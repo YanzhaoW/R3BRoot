@@ -14,7 +14,6 @@
 #ifndef R3B_NEULAND_DIGITIZER_H
 #define R3B_NEULAND_DIGITIZER_H
 
-#include <TClonesArray.h>
 #include "DigitizingEngine.h"
 #include "FairTask.h"
 #include "Filterable.h"
@@ -23,6 +22,8 @@
 #include "R3BNeulandHitPar.h"
 #include "R3BNeulandPoint.h"
 #include "TCAConnector.h"
+#include <TClonesArray.h>
+#include <TH1.h>
 
 class TGeoNode;
 class TH1F;
@@ -43,10 +44,10 @@ class TH2F;
 class R3BNeulandDigitizer : public FairTask
 {
   public:
-    R3BNeulandDigitizer(TString input = "NeulandPoints", TString output = "NeulandHits");
-    R3BNeulandDigitizer(Neuland::DigitizingEngine* engine,
-                        TString input = "NeulandPoints",
-                        TString output = "NeulandHits");
+    explicit R3BNeulandDigitizer(TString input = "NeulandPoints", TString output = "NeulandHits");
+    explicit R3BNeulandDigitizer(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine,
+                                 TString input = "NeulandPoints",
+                                 TString output = "NeulandHits");
 
     ~R3BNeulandDigitizer() override = default;
 
@@ -56,34 +57,36 @@ class R3BNeulandDigitizer : public FairTask
     R3BNeulandDigitizer& operator=(const R3BNeulandDigitizer&) = delete; // copy assignment
     R3BNeulandDigitizer& operator=(R3BNeulandDigitizer&&) = delete;      // move assignment
 
+    void SetPaddleChannel(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine);
+    [[nodiscard]] auto GetNeulandHitParRef() const -> const std::optional<R3BNeulandHitPar*>& { return fNeulandHitPar; }
+
   protected:
     InitStatus Init() override;
     void Finish() override;
     void SetParContainers() override;
 
   public:
-    void Exec(Option_t*) override;
-    void AddFilter(const Filterable<R3BNeulandHit&>::Filter& f) { fHitFilters.Add(f); }
+    void Exec(Option_t* /*option*/) override;
+    void AddFilter(const Filterable<R3BNeulandHit&>::Filter& filter) { fHitFilters.Add(filter); }
     void SetHitParName(const TString& name) { fHitParName = name; };
 
   private:
     TCAInputConnector<R3BNeulandPoint> fPoints;
     TCAOutputConnector<R3BNeulandHit> fHits;
 
-    std::unique_ptr<Neuland::DigitizingEngine> fDigitizingEngine; // owning
+    std::unique_ptr<Digitizing::DigitizingEngineInterface> fDigitizingEngine; // owning
 
     Filterable<R3BNeulandHit&> fHitFilters;
 
-    R3BNeulandGeoPar* fNeulandGeoPar; // non-owning
+    R3BNeulandGeoPar* fNeulandGeoPar = nullptr; // non-owning
+    std::optional<R3BNeulandHitPar*> fNeulandHitPar = nullptr;
 
     TString fHitParName{};
-    TH1F* hMultOne;
-    TH1F* hMultTwo;
-    TH1F* hRLTimeToTrig;
-    TH2F* hElossVSQDC;
+    TH1I* hMultOne = nullptr;
+    TH1I* hMultTwo = nullptr;
 
   public:
-    ClassDefOverride(R3BNeulandDigitizer, 0)
+    ClassDefOverride(R3BNeulandDigitizer, 1) // NOLINT
 };
 
 #endif // R3B_NEULAND_DIGITIZER_H

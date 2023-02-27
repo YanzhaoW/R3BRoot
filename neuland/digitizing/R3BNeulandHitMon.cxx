@@ -66,7 +66,7 @@ InitStatus R3BNeulandHitMon::Init()
     hDepthVSForemostEnergy = new TH2D("hDepthVSFrontEnergy", "Depth vs Foremost Energy", 60, 1400, 1700, 100, 0, 100);
     hDepthVSSternmostEnergy =
         new TH2D("hDepthVSSternmostEnergy", "Depth vs Sternmost Energy", 60, 1400, 1700, 100, 0, 100);
-    hEtot = new TH1D("hEtot", "Total Energy", 10000, 0, 10000);
+    hEtot = new TH1D("hEtot", "Total Energy", 1000, 0, 10000);
     hDepthVSEtot = new TH2D("hDepthVSEtot", "Depth vs Total Energy", 60, 1400, 1700, 1000, 0, 1000);
     hdeltaEE = new TH2D("hdeltaEE", "Energy in Foremost Plane vs Etot", 100, 0, 2000, 100, 0, 250);
     hPosVSEnergy = new TH2D("hPosVSEnergy", "Position vs Energy deposition", 60, 1400, 1700, 1000, 0, 1000);
@@ -92,10 +92,10 @@ void R3BNeulandHitMon::Exec(Option_t*)
         if (result.second == false)
             result.first->second++;
     }
-    auto max = std::max_element(
-        paddlenum.begin(), paddlenum.end(), [](std::pair<Int_t, Int_t> lhs, std::pair<Int_t, Int_t> rhs) {
-            return (lhs.second < rhs.second);
-        });
+    auto max = std::max_element(paddlenum.begin(),
+                                paddlenum.end(),
+                                [](std::pair<Int_t, Int_t> lhs, std::pair<Int_t, Int_t> rhs)
+                                { return (lhs.second < rhs.second); });
     LOG(debug) << "max dupli: " << max->second;
 
     if (fIs3DTrackEnabled)
@@ -133,9 +133,10 @@ void R3BNeulandHitMon::Exec(Option_t*)
         }
     }
 
-    auto maxDepthHit = std::max_element(hits.begin(), hits.end(), [](R3BNeulandHit* a, R3BNeulandHit* b) {
-        return a->GetPosition().Z() < b->GetPosition().Z();
-    });
+    auto maxDepthHit = std::max_element(hits.begin(),
+                                        hits.end(),
+                                        [](R3BNeulandHit* a, R3BNeulandHit* b)
+                                        { return a->GetPosition().Z() < b->GetPosition().Z(); });
     if (maxDepthHit != hits.end())
     {
         hDepth->Fill((*maxDepthHit)->GetPosition().Z());
@@ -143,9 +144,10 @@ void R3BNeulandHitMon::Exec(Option_t*)
         hDepthVSSternmostEnergy->Fill((*maxDepthHit)->GetPosition().Z(), (*maxDepthHit)->GetE());
     }
 
-    auto minDepthHit = std::min_element(hits.begin(), hits.end(), [](R3BNeulandHit* a, R3BNeulandHit* b) {
-        return a->GetPosition().Z() < b->GetPosition().Z();
-    });
+    auto minDepthHit = std::min_element(hits.begin(),
+                                        hits.end(),
+                                        [](R3BNeulandHit* a, R3BNeulandHit* b)
+                                        { return a->GetPosition().Z() < b->GetPosition().Z(); });
     auto Etot = std::accumulate(
         hits.begin(), hits.end(), Double_t(0.), [](const Double_t a, R3BNeulandHit* b) { return a + b->GetE(); });
 

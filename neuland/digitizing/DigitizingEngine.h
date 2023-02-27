@@ -14,170 +14,113 @@
 #ifndef NEULAND_DIGITIZING_ENGINE_H
 #define NEULAND_DIGITIZING_ENGINE_H
 
+#include "DigitizingChannel.h"
+#include "DigitizingPaddle.h"
 #include "FairLogger.h"
-#include "R3BNeulandHitPar.h"
 #include "Rtypes.h"
-#include "Validated.h"
+#include <cmath>
+#include <functional>
 #include <map>
 #include <memory>
-#include <vector>
 
-namespace Neuland
+namespace Digitizing
 {
-    namespace Digitizing
-    {
-        struct PMTHit
-        {
-            Double_t time;
-            Double_t light;
-
-            bool operator<(const PMTHit& rhs) const { return (time < rhs.time); }
-
-            PMTHit() = default;
-            PMTHit(Double_t mcTime, Double_t mcLight, Double_t dist);
-        };
-
-        class Paddle;
-
-        // channels of PMT plus digitisation module. Input interaction points and output digital signals.
-        class Channel
-        {
-          public:
-            enum SideOfChannel
-            {
-                right = 1,
-                left = 2
-            };
-
-            struct Signal
-            {
-                Double_t qdc{};
-                Double_t tdc{};
-                Double_t energy{};
-                SideOfChannel side{};
-                Signal() = default;
-                Signal(Double_t q, Double_t t, Double_t e, SideOfChannel s)
-                    : qdc{ q }
-                    , tdc{ t }
-                    , energy{ e }
-                    , side{ s }
-                {
-                }
-            };
-
-            Channel(SideOfChannel);
-            virtual ~Channel() = default; // FIXME: Root doesn't like pure virtual destructors (= 0;)
-            virtual void AddHit(Double_t mcTime, Double_t mcLight, Double_t dist) = 0;
-            virtual bool HasFired() const = 0;
-            virtual void SetPaddle(Paddle* paddle) { fPaddle = paddle; };
-            virtual const Double_t GetTrigTime() const = 0;
-
-            const std::vector<Signal>& GetSignals() const;
-            const SideOfChannel GetSide() const { return fSide; }
-
-          protected:
-            std::vector<PMTHit> fPMTHits;                    // input PMT hits to the channel
-            const SideOfChannel fSide;                       // side of the channel
-            mutable Validated<std::vector<Signal>> fSignals; // output signals from the channel
-            Paddle* fPaddle;                                 // pointer to the paddle who owns this channel
-
-          private:
-            virtual void ConstructSignals() const = 0;
-        };
-
-        class Paddle
-        {
-          public:
-            template <class T>
-            struct Pair
-            {
-                T left;
-                T right;
-                Pair(T l, T r)
-                    : left(l)
-                    , right(r){};
-            };
-
-            struct Signal
-            {
-                Double_t energy{};
-                Double_t time{};
-                Double_t position{};
-                const Channel::Signal& leftChannel;
-                const Channel::Signal& rightChannel;
-                Signal(const Channel::Signal& leftSignal, const Channel::Signal& rightSignal)
-                    : leftChannel{ leftSignal }
-                    , rightChannel{ rightSignal }
-                {
-                }
-            };
-
-            Paddle(const Int_t paddleID,
-                   std::unique_ptr<Channel> l,
-                   std::unique_ptr<Channel> r,
-                   R3BNeulandHitPar* par = nullptr);
-            virtual ~Paddle() {}
-            void DepositLight(Double_t time, Double_t light, Double_t dist);
-
-            bool HasFired() const;
-            bool HasHalfFired() const;
-
-            void SetHitModulePar(R3BNeulandHitPar* par);
-            R3BNeulandHitModulePar* GetHitModulePar() const { return fHitModulePar; }
-
-            Int_t GetPaddleId() const { return fPaddleId; }
-            const std::vector<Signal>& GetSignals() const;
-
-            const Channel* GetLeftChannel() const { return fLeftChannel.get(); }
-            const Channel* GetRightChannel() const { return fRightChannel.get(); }
-
-          protected:
-            using ChannelSignals = std::vector<Channel::Signal>;
-            using PaddleSignals = std::vector<Signal>;
-            std::unique_ptr<Channel> fLeftChannel;
-            std::unique_ptr<Channel> fRightChannel;
-            R3BNeulandHitModulePar* fHitModulePar = nullptr;
-            mutable Validated<PaddleSignals> fSignals;
-            const Int_t fPaddleId;
-
-          public:
-            static constexpr Double_t gHalfLength = 135.;   // [cm]
-            static constexpr Double_t gCMedium = 14.;       // speed of light in material in [cm/ns]
-            static constexpr Double_t gAttenuation = 0.008; // light attenuation of plastic scintillator [1/cm]
-            static constexpr Double_t gLambda = 1. / 2.1;
-
-          private:
-            virtual std::vector<Pair<int>> ConstructIndexMap(const ChannelSignals& leftSignals,
-                                                             const ChannelSignals& rightSignals) const;
-            virtual PaddleSignals ConstructPaddelSignals(const ChannelSignals& leftSignals,
-                                                         const ChannelSignals& rightSignals,
-                                                         const std::vector<Pair<int>>& indexMapping) const;
-            virtual Float_t CompareSignals(const Channel::Signal& firstSignal,
-                                           const Channel::Signal& secondSignal) const;
-            virtual Double_t ComputeTime(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const;
-            virtual Double_t ComputeEnergy(const Channel::Signal& firstSignal,
-                                           const Channel::Signal& secondSignal) const;
-            virtual Double_t ComputePosition(const Channel::Signal& rightSignal,
-                                             const Channel::Signal& leftSignal) const;
-        };
-    } // namespace Digitizing
-
-    // abstract class, cannot be instantiated, to be used as a base class.
-    class DigitizingEngine
+    class DigitizingEngineInterface
     {
       public:
-        virtual ~DigitizingEngine() = default; // FIXME: Root doesn't like pure virtual destructors (= 0;)
-        virtual std::unique_ptr<Digitizing::Channel> BuildChannel(Digitizing::Channel::SideOfChannel) = 0;
+        DigitizingEngineInterface() = default;
+        // rule of 5
+        virtual ~DigitizingEngineInterface() = default;
+        DigitizingEngineInterface(const DigitizingEngineInterface& other) = delete;
+        auto operator=(const DigitizingEngineInterface& other) -> DigitizingEngineInterface& = delete;
+        DigitizingEngineInterface(DigitizingEngineInterface&& other) = default;
+        auto operator=(DigitizingEngineInterface&& other) -> DigitizingEngineInterface& = delete;
 
-        void SetHitPar(R3BNeulandHitPar* par) { fNeulandHitPar = par; }
-        void DepositLight(Int_t paddle_id, Double_t time, Double_t light, Double_t dist);
-        Double_t GetTriggerTime() const;
-        std::map<Int_t, std::unique_ptr<Digitizing::Paddle>> ExtractPaddles();
-
-      protected:
-        std::map<Int_t, std::unique_ptr<Digitizing::Paddle>> paddles;
-        R3BNeulandHitPar* fNeulandHitPar = nullptr;
+        virtual void DepositLight(int paddle_id, double time, double light, double dist) = 0;
+        [[nodiscard]] virtual auto GetTriggerTime() const -> double = 0;
+        virtual auto ExtractPaddles() -> std::map<int, std::unique_ptr<Paddle>> = 0;
     };
-} // namespace Neuland
+
+    // factory classes for paddle and channel:
+    template <typename ChannelClass,
+              typename = typename std::enable_if<std::is_base_of<Channel, ChannelClass>::value>::type>
+    class UseChannel
+    {
+      public:
+        template <typename... Args>
+        explicit UseChannel(Args&&... args)
+            : BuildChannel([&](ChannelSide side)
+                           { return std::make_unique<ChannelClass>(side, std::forward<Args>(args)...); })
+        {
+        }
+        std::function<std::unique_ptr<ChannelClass>(ChannelSide)> BuildChannel;
+    };
+
+    template <typename PaddleClass,
+              typename = typename std::enable_if<std::is_base_of<Paddle, PaddleClass>::value>::type>
+    class UsePaddle
+    {
+      public:
+        template <typename... Args>
+        explicit UsePaddle(Args&&... args)
+            : BuildPaddle([&](int paddleID)
+                          { return std::make_unique<PaddleClass>(paddleID, std::forward<Args>(args)...); })
+        {
+        }
+        std::function<std::unique_ptr<PaddleClass>(int)> BuildPaddle;
+    };
+
+    template <typename PaddleClass, typename ChannelClass>
+    class DigitizingEngine : public DigitizingEngineInterface
+    {
+      private:
+        UsePaddle<PaddleClass> paddleClass;
+        UseChannel<ChannelClass> channelClass;
+        std::map<int, std::unique_ptr<Paddle>> paddles;
+
+      public:
+        DigitizingEngine(const UsePaddle<PaddleClass>& p_paddleClass, const UseChannel<ChannelClass>& p_channelClass)
+            : paddleClass{ p_paddleClass }
+            , channelClass{ p_channelClass }
+            , DigitizingEngineInterface()
+        {
+        }
+
+        void DepositLight(int paddle_id, double time, double light, double dist) override
+        {
+            if (paddles.find(paddle_id) == paddles.end())
+            {
+                auto newPaddle = paddleClass.BuildPaddle(paddle_id);
+                newPaddle->SetChannel(channelClass.BuildChannel(Digitizing::ChannelSide::left));
+                newPaddle->SetChannel(channelClass.BuildChannel(Digitizing::ChannelSide::right));
+                paddles[paddle_id] = std::move(newPaddle);
+            }
+            paddles.at(paddle_id)->DepositLight({ time, light, dist });
+        }
+
+        [[nodiscard]] auto GetTriggerTime() const -> double override
+        {
+            auto min_element = std::min_element(paddles.begin(),
+                                                paddles.end(),
+                                                [](const auto& left, const auto& right)
+                                                { return left.second->GetTrigTime() < right.second->GetTrigTime(); });
+            return (min_element == paddles.end()) ? NAN : min_element->second->GetTrigTime();
+        }
+
+        [[nodiscard]] auto ExtractPaddles() -> std::map<int, std::unique_ptr<Paddle>> override
+        {
+            return std::move(paddles);
+        }
+    };
+
+    // helper to create owning digitizingEngine:
+    template <typename... Args>
+    [[nodiscard]] auto CreateEngine(Args&&... args)
+        -> std::unique_ptr<decltype(DigitizingEngine{ std::forward<Args>(args)... })>
+    {
+        return std::make_unique<decltype(DigitizingEngine{ std::forward<Args>(args)... })>(std::forward<Args>(args)...);
+    }
+
+} // namespace Digitizing
 
 #endif // NEULAND_DIGITIZING_ENGINE_H

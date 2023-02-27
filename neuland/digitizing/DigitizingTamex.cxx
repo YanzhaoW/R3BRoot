@@ -13,14 +13,31 @@
 
 #include "DigitizingTamex.h"
 
+#include <cmath>
+
+#include "R3BNeulandHitModulePar.h"
+#include "R3BNeulandHitPar.h"
 #include <algorithm>
 #include <iostream>
+#include <utility>
 
 #include "FairLogger.h"
 
-namespace Neuland
+namespace Digitizing::Neuland::Tamex
 {
-    Tamex::Params::Params(TRandom3* rnd)
+    // some declarations for static functions:
+    template <class T>
+    static auto CheckOverlapping(const T& peak, std::vector<T>& peaks) -> decltype(peaks.begin());
+    template <class T>
+    static void ReOverlapping(typename std::vector<T>::iterator v_iter, std::vector<T>& peaks);
+    template <class T>
+    static void RemovePeakAt(typename std::vector<T>::iterator v_iter, std::vector<T>& peaks);
+
+    // global variables for default options:
+    const size_t TmxPeaksInitialCapacity = 10;
+    const double PMTPeak::minimumTimeDf = 15.0; // ns
+
+    Params::Params(TRandom3& rnd)
         : fPMTThresh(1.)                // [MeV]
         , fSaturationCoefficient(0.012) //
         , fExperimentalDataIsCorrectedForSaturation(true)
@@ -28,258 +45,249 @@ namespace Neuland
         , fEResRel(0.05) // Gaus(e, fEResRel * e) []
         , fEnergyGain(15.0)
         , fPedestal(14.0)
-        , fTimeMax(1000)
+        , fTimeMax(1000.)
         , fTimeMin(1)
         , fQdcMin(0.67)
         , fRnd(rnd)
     {
     }
 
-    Tamex::TmxPeak::TmxPeak()
-        : TmxPeak(Digitizing::PMTHit{}, nullptr)
+    PMTPeak::PMTPeak(Digitizing::Channel::Hit pmtHit, const Channel& channel)
     {
-    }
-
-    Tamex::TmxPeak::TmxPeak(const Digitizing::PMTHit& hit, Tamex::Channel* channel)
-        : fChannel{ channel }
-    {
-        if (!fChannel)
-            LOG(fatal) << "no channel is linked to the signal peak!";
-        auto side = fChannel->GetSide();
-        auto par = fChannel->GetPar();
-
-        auto light = hit.light;
+        auto par = channel.GetParConstRef();
         // apply saturation coefficent
         if (par.fExperimentalDataIsCorrectedForSaturation)
-            fQdc = light / (1. + par.fSaturationCoefficient * light);
+        {
+            fQdc = pmtHit.light / (1. + par.fSaturationCoefficient * pmtHit.light);
+        }
         else
-            fQdc = light;
+        {
+            fQdc = pmtHit.light;
+        }
+        fLETime = pmtHit.time;
+    }
+
+    auto PMTPeak::operator+=(const PMTPeak& rhs) -> PMTPeak&
+    {
+        fQdc += rhs.fQdc;
+        fLETime = (fLETime < rhs.fLETime) ? fLETime : rhs.fLETime;
+        return *this;
+    }
+
+    Peak::Peak(const PMTPeak& pmtPeak, Channel* channel)
+        : fQdc(pmtPeak.GetQDC())
+        , fLETime(pmtPeak.GetLETime())
+        , fChannel(channel)
+    {
+        if (fChannel == nullptr)
+        {
+            LOG(fatal) << "channel is not bound to FQTPeak object!";
+        }
+        auto par = channel->GetParConstRef();
 
         // calculate the time and the width of the signal
-        fTime = hit.time;
-        fWidth = QdcToWidth(fQdc);
+        fWidth = QdcToWidth(fQdc, par);
+        fTETime = fLETime + fWidth;
     }
 
-    Tamex::TmxPeak::operator Digitizing::Channel::Signal() const
+    auto Peak::operator==(const Peak& sig) const -> bool
     {
-        if (!cachedSignal.valid())
-            cachedSignal.set(fChannel->TmxPeakToSignal(*this));
-
-        return cachedSignal.get();
-    }
-
-    bool Tamex::TmxPeak::operator==(const TmxPeak& sig) const
-    {
-        if (sig.fTime == 0 && fTime == 0)
+        if (sig.fLETime == 0 && fLETime == 0)
+        {
             LOG(warn) << "the times of both PMT signals are 0!";
-        return !((fTime > sig.fTime + sig.fWidth) || (sig.fTime > fTime + fWidth));
+        }
+        return (fLETime <= (sig.fLETime + sig.fWidth)) && (sig.fLETime <= (fLETime + fWidth));
     }
 
-    void Tamex::TmxPeak::operator+=(TmxPeak& sig)
+    void Peak::operator+=(const Peak& sig)
     {
-        cachedSignal.invalidate();
-        auto qdc_prev = fQdc;
-
-        fTime = (fTime > sig.fTime) ? fTime : sig.fTime;
-        fQdc += sig.fQdc;
-
-        // change the width of peak to make sure its correlation to qdc stays the same
-        if (!fChannel)
-            LOG(fatal) << "no channel is linked to the signal peak!";
-        auto par = fChannel->GetPar();
-        if (par.fEnergyGain != 0)
-            fWidth = QdcToWidth(fQdc);
+        if (fChannel == nullptr)
+        {
+            LOG(fatal) << "channel is not bound to FQTPeak object!";
+        }
+        fLETime = (fLETime < sig.fLETime) ? fLETime : sig.fLETime;
+        fTETime = (fTETime > sig.fTETime) ? fTETime : sig.fTETime;
+        fWidth = fTETime - fLETime;
+        fQdc = WidthToQdc(fWidth, fChannel->GetParConstRef());
     }
 
-    Double_t Tamex::TmxPeak::QdcToWidth(Double_t qdc) const
-    {
-        Double_t width;
-        auto par = fChannel->GetPar();
-        if (qdc > par.fQdcMin)
-            width = qdc * par.fEnergyGain + par.fPedestal;
-        else
-            width = qdc * par.fEnergyGain * (par.fPedestal + 1);
-        return std::move(width);
-    }
-
-    Tamex::Channel::Channel(TRandom3* rnd, const SideOfChannel side)
+    Channel::Channel(ChannelSide side, TRandom3& rnd, const std::optional<R3BNeulandHitPar*>& hitpar)
         : Digitizing::Channel{ side }
+        , fNeulandHitPar{ hitpar.value_or(nullptr) }
         , par{ rnd }
     {
+        fPMTPeaks.reserve(TmxPeaksInitialCapacity);
     }
 
-    bool Tamex::Channel::HasFired() const { return (GetSignals().size() > 0); }
-
-    Int_t Tamex::Channel::CheckOverlapping(TmxPeak& peak) const
+    void Channel::AttachToPaddle(Digitizing::Paddle* /*v_paddle*/)
     {
-        auto it = std::find_if(fTmxPeaks.begin(), fTmxPeaks.end(), [&](const TmxPeak& s) { return (s == peak); });
-        if (it == fTmxPeaks.end())
+        auto* paddle = GetPaddle();
+        if (paddle == nullptr)
         {
-            return -1;
+            return;
         }
-        else
+
+        if (CheckPaddleIDInHitPar())
         {
-            return static_cast<Int_t>(it - fTmxPeaks.begin());
-        }
-    }
-
-    Int_t Tamex::Channel::RecheckOverlapping(Int_t index)
-    {
-        auto it = fTmxPeaks.begin();
-        if (index >= fTmxPeaks.size())
-            LOG(fatal) << "DigitizingTamex::RecheckOverlapping: cannot check the peak with overflowing index!";
-        while (it != fTmxPeaks.end())
-        {
-            Int_t i = 0;
-            it = std::find_if(fTmxPeaks.begin(), fTmxPeaks.end(), [&](const TmxPeak& p) {
-                bool res = false;
-                if (index != i)
-                {
-                    res = (p == fTmxPeaks[index]);
-                }
-                i++;
-                return res;
-            });
-
-            if (it == fTmxPeaks.end())
-                continue;
-
-            i = static_cast<int>(it - fTmxPeaks.begin());
-
-            if (index == fTmxPeaks.size() - 1)
+            fNeulandHitModulePar = fNeulandHitPar->GetModuleParAt(GetPaddle()->GetPaddleID() - 1);
+            if (CheckPaddleIDInHitModulePar())
             {
-                std::swap(index, i);
+                auto side = GetSide();
+                par.fSaturationCoefficient = fNeulandHitModulePar->GetPMTSaturation(static_cast<int>(side));
+                par.fEnergyGain = fNeulandHitModulePar->GetEnergyGain(static_cast<int>(side));
+                par.fPedestal = fNeulandHitModulePar->GetPedestal(static_cast<int>(side));
+                par.fPMTThresh = fNeulandHitModulePar->GetPMTThreshold(static_cast<int>(side));
+                par.fQdcMin = 1 / par.fEnergyGain;
             }
-            fTmxPeaks[index] += fTmxPeaks[i];
-            RemovePeakAt(i);
         }
-        return index;
     }
 
-    void Tamex::Channel::AddHit(Double_t mcTime, Double_t mcLight, Double_t dist)
+    auto Channel::CheckPaddleIDInHitModulePar() const -> bool
     {
-        auto newHit = Digitizing::PMTHit{ mcTime, mcLight, dist };
-        if (newHit.time < par.fTimeMin || newHit.time > par.fTimeMax)
-            return;
-
-        fSignals.invalidate();
-        fTrigTime.invalidate();
-
-        auto peak = TmxPeak{ std::move(newHit), this };
-
-        auto index = CheckOverlapping(peak);
-
-        if (index < 0)
+        auto is_valid = false;
+        if (fNeulandHitModulePar == nullptr || GetPaddle() == nullptr)
         {
-            fTmxPeaks.push_back(std::move(peak));
+            return false;
+        }
+
+        if (GetPaddle()->GetPaddleID() != fNeulandHitModulePar->GetModuleId())
+        {
+            LOG(warn) << "Channel::SetHitModulePar:Wrong paddleID for the parameters!";
+            is_valid = false;
         }
         else
         {
-            fTmxPeaks[index] += peak;
-            index = RecheckOverlapping(index);
+            is_valid = true;
         }
+        return is_valid;
     }
 
-    void Tamex::Channel::RemovePeakAt(Int_t i) const
+    auto Channel::CheckPaddleIDInHitPar() const -> bool
     {
-        if (i >= fTmxPeaks.size())
+        auto is_valid = false;
+        if (fNeulandHitPar == nullptr)
         {
-            LOG(fatal) << "DigitizingTamex::RemovePeakAt: Cannot remove the peak with the overflowing index! ";
+            return false;
+        }
+
+        auto PaddleId_max = fNeulandHitPar->GetNumModulePar();
+        if (GetPaddle()->GetPaddleID() > PaddleId_max)
+        {
+            LOG(warn) << "Paddle id exceeds the id in the parameter file!";
+            is_valid = false;
+        }
+        else
+        {
+            is_valid = true;
+        }
+
+        return is_valid;
+    }
+
+    void Channel::AddHit(Hit newHit)
+    {
+        if (newHit.time < par.fTimeMin || newHit.time > par.fTimeMax)
+        {
             return;
         }
-        if (i != fTmxPeaks.size() - 1)
-        {
-            fTmxPeaks[i] = std::move(fTmxPeaks.back());
-        }
-        fTmxPeaks.pop_back();
+        InvalidateSignals();
+        InvalidateTrigTime();
+        fPMTPeaks.emplace_back(newHit, *this);
     }
 
-    Digitizing::Channel::Signal Tamex::Channel::TmxPeakToSignal(const TmxPeak& peak) const
+    auto Channel::CreateSignal(const Peak& peak) const -> Signal
     {
         auto peakQdc = peak.GetQDC();
-        auto peakTime = peak.GetTime();
+        auto peakTime = peak.GetLETime();
         auto qdc = ToQdc(peakQdc);
 
-        return { qdc, ToTdc(peakTime), ToEnergy(qdc), this->GetSide() };
+        auto signal = Signal{};
+        signal.qdcUnSat = ToUnSatQdc(qdc);
+        signal.qdc = qdc;
+        signal.tdc = ToTdc(peakTime);
+        signal.side = this->GetSide();
+        return signal;
     }
 
-    void Tamex::Channel::RemoveZero(std::vector<Signal>& signals) const
+    template <typename Peak>
+    void Channel::PeakPilingUp(std::vector<Peak>& peaks)
     {
-        // remove signals with 0 energy using c++ erase-remove idiom:
-        auto it = std::remove_if(signals.begin(), signals.end(), [](const Signal& s) { return s.energy == 0.0; });
-        signals.erase(it, signals.end());
-    }
-
-    void Tamex::Channel::ConstructSignals() const
-    {
-        auto signals = std::vector<Signal>{};
-        signals.reserve(fTmxPeaks.size());
-
-        std::transform(fTmxPeaks.begin(), fTmxPeaks.end(), std::back_inserter(signals), [](TmxPeak& peak) {
-            return static_cast<Signal>(peak);
-        });
-        RemoveZero(signals);
-        fSignals.set(std::move(signals));
-    }
-
-    void Tamex::Channel::SetPaddle(Digitizing::Paddle* paddle)
-    {
-        fPaddle = paddle;
-        auto hitModulePar = paddle->GetHitModulePar();
-        if (hitModulePar)
+        if (peaks.size() == 0)
         {
-            par.fSaturationCoefficient = hitModulePar->GetPMTSaturation(fSide);
-            par.fEnergyGain = hitModulePar->GetEnergyGain(fSide);
-            par.fPedestal = hitModulePar->GetPedestal(fSide);
-            par.fPMTThresh = hitModulePar->GetPMTThreshold(fSide);
-            par.fQdcMin = 1 / par.fEnergyGain;
+            return;
+        }
+        for (auto it = peaks.end() - 1; it != peaks.begin(); --it)
+        {
+            if (*it == *(it - 1))
+            {
+                *(it - 1) += *it;
+                peaks.erase(it);
+            }
         }
     }
 
-    Double_t Tamex::Channel::ToQdc(Double_t qdc) const
+    template <typename Peak>
+    void Channel::ApplyThreshold(std::vector<Peak>& peaks)
+    {
+        // apply threshold on energy using c++ erase-remove idiom:
+        auto it_end =
+            std::remove_if(peaks.begin(),
+                           peaks.end(),
+                           [this](const auto& peak) { return peak.GetQDC() < this->GetParConstRef().fPMTThresh; });
+        peaks.erase(it_end, peaks.end());
+    }
+
+    auto Channel::ConstructFQTPeaks(std::vector<PMTPeak>& pmtPeaks) -> std::vector<Peak>
+    {
+        auto FQTPeaks = std::vector<Peak>{};
+        FQTPeaks.reserve(pmtPeaks.size());
+
+        // sorting pmt peaks according to time:
+        std::sort(pmtPeaks.begin(), pmtPeaks.end());
+
+        PeakPilingUp(pmtPeaks);
+        ApplyThreshold(pmtPeaks);
+        for (auto const& peak : pmtPeaks)
+        {
+            FQTPeaks.emplace_back(peak, this);
+        }
+        return FQTPeaks;
+    }
+
+    auto Channel::ConstructSignals() -> Signals
+    {
+        fFQTPeaks = ConstructFQTPeaks(fPMTPeaks);
+        // signal pileup:
+        PeakPilingUp(fFQTPeaks);
+
+        // construct Channel signals:
+        auto signals = std::vector<Signal>{};
+        signals.reserve(fFQTPeaks.size());
+
+        for (const auto& peak : fFQTPeaks)
+        {
+            signals.emplace_back(CreateSignal(peak));
+        }
+        return signals;
+    }
+
+    auto Channel::ToQdc(double qdc) const -> double
     {
         // apply energy smearing
-        qdc = par.fRnd->Gaus(qdc, par.fEResRel * qdc);
-
-        // set qdc to zero if below PMT threshold
-        qdc = (qdc > par.fPMTThresh) ? qdc : 0.0;
+        qdc = par.fRnd.Gaus(qdc, par.fEResRel * qdc);
         return qdc;
     }
 
-    Double_t Tamex::Channel::ToTdc(Double_t time) const { return time + par.fRnd->Gaus(0., par.fTimeRes); }
+    auto Channel::ToTdc(double time) const -> double { return time + par.fRnd.Gaus(0., par.fTimeRes); }
 
-    Double_t Tamex::Channel::ToEnergy(Double_t e) const
+    auto Channel::ToUnSatQdc(double qdc) const -> double
     {
         // Apply reverse saturation
         if (par.fExperimentalDataIsCorrectedForSaturation)
         {
-            e = e / (1. - par.fSaturationCoefficient * e);
+            qdc = qdc / (1 - par.fSaturationCoefficient * qdc);
         }
         // Apply reverse attenuation
-        e = e * exp((2. * (Digitizing::Paddle::gHalfLength)) * Digitizing::Paddle::gAttenuation / 2.);
-        return e;
+        return qdc;
     }
-
-    const Double_t Tamex::Channel::GetTrigTime() const
-    {
-        if (!fTrigTime.valid())
-        {
-            auto signals = GetSignals();
-            auto it = std::min_element(
-                signals.begin(), signals.end(), [](const Signal& l, const Signal& r) { return l.tdc < r.tdc; });
-            fTrigTime.set(it->tdc);
-        }
-        return fTrigTime.get();
-    }
-
-    DigitizingTamex::DigitizingTamex()
-        : fRnd(new TRandom3{})
-    {
-    }
-
-    std::unique_ptr<Digitizing::Channel> DigitizingTamex::BuildChannel(Digitizing::Channel::SideOfChannel side)
-    {
-        return std::unique_ptr<Digitizing::Channel>(new Tamex::Channel(fRnd.get(), side));
-    }
-
-} // namespace Neuland
+} // namespace Digitizing::Neuland::Tamex

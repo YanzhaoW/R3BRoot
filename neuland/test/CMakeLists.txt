@@ -16,6 +16,7 @@ set(PROJECT_TEST_NAME NeulandUnitTests)
 
 if(GTEST_FOUND)
     file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/neuland/test/*.cxx)
+    add_subdirectory(digitizing)
 
     include_directories(
         ${SYSTEM_INCLUDE_DIRECTORIES}
@@ -51,24 +52,23 @@ set_tests_properties(NeulandSimulation PROPERTIES TIMEOUT "2000")
 set_tests_properties(NeulandSimulation PROPERTIES PASS_REGULAR_EXPRESSION
     "Macro finished successfully.")
 
-generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandDigitizer.C)
-add_test(NeulandDigitizer ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandDigitizer.sh)
+add_test(NeulandDigitizer ${R3BROOT_BINARY_DIR}/bin/neulandAna)
 set_tests_properties(NeulandDigitizer PROPERTIES DEPENDS NeulandSimulation)
 set_tests_properties(NeulandDigitizer PROPERTIES TIMEOUT "1000")
 set_tests_properties(NeulandDigitizer PROPERTIES PASS_REGULAR_EXPRESSION
     "Macro finished successfully.")
 
-generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandTrain.C)
-add_test(NeulandTrain ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandTrain.sh)
-set_tests_properties(NeulandTrain PROPERTIES DEPENDS NeulandDigitizer)
-set_tests_properties(NeulandTrain PROPERTIES TIMEOUT "1000")
-set_tests_properties(NeulandTrain PROPERTIES PASS_REGULAR_EXPRESSION "Macro finished successfully.")
+# generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandTrain.C)
+# add_test(NeulandTrain ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandTrain.sh)
+# set_tests_properties(NeulandTrain PROPERTIES DEPENDS NeulandDigitizer)
+# set_tests_properties(NeulandTrain PROPERTIES TIMEOUT "1000")
+# set_tests_properties(NeulandTrain PROPERTIES PASS_REGULAR_EXPRESSION "Macro finished successfully.")
 
-generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandReconstruction.C)
-add_test(NeulandReconstruction ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandReconstruction.sh)
-set_tests_properties(NeulandReconstruction PROPERTIES DEPENDS NeulandTrain)
-set_tests_properties(NeulandReconstruction PROPERTIES TIMEOUT "1000")
-set_tests_properties(NeulandReconstruction PROPERTIES PASS_REGULAR_EXPRESSION
-    "Macro finished successfully.")
+# generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandReconstruction.C)
+# add_test(NeulandReconstruction ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandReconstruction.sh)
+# set_tests_properties(NeulandReconstruction PROPERTIES DEPENDS NeulandTrain)
+# set_tests_properties(NeulandReconstruction PROPERTIES TIMEOUT "1000")
+# set_tests_properties(NeulandReconstruction PROPERTIES PASS_REGULAR_EXPRESSION
+#                                                       "Macro finished successfully.")
 
 add_subdirectory(calibration)

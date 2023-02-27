@@ -21,107 +21,139 @@
  *
  */
 
-#include "DigitizingEngine.h"
+#include "DigitizingChannel.h"
+#include "DigitizingPaddle.h"
 #include "TRandom3.h"
 #include "Validated.h"
-#include <iostream>
+#include <optional>
 
-namespace Neuland
+class R3BNeulandHitPar;
+class R3BNeulandHitModulePar;
+
+namespace Digitizing::Neuland::Tamex
 {
-    class DigitizingTamex;
-
-    namespace Tamex
+    class Channel;
+    struct Params
     {
-        class Channel;
-        struct Params
-        {
-            Double_t fPMTThresh;             // [MeV]
-            Double_t fSaturationCoefficient; // Saturation coefficient of PMTs
-            Bool_t fExperimentalDataIsCorrectedForSaturation;
-            Double_t fTimeRes; // time + Gaus(0., fTimeRes) [ns]
-            Double_t fEResRel; // Gaus(e, fEResRel * e) []
-            Double_t fEnergyGain;
-            Double_t fPedestal;
-            Double_t fTimeMax;
-            Double_t fTimeMin;
-            Double_t fQdcMin;
-            TRandom3* fRnd;
+        double fPMTThresh;             // [MeV]
+        double fSaturationCoefficient; // Saturation coefficient of PMTs
+        bool fExperimentalDataIsCorrectedForSaturation;
+        double fTimeRes; // time + Gaus(0., fTimeRes) [ns]
+        double fEResRel; // Gaus(e, fEResRel * e) []
+        double fEnergyGain;
+        double fPedestal;
+        double fTimeMax;
+        double fTimeMin;
+        double fQdcMin;
+        TRandom3& fRnd;
 
-            Params(TRandom3*);
-        };
+        explicit Params(TRandom3&);
+    };
 
-        class TmxPeak
-        {
-          public:
-            TmxPeak();
-            TmxPeak(const Digitizing::PMTHit&, Channel*);
-
-            // Getters:
-            Double_t GetWidth() const { return fWidth; }
-            Double_t GetQDC() const { return fQdc; }
-            Double_t GetTime() const { return fTime; }
-
-            bool operator==(const TmxPeak&) const;
-            void operator+=(TmxPeak&);
-            Double_t QdcToWidth(Double_t) const;
-            explicit operator Digitizing::Channel::Signal() const;
-            bool valid() const { return cachedSignal.valid(); }
-
-          private:
-            Double_t fWidth = 0.0; // the temperal width of the TmxPeak in [ns]
-            Double_t fQdc = 0.0;   // the qdc value in [MeV] (without threshold)
-            Double_t fTime = 0.0;  // leading edge of the TmxPeak in [ns]
-            Channel* fChannel;     // pointer to the channel that generates this peak
-            mutable Validated<Digitizing::Channel::Signal> cachedSignal;
-        };
-
-        class Channel : public Digitizing::Channel
-        {
-            friend class Neuland::DigitizingTamex;
-
-          public:
-            ~Channel() override = default;
-            void AddHit(Double_t mcTime, Double_t mcLight, Double_t dist) override;
-            bool HasFired() const override;
-
-            // Getters:
-            const Tamex::Params& GetPar() const { return par; }
-            const std::vector<TmxPeak>& GetTmxPeaks() const { return fTmxPeaks; }
-            const Double_t GetTrigTime() const override; 
-
-            void SetPaddle(Digitizing::Paddle* paddle) override;
-            Signal TmxPeakToSignal(const TmxPeak& peak) const;
-
-          private:
-            mutable std::vector<TmxPeak> fTmxPeaks;
-            mutable Validated<Double_t> fTrigTime;
-            Tamex::Params par;
-
-            // private ctor. Only constructable via DigitizingEngine.
-            Channel(TRandom3*, const SideOfChannel);
-            Int_t CheckOverlapping(TmxPeak&) const;
-            Int_t RecheckOverlapping(Int_t index);
-            void RemovePeakAt(Int_t index) const;
-            void RemoveZero(std::vector<Signal>&) const;
-            Double_t ToQdc(Double_t) const;
-            Double_t ToTdc(Double_t) const;
-            Double_t ToEnergy(Double_t) const;
-            void ConstructSignals() const override;
-        };
-
-    } // namespace Tamex
-
-    class DigitizingTamex : public DigitizingEngine
+    class PMTPeak
     {
       public:
-        DigitizingTamex();
-        ~DigitizingTamex() override = default;
-        std::unique_ptr<Digitizing::Channel> BuildChannel(Digitizing::Channel::SideOfChannel side) override;
+        PMTPeak() = default;
+        PMTPeak(Digitizing::Channel::Hit pmtHit, const Channel&);
+        auto operator<(const PMTPeak& rhs) const -> bool { return (fLETime < rhs.fLETime); }
+        auto operator==(const PMTPeak& rhs) const -> bool { return std::abs(fLETime - rhs.fLETime) < minimumTimeDf; }
+        auto operator+=(const PMTPeak& rhs) -> PMTPeak&;
+        [[nodiscard]] auto GetQDC() const -> double { return fQdc; }
+        [[nodiscard]] auto GetLETime() const -> double { return fLETime; }
+        static const double minimumTimeDf; // ns
 
       private:
-        // single random generator is shared by all paddles.
-        std::unique_ptr<TRandom3> fRnd;
+        double fQdc = 0.0;
+        double fLETime = 0.0;
     };
-} // namespace Neuland
 
+    class Peak
+    {
+      public:
+        Peak(const PMTPeak& pmtPeak, Channel* channel);
+        Peak() = default;
+
+        // Getters:
+        [[nodiscard]] auto GetWidth() const -> double { return fWidth; }
+        [[nodiscard]] auto GetQDC() const -> double { return fQdc; }
+        [[nodiscard]] auto GetLETime() const -> double { return fLETime; }
+        [[nodiscard]] auto GetTETime() const -> double { return fTETime; }
+
+        auto operator==(const Peak&) const -> bool;
+        void operator+=(const Peak&);
+
+        template <typename Par>
+        static auto WidthToQdc(double width, const Par& par) -> double
+        {
+            return std::max(1., width - par.fPedestal) / par.fEnergyGain;
+        }
+
+        template <typename Par>
+        static auto QdcToWidth(double qdc, const Par& par) -> double
+        {
+            auto width = 0.0;
+            if (qdc > par.fQdcMin)
+            {
+                width = qdc * par.fEnergyGain + par.fPedestal;
+            }
+            else
+            {
+                width = qdc * par.fEnergyGain * (par.fPedestal + 1);
+            }
+            return width;
+        }
+        explicit operator Digitizing::Channel::Signal() const;
+
+      private:
+        double fWidth = 0.0;  // the temperal width of the TmxPeak in [ns]
+        double fQdc = 0.0;    // the qdc value in [MeV] (without threshold)
+        double fLETime = 0.0; // leading edge of the TmxPeak in [ns]
+        double fTETime = 0.0; // tailing edge of the TmxPeak
+        Channel* fChannel = nullptr;
+    };
+
+    class Channel : public Digitizing::Channel
+    {
+      public:
+        Channel(ChannelSide, TRandom3&, const std::optional<R3BNeulandHitPar*>& hitpar = {});
+        Channel(ChannelSide side, const std::optional<R3BNeulandHitPar*>& hitpar)
+            : Channel(side, GetRandom3Ref(), hitpar){};
+        explicit Channel(ChannelSide side)
+            : Channel(side, {})
+        {
+        }
+        void AddHit(Hit /*hit*/) override;
+
+        // Getters:
+        auto GetPar() -> Tamex::Params& { return par; }
+        auto GetParConstRef() const -> const Tamex::Params& { return par; }
+        auto GetFQTPeaks() const -> const std::vector<Peak>& { return fFQTPeaks; }
+
+        void AttachToPaddle(Digitizing::Paddle* paddle) override;
+        auto CreateSignal(const Peak& peak) const -> Signal;
+
+      private:
+        // mutable std::vector<FQTPeak> fFQTPeaks;
+        std::vector<PMTPeak> fPMTPeaks;
+        std::vector<Peak> fFQTPeaks;
+        R3BNeulandHitPar* fNeulandHitPar = nullptr;
+        R3BNeulandHitModulePar* fNeulandHitModulePar = nullptr;
+        Tamex::Params par;
+
+        auto CheckPaddleIDInHitPar() const -> bool;
+        auto CheckPaddleIDInHitModulePar() const -> bool;
+        void SetHitPar(R3BNeulandHitPar* hitpar) { fNeulandHitPar = hitpar; }
+        void SetHitModulePar(int PaddleId);
+        auto ToQdc(double) const -> double;
+        auto ToTdc(double) const -> double;
+        auto ToUnSatQdc(double) const -> double;
+        auto ConstructSignals() -> Signals override;
+        template <typename Peak>
+        void ApplyThreshold(std::vector<Peak>&);
+        auto ConstructFQTPeaks(std::vector<PMTPeak>& pmtPeaks) -> std::vector<Peak>;
+        template <typename Peak>
+        static void PeakPilingUp(std::vector<Peak>& peaks);
+    };
+
+} // namespace Digitizing::Neuland::Tamex
 #endif // R3BROOT_DIGITIZINGTAMEX_H
