@@ -6,7 +6,22 @@
 #include "R3BCave.h"
 #include "R3BNeuland.h"
 #include "TStopwatch.h"
+#include <R3BShared.h>
+#include <TH1D.h>
 #include <iostream>
+
+void Foo()
+{
+    auto* intValBad = new int{ 3 };
+
+    auto intValGood = std::make_unique<int>(3);
+
+    auto* hist = new TH1D("hist", "hist", 10, 0., 10.);
+
+    auto* hist2 = r3b::root_owned<TH1D>("hist", "hist", 10, 0., 10.);
+
+    delete hist;
+}
 
 int main()
 {
