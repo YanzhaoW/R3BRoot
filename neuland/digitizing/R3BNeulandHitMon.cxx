@@ -169,7 +169,7 @@ void R3BNeulandHitMon::Exec(Option_t* /*option*/)
                                         [](R3BNeulandHit* one, R3BNeulandHit* another)
                                         { return one->GetPosition().Z() < another->GetPosition().Z(); });
     auto Etot =
-        std::accumulate(hits.begin(), hits.end(), 0., [](double init, const auto& hit) { return init + hit.GetE(); });
+        std::accumulate(hits.begin(), hits.end(), 0., [](double init, const auto* hit) { return init + hit->GetE(); });
 
     if (minDepthHit != hits.end())
     {
