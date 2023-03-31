@@ -103,26 +103,29 @@ int main(int argc, const char** argv)
     }
     FairLogger::GetLogger()->SetLogScreenLevel(logLevel.c_str());
 
-    auto run = new FairRunAna{};
-    run->SetSource(new FairFileSource(simuFileName.c_str()));
-    run->SetSink(new FairRootFileSink(digiFileName.c_str()));
+    auto run = std::make_unique<FairRunAna>();
+    auto filesource = std::make_unique<FairFileSource>(simuFileName.c_str());
+    auto filesink = std::make_unique<FairRootFileSink>(digiFileName.c_str());
+    run->SetSource(filesource.release());
+    run->SetSink(filesink.release());
 
-    auto io = new FairParRootFileIo();
-    io->open(paraFileName.c_str());
-    run->GetRuntimeDb()->setFirstInput(io);
+    auto fileio = std::make_unique<FairParRootFileIo>();
+    fileio->open(paraFileName.c_str());
+    run->GetRuntimeDb()->setFirstInput(fileio.get());
 
-    auto* digiNeuland = new R3BNeulandDigitizer();
+    auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
     digiNeuland->SetPaddleChannel((neulandEngines.at({ paddleName, channelName }))());
     // digiNeuland->SetPaddleChannel(UsePaddle<NeulandPaddle>(),
     //                               UseChannel<TamexChannel>(digiNeuland->GetNeulandHitParRef()));
-    run->AddTask(digiNeuland);
-    run->AddTask(new R3BNeulandHitMon());
+    run->AddTask(digiNeuland.get());
+    auto hitmon = std::make_unique<R3BNeulandHitMon>();
+    run->AddTask(hitmon.get());
 
     run->Init();
     run->Run(0, eventNum);
 
     timer.Stop();
-    auto sink = run->GetSink();
+    auto* sink = run->GetSink();
     sink->Close();
     cout << "Macro finished successfully." << endl;
     cout << "Real time: " << timer.RealTime() << "s, CPU time: " << timer.CpuTime() << "s" << endl;

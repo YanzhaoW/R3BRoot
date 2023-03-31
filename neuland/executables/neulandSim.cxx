@@ -5,6 +5,7 @@
 #include "FairRunSim.h"
 #include "R3BCave.h"
 #include "R3BNeuland.h"
+#include "R3BShared.h"
 #include "TStopwatch.h"
 #include <FairConstField.h>
 #include <G4RunManager.hh>
@@ -91,45 +92,49 @@ int main(int argc, const char** argv)
     gSystem->Setenv("CONFIG_DIR", workDirectory + "/gconfig");
 
     // Basic simulation setup
-    auto run = new FairRunSim();
+    auto run = std::make_unique<FairRunSim>();
     run->SetName("TGeant4");
     run->SetStoreTraj(false);
     run->SetMaterials("media_r3b.geo");
-    run->SetSink(new FairRootFileSink(simuFileName.c_str()));
-    run->SetField(new FairConstField());
+    run->SetSink(std::make_unique<FairRootFileSink>(simuFileName.c_str()));
+    auto fairField = std::make_unique<FairConstField>();
+    run->SetField(fairField.release());
 
     // Primary particle generator
-    auto boxGen = new FairBoxGenerator(PID, multi);
+    auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi);
     boxGen->SetXYZ(0, 0, 0.);
     boxGen->SetThetaRange(0., 3.);
     boxGen->SetPhiRange(0., 360.);
     boxGen->SetEkinRange(pEnergy, pEnergy);
-    auto primGen = new FairPrimaryGenerator();
-    primGen->AddGenerator(boxGen);
-    run->SetGenerator(primGen);
+    auto primGen = std::make_unique<FairPrimaryGenerator>();
+    primGen->AddGenerator(boxGen.release());
+    run->SetGenerator(primGen.release());
 
     // Geometry: Cave
-    auto cave = new R3BCave("CAVE");
+    auto cave = std::make_unique<R3BCave>("CAVE");
     cave->SetGeometryFileName("r3b_cave.geo");
-    run->AddModule(cave);
+    run->AddModule(cave.release());
 
     // Geometry: Neuland
-    run->AddModule(new R3BNeuland(30, { 0., 0., 1650. }));
+    auto const nDP = 13;
+    auto const neulandGeoTrans = TGeoTranslation{ 0., 0., 1650. };
+    auto neuland = std::make_unique<R3BNeuland>(nDP, neulandGeoTrans);
+    run->AddModule(neuland.release());
 
     // Init
     run->Init();
 
     // event print out:
-    auto grun = G4RunManager::GetRunManager();
+    auto* grun = G4RunManager::GetRunManager();
     grun->SetPrintProgress(eventPrintNum);
-    auto event = dynamic_cast<TG4EventAction*>(const_cast<G4UserEventAction*>(grun->GetUserEventAction()));
+    auto* event = dynamic_cast<TG4EventAction*>(const_cast<G4UserEventAction*>(grun->GetUserEventAction())); // NOLINT
     event->VerboseLevel(0);
 
     // Connect runtime parameter file
-    auto parFileIO = new FairParRootFileIo(true);
+    auto parFileIO = std::make_unique<FairParRootFileIo>(true);
     parFileIO->open(paraFileName.c_str());
-    auto rtdb = run->GetRuntimeDb();
-    rtdb->setOutput(parFileIO);
+    auto* rtdb = run->GetRuntimeDb();
+    rtdb->setOutput(parFileIO.release());
     rtdb->saveOutput();
 
     // Simulate
