@@ -2,26 +2,34 @@
 
 namespace r3b
 {
-    template <typename OptionType>
-    auto ProgramOptions::Create_Option(const std::string& optionName, OptionType defaultValue)
-    {
-        if (auto search = registries_.find(optionName); search != registries_.end())
-        {
-            throw runtime_error("option has been already defined!");
-        }
-        auto option = Option<OptionType>{ optionName, std::move(defaultValue), this };
-        registries_.emplace(optionName, &option);
-        return option;
-    }
-
-    void ProgramOptions::Verify(int argc, char** argv)
+    bool ProgramOptions::Verify(int argc, const char** argv)
     {
 
-        po::store(po::command_line_parser(argc, argv).positional(pos_desc_).options(desc_).run(), varMap_);
-        po::notify(varMap_);
-        for (auto& registrie : registries_)
+        try
         {
-            registrie.second->Retrieve(varMap_);
+            po::store(po::command_line_parser(argc, argv).positional(pos_desc_).options(desc_).run(), varMap_);
+            po::notify(varMap_);
+            for (auto& registrie : registries_)
+            {
+                registrie.second->Retrieve(varMap_);
+            }
         }
+        catch (const std::runtime_error& err)
+        {
+            std::cerr << "An exception occurs: " << err.what() << std::endl;
+            return false;
+        }
+        catch (const std::exception& err)
+        {
+            // std::cerr << "exception occurs: " << boost::diagnostic_information(err) << std::endl;
+            std::cerr << "An exception occurs: " << err.what() << std::endl;
+            return false;
+        }
+        catch (...)
+        {
+            std::cerr << "An unrecognizable exception occurs!" << std::endl;
+            return false;
+        }
+        return true;
     }
 } // namespace r3b

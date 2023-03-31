@@ -10,6 +10,7 @@
 #include "FairRuntimeDb.h"
 #include "R3BNeulandDigitizer.h"
 #include "R3BNeulandHitMon.h"
+#include "R3BProgramOptions.h"
 #include "TRandom3.h"
 #include "TStopwatch.h"
 #include <boost/program_options.hpp>
@@ -39,82 +40,51 @@ const auto neulandEngines = std::map<std::pair<const std::string, const std::str
       []() { return Digitizing::CreateEngine(UsePaddle<MockPaddle>(), UseChannel<MockChannel>()); } }
 };
 
-namespace po = boost::program_options;
-
 int main(int argc, const char** argv)
 {
     TStopwatch timer;
     timer.Start();
 
-    auto channelName = std::string{ "tacquila" };
-    auto paddleName = std::string{ "neuland" };
-    auto paraFileName = std::string{ "para.root" };
-    auto simuFileName = std::string{ "simu.root" };
-    auto digiFileName = std::string{ "digi.root" };
-    auto logLevel = std::string{ "error" };
-    auto eventNum = 0;
+    auto programOptions = r3b::ProgramOptions("options for neuland data analysis");
+    auto help = programOptions.Create_Option<bool>("help,h", "help message", false);
+    auto paddleName =
+        programOptions.Create_Option<std::string>("paddle", R"(set the paddle name. e.g. "neuland")", "neuland");
+    auto channelName =
+        programOptions.Create_Option<std::string>("channel", R"(set the channel name. e.g. "tamex")", "tacquila");
+    auto simuFileName =
+        programOptions.Create_Option<std::string>("simuFile", "set the filename of simulation input", "simu.root");
+    auto paraFileName =
+        programOptions.Create_Option<std::string>("paraFile", "set the filename of parameter sink", "para.root");
+    auto digiFileName =
+        programOptions.Create_Option<std::string>("digiFile", "set the filename of digitization output", "digi.root");
+    auto logLevel = programOptions.Create_Option<std::string>("logLevel,v", "set log level of fairlog", "error");
+    auto eventNum = programOptions.Create_Option<int>("eventNum,n", "set total event number", 0);
 
-    auto desc = po::options_description{ "options for neuland data analysis" };
-    desc.add_options()("help", "help message")(
-        "paddle", po::value<std::string>(), R"(set the paddle name. e.g. "neuland")")(
-        "channel", po::value<std::string>(), R"(set the channel name. e.g. "tamex", "tacquila")")(
-        "simuFile", po::value<std::string>(), "set the base filename of simulation input")(
-        "digiFile", po::value<std::string>(), "set the base filename of digitization ouput")(
-        "paraFile", po::value<std::string>(), "set the base filename of parameter input")(
-        "eventN,n", po::value<int>(), "set the number of events")(
-        "logLevel,v", po::value<std::string>(), "set log level of fairlog");
-
-    auto varMap = po::variables_map{};
-    po::store(po::parse_command_line(argc, argv, desc), varMap);
-    po::notify(varMap);
-
-    if (varMap.count("help") != 0U)
+    if (!programOptions.Verify(argc, argv))
     {
-        std::cout << desc << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    if (help->value())
+    {
+        std::cout << programOptions.Get_DescRef() << std::endl;
         return 0;
     }
-    if (varMap.count("paddle") != 0U)
-    {
-        paddleName = varMap["paddle"].as<std::string>();
-    }
-    if (varMap.count("channel") != 0U)
-    {
-        channelName = varMap["channel"].as<std::string>();
-    }
-    if (varMap.count("simuFile") != 0U)
-    {
-        simuFileName = varMap["simuFile"].as<std::string>() + std::string{ ".root" };
-    }
-    if (varMap.count("digiFile") != 0U)
-    {
-        digiFileName = varMap["digiFile"].as<std::string>() + std::string{ ".root" };
-    }
-    if (varMap.count("paraFile") != 0U)
-    {
-        paraFileName = varMap["paraFile"].as<std::string>() + std::string{ ".root" };
-    }
-    if (varMap.count("logLevel") != 0U)
-    {
-        logLevel = varMap["logLevel"].as<std::string>();
-    }
-    if (varMap.count("eventN") != 0U)
-    {
-        eventNum = varMap["eventN"].as<int>();
-    }
-    FairLogger::GetLogger()->SetLogScreenLevel(logLevel.c_str());
+
+    FairLogger::GetLogger()->SetLogScreenLevel(logLevel->value().c_str());
 
     auto run = std::make_unique<FairRunAna>();
-    auto filesource = std::make_unique<FairFileSource>(simuFileName.c_str());
-    auto filesink = std::make_unique<FairRootFileSink>(digiFileName.c_str());
+    auto filesource = std::make_unique<FairFileSource>(simuFileName->value().c_str());
+    auto filesink = std::make_unique<FairRootFileSink>(digiFileName->value().c_str());
     run->SetSource(filesource.release());
     run->SetSink(filesink.release());
 
     auto fileio = std::make_unique<FairParRootFileIo>();
-    fileio->open(paraFileName.c_str());
+    fileio->open(paraFileName->value().c_str());
     run->GetRuntimeDb()->setFirstInput(fileio.get());
 
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
-    digiNeuland->SetPaddleChannel((neulandEngines.at({ paddleName, channelName }))());
+    digiNeuland->SetPaddleChannel((neulandEngines.at({ paddleName->value(), channelName->value() }))());
     // digiNeuland->SetPaddleChannel(UsePaddle<NeulandPaddle>(),
     //                               UseChannel<TamexChannel>(digiNeuland->GetNeulandHitParRef()));
     run->AddTask(digiNeuland.get());
@@ -122,7 +92,7 @@ int main(int argc, const char** argv)
     run->AddTask(hitmon.get());
 
     run->Init();
-    run->Run(0, eventNum);
+    run->Run(0, eventNum->value());
 
     timer.Stop();
     auto* sink = run->GetSink();

@@ -10,81 +10,47 @@
 #include <FairConstField.h>
 #include <G4RunManager.hh>
 #include <G4UserEventAction.hh>
+#include <R3BProgramOptions.h>
 #include <TG4EventAction.h>
+#include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <string>
 
-namespace po = boost::program_options;
-
 int main(int argc, const char** argv)
 {
     TStopwatch timer;
-    auto eventNum = 100000;
-    auto eventPrintNum = 1000;
-    auto multi = 1;
-    auto PID = 2112;
-    auto pEnergy = 1.;
-    auto simuFileName = std::string{ "simu.root" };
-    auto paraFileName = std::string{ "para.root" };
-    auto logLevel = std::string{ "error" };
+    auto const PID = 2112;
+    auto const defaultEventNum = 10;
     timer.Start();
 
-    auto desc = po::options_description{ "options for neuland simulation" };
+    auto programOptions = r3b::ProgramOptions("options for neuland simulation");
 
-    desc.add_options()("help", "help message")("eventNum", po::value<int>(), "set total event number")(
-        "eventPrint", po::value<int>(), "set event print number")("PID", po::value<int>(), "set particle id")(
-        "energy", po::value<double>(), "set energy value (GeV) of the particle")(
-        "multiplicity", po::value<int>(), "set particle multiplicity")(
-        "simuFile", po::value<std::string>(), "set the base filename (no .root) of simulation ouput")(
-        "paraFile", po::value<std::string>(), "set the base filename (no .root) of parameter sink")(
-        "logLevel", po::value<std::string>(), "set log level of fairlog");
+    auto help = programOptions.Create_Option<bool>("help,h", "help message", false);
+    auto eventNum = programOptions.Create_Option<int>("eventNum", "set total event number", defaultEventNum);
+    auto eventPrintNum = programOptions.Create_Option<int>("eventPrint", "set event print number", 1);
+    auto multi = programOptions.Create_Option<int>("multiplicity", "set particle multiplicity", 1);
+    auto pEnergy = programOptions.Create_Option<double>("energy", "set energy value (GeV) of the particle", 1);
+    auto simuFileName =
+        programOptions.Create_Option<std::string>("simuFile", "set the base filename of simulation ouput", "simu.root");
+    auto paraFileName =
+        programOptions.Create_Option<std::string>("paraFile", "set the base filename of parameter sink", "para.root");
+    auto logLevel = programOptions.Create_Option<std::string>("logLevel", "set log level of fairlog", "error");
 
-    auto varMap = po::variables_map{};
-    po::store(po::parse_command_line(argc, argv, desc), varMap);
-    po::notify(varMap);
-
-    if (varMap.count("help") != 0U)
+    if (!programOptions.Verify(argc, argv))
     {
-        std::cout << desc << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    if (help->value())
+    {
+        std::cout << programOptions.Get_DescRef() << std::endl;
         return 0;
-    }
-    if (varMap.count("eventNum") != 0U)
-    {
-        eventNum = varMap["eventNum"].as<int>();
-    }
-    if (varMap.count("eventPrint") != 0U)
-    {
-        eventPrintNum = varMap["eventPrint"].as<int>();
-    }
-    if (varMap.count("multiplicity") != 0U)
-    {
-        multi = varMap["multiplicity"].as<int>();
-    }
-    if (varMap.count("PID") != 0U)
-    {
-        PID = varMap["PID"].as<int>();
-    }
-    if (varMap.count("energy") != 0U)
-    {
-        pEnergy = varMap["energy"].as<double>();
-    }
-    if (varMap.count("simuFile") != 0U)
-    {
-        simuFileName = std::string{ "simu_" } + varMap["simuFile"].as<std::string>();
-    }
-    if (varMap.count("paraFile") != 0U)
-    {
-        paraFileName = std::string{ "para_" } + varMap["paraFile"].as<std::string>();
-    }
-    if (varMap.count("logLevel") != 0U)
-    {
-        logLevel = varMap["logLevel"].as<std::string>();
     }
 
     // Logging
     FairLogger::GetLogger()->SetLogVerbosityLevel("LOW");
-    FairLogger::GetLogger()->SetLogScreenLevel(logLevel.c_str());
+    FairLogger::GetLogger()->SetLogScreenLevel(logLevel->value().c_str());
 
     // System paths
     const TString workDirectory = getenv("VMCWORKDIR");
@@ -96,16 +62,16 @@ int main(int argc, const char** argv)
     run->SetName("TGeant4");
     run->SetStoreTraj(false);
     run->SetMaterials("media_r3b.geo");
-    run->SetSink(std::make_unique<FairRootFileSink>(simuFileName.c_str()));
+    run->SetSink(std::make_unique<FairRootFileSink>(simuFileName->value().c_str()));
     auto fairField = std::make_unique<FairConstField>();
     run->SetField(fairField.release());
 
     // Primary particle generator
-    auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi);
+    auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi->value());
     boxGen->SetXYZ(0, 0, 0.);
     boxGen->SetThetaRange(0., 3.);
     boxGen->SetPhiRange(0., 360.);
-    boxGen->SetEkinRange(pEnergy, pEnergy);
+    boxGen->SetEkinRange(pEnergy->value(), pEnergy->value());
     auto primGen = std::make_unique<FairPrimaryGenerator>();
     primGen->AddGenerator(boxGen.release());
     run->SetGenerator(primGen.release());
@@ -126,19 +92,19 @@ int main(int argc, const char** argv)
 
     // event print out:
     auto* grun = G4RunManager::GetRunManager();
-    grun->SetPrintProgress(eventPrintNum);
+    grun->SetPrintProgress(eventPrintNum->value());
     auto* event = dynamic_cast<TG4EventAction*>(const_cast<G4UserEventAction*>(grun->GetUserEventAction())); // NOLINT
     event->VerboseLevel(0);
 
     // Connect runtime parameter file
     auto parFileIO = std::make_unique<FairParRootFileIo>(true);
-    parFileIO->open(paraFileName.c_str());
+    parFileIO->open(paraFileName->value().c_str());
     auto* rtdb = run->GetRuntimeDb();
     rtdb->setOutput(parFileIO.release());
     rtdb->saveOutput();
 
     // Simulate
-    run->Run(eventNum);
+    run->Run(eventNum->value());
 
     // Report
     timer.Stop();

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <boost/program_options.hpp>
+#include <iostream>
 #include <unordered_map>
+#include <utility>
 
 namespace r3b
 {
@@ -33,8 +35,22 @@ namespace r3b
         }
 
         template <typename OptionType>
-        auto Create_Option(const std::string& optionName, OptionType defaultValue = OptionType{});
-        void Verify(int argc, char** argv);
+        auto Create_Option(const std::string& optionName,
+                           const std::string& option_desc,
+                           OptionType defaultValue = OptionType{}) -> decltype(auto)
+        {
+            if (auto search = registries_.find(optionName); search != registries_.end())
+            {
+                std::cerr << "ERROR: option has been already defined!" << std::endl;
+                exit(1);
+            }
+            auto option = std::make_unique<Option<OptionType>>(optionName, std::move(defaultValue), this);
+            option->Add(option_desc);
+            registries_.emplace(optionName, option.get());
+            return option;
+        }
+
+        bool Verify(int argc, const char** argv);
         void Delete_Option(const std::string& optionName) { registries_.erase(optionName); }
         auto& Get_PosDescRef() { return pos_desc_; }
         auto& Get_DescRef() { return desc_; }
@@ -49,12 +65,12 @@ namespace r3b
     class OptionConcept
     {
       public:
-        virtual ~OptionConcept() = default;
-        OptionConcept() = default;
         OptionConcept(const OptionConcept&) = delete;
         OptionConcept(OptionConcept&&) = delete;
         OptionConcept& operator=(const OptionConcept&) = delete;
         OptionConcept& operator=(OptionConcept&&) = delete;
+        virtual ~OptionConcept() = default;
+        OptionConcept() = default;
         virtual void Retrieve(const po::variables_map& varMap) = 0;
     };
 
@@ -63,7 +79,11 @@ namespace r3b
     {
       public:
         using type = Type;
-        explicit Option(std::string name, Type defaultValue, ProgramOptions* program)
+        Option(const Option&) = delete;
+        Option(Option&&) = delete;
+        Option& operator=(const Option&) = delete;
+        Option& operator=(Option&&) = delete;
+        Option(std::string name, Type defaultValue, ProgramOptions* program)
             : name_{ std::move(name) }
             , value_{ std::move(defaultValue) }
             , program_{ program }
@@ -77,11 +97,6 @@ namespace r3b
                 key_ = name_;
             }
         }
-
-        Option(const Option&) = delete;
-        Option(Option&&) = delete;
-        Option& operator=(const Option&) = delete;
-        Option& operator=(Option&&) = delete;
         ~Option() override { program_->Delete_Option(name_); }
 
         void Add(const std::string& desc)
@@ -122,7 +137,7 @@ namespace r3b
 
         void Set_required(bool p_rq) { is_required = p_rq; }
 
-        [[nodiscard]] auto Get() const { return value_; }
+        [[nodiscard]] auto value() const { return value_; }
 
       private:
         std::string name_;
@@ -130,6 +145,6 @@ namespace r3b
         std::string desc_;
         bool is_required = false;
         Type value_{};
-        ProgramOptions* program_ = nullptr;
+        ProgramOptions* program_;
     };
 }; // namespace r3b
