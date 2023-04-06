@@ -81,15 +81,15 @@ int main(int argc, const char** argv)
 
     auto fileio = std::make_unique<FairParRootFileIo>();
     fileio->open(paraFileName->value().c_str());
-    run->GetRuntimeDb()->setFirstInput(fileio.get());
+    run->GetRuntimeDb()->setFirstInput(fileio.release());
 
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
     digiNeuland->SetPaddleChannel((neulandEngines.at({ paddleName->value(), channelName->value() }))());
     // digiNeuland->SetPaddleChannel(UsePaddle<NeulandPaddle>(),
     //                               UseChannel<TamexChannel>(digiNeuland->GetNeulandHitParRef()));
-    run->AddTask(digiNeuland.get());
+    run->AddTask(digiNeuland.release());
     auto hitmon = std::make_unique<R3BNeulandHitMon>();
-    run->AddTask(hitmon.get());
+    run->AddTask(hitmon.release());
 
     run->Init();
     run->Run(0, eventNum->value());

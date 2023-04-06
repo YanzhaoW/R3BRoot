@@ -46,13 +46,23 @@ if(GTEST_FOUND)
     gtest_discover_tests(${PROJECT_TEST_NAME} DISCOVERY_TIMEOUT 600)
 endif(GTEST_FOUND)
 
-generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandSimulation.C)
-add_test(NeulandSimulation ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandSimulation.sh)
+# generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandSimulation.C)
+# add_test(NeulandSimulation ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandSimulation.sh)
+set(simuPars
+    --simuFile test.simu.root
+    --paraFile test.para.root
+    --eventNum 100
+    --eventPrint 10
+    --energy 1.0
+    --multiplicity 4
+    --logLevel error
+    )
+add_test(NeulandSimulation ${R3BROOT_BINARY_DIR}/bin/neulandSim ${simuPars})
 set_tests_properties(NeulandSimulation PROPERTIES TIMEOUT "2000")
 set_tests_properties(NeulandSimulation PROPERTIES PASS_REGULAR_EXPRESSION
     "Macro finished successfully.")
 
-add_test(NeulandDigitizer ${R3BROOT_BINARY_DIR}/bin/neulandAna)
+add_test(NeulandDigitizer ${R3BROOT_BINARY_DIR}/bin/neulandAna --simuFile test.simu.root --paraFile test.para.root)
 set_tests_properties(NeulandDigitizer PROPERTIES DEPENDS NeulandSimulation)
 set_tests_properties(NeulandDigitizer PROPERTIES TIMEOUT "1000")
 set_tests_properties(NeulandDigitizer PROPERTIES PASS_REGULAR_EXPRESSION
