@@ -49,6 +49,7 @@ namespace Digitizing::Neuland::TacQuila
         double GetTDC();
         double GetEnergy();
         double GetTrigTime() override { return GetTDC(); }
+        auto ConstructSignals() -> Signals override;
 
       private:
         // NOTE: Some expensive calculations and random distributions are cached
@@ -68,7 +69,6 @@ namespace Digitizing::Neuland::TacQuila
 
         const TacQuila::Params& par;
 
-        auto ConstructSignals() -> Signals override;
     };
 
 } // namespace Digitizing::Neuland::TacQuila

@@ -35,7 +35,7 @@ namespace Digitizing::Neuland::Tamex
 
     // global variables for default options:
     const size_t TmxPeaksInitialCapacity = 10;
-    const double PMTPeak::minimumTimeDf = 15.0; // ns
+    const double PMTPeak::peakWidth = 15.0; // ns
 
     Params::Params(TRandom3& rnd)
         : fPMTThresh(1.)                // [MeV]
@@ -210,7 +210,7 @@ namespace Digitizing::Neuland::Tamex
     }
 
     template <typename Peak>
-    void Channel::PeakPilingUp(std::vector<Peak>& peaks)
+    void Channel::PeakPilingUp(/* inout */ std::vector<Peak>& peaks)
     {
         if (peaks.size() == 0)
         {
@@ -269,6 +269,25 @@ namespace Digitizing::Neuland::Tamex
             signals.emplace_back(CreateSignal(peak));
         }
         return signals;
+    }
+
+    auto Channel::GetFQTPeaks() -> const std::vector<Peak>&
+    {
+
+        if (!Is_ValidSignals())
+        {
+            ConstructSignals();
+        }
+        return fFQTPeaks;
+    }
+
+    auto Channel::GetPMTPeaks() -> const std::vector<PMTPeak>&
+    {
+        if (!Is_ValidSignals())
+        {
+            ConstructSignals();
+        }
+        return fPMTPeaks;
     }
 
     auto Channel::ToQdc(double qdc) const -> double

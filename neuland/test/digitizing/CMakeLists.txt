@@ -13,5 +13,8 @@
 
 project(TestNeulandDigitizing)
 
-file(GLOB TestFiles *.cxx)
-set(TEST_SRC_FILES ${TEST_SRC_FILES} ${TestFiles} PARENT_SCOPE)
+file(GLOB TestFiles testNeulandDigitizingTamex.cxx testNeulandDigitizingPaddle.cxx)
+
+set(TEST_SRC_FILES
+    ${TEST_SRC_FILES} ${TestFiles}
+    PARENT_SCOPE)

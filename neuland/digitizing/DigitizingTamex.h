@@ -56,11 +56,11 @@ namespace Digitizing::Neuland::Tamex
         PMTPeak() = default;
         PMTPeak(Digitizing::Channel::Hit pmtHit, const Channel&);
         auto operator<(const PMTPeak& rhs) const -> bool { return (fLETime < rhs.fLETime); }
-        auto operator==(const PMTPeak& rhs) const -> bool { return std::abs(fLETime - rhs.fLETime) < minimumTimeDf; }
+        auto operator==(const PMTPeak& rhs) const -> bool { return std::abs(fLETime - rhs.fLETime) < peakWidth; }
         auto operator+=(const PMTPeak& rhs) -> PMTPeak&;
         [[nodiscard]] auto GetQDC() const -> double { return fQdc; }
         [[nodiscard]] auto GetLETime() const -> double { return fLETime; }
-        static const double minimumTimeDf; // ns
+        static const double peakWidth; // ns
 
       private:
         double fQdc = 0.0;
@@ -127,9 +127,11 @@ namespace Digitizing::Neuland::Tamex
         // Getters:
         auto GetPar() -> Tamex::Params& { return par; }
         auto GetParConstRef() const -> const Tamex::Params& { return par; }
-        auto GetFQTPeaks() const -> const std::vector<Peak>& { return fFQTPeaks; }
+        auto GetFQTPeaks() -> const std::vector<Peak>&;
+        auto GetPMTPeaks() -> const std::vector<PMTPeak>&;
 
         void AttachToPaddle(Digitizing::Paddle* paddle) override;
+        auto ConstructSignals() -> Signals override;
         auto CreateSignal(const Peak& peak) const -> Signal;
 
       private:
@@ -147,12 +149,11 @@ namespace Digitizing::Neuland::Tamex
         auto ToQdc(double) const -> double;
         auto ToTdc(double) const -> double;
         auto ToUnSatQdc(double) const -> double;
-        auto ConstructSignals() -> Signals override;
         template <typename Peak>
-        void ApplyThreshold(std::vector<Peak>&);
+        void ApplyThreshold(/* inout */ std::vector<Peak>&);
         auto ConstructFQTPeaks(std::vector<PMTPeak>& pmtPeaks) -> std::vector<Peak>;
         template <typename Peak>
-        static void PeakPilingUp(std::vector<Peak>& peaks);
+        static void PeakPilingUp(/* inout */ std::vector<Peak>& peaks);
     };
 
 } // namespace Digitizing::Neuland::Tamex

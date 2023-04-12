@@ -28,5 +28,4 @@ namespace Digitizing::Neuland
         Signals m_Signals{};
         auto ConstructSignals() -> Signals override { return m_Signals; }
     };
-
 } // namespace Digitizing::Neuland

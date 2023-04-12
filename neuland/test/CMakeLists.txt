@@ -11,7 +11,7 @@
 # or submit itself to any jurisdiction.                                      #
 ##############################################################################
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.23)
 set(PROJECT_TEST_NAME NeulandUnitTests)
 
 if(GTEST_FOUND)
@@ -25,6 +25,7 @@ if(GTEST_FOUND)
         ${R3BROOT_SOURCE_DIR}/r3bdata/neulandData
         ${R3BROOT_SOURCE_DIR}/neuland/shared
         ${R3BROOT_SOURCE_DIR}/neuland/reconstruction
+        ${R3BROOT_SOURCE_DIR}/neuland/digitizing
         ${R3BROOT_SOURCE_DIR}/neuland/reconstruction/multiplicity)
 
     link_directories(${ROOT_LIBRARY_DIR} ${FAIRROOT_LIBRARY_DIR}
@@ -32,12 +33,14 @@ if(GTEST_FOUND)
 
     set(TEST_DEPENDENCIES
         GTest::gtest_main
+        GTest::gmock_main
         ${ROOT_LIBRARIES}
         FairTools
         R3BData
         ParBase
         GeoBase
         R3BNeulandShared
+        R3BNeulandDigitizing
         R3BNeulandReconstruction
         Alignment)
 

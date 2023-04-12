@@ -14,12 +14,12 @@
 #include "DigitizingChannel.h"
 #include "DigitizingTamex.h"
 #include "gtest/gtest.h"
-#include <iostream>
 
 namespace
 {
     using TmxChannel = Digitizing::Neuland::Tamex::Channel;
-    using TmxPeak = Digitizing::Neuland::Tamex::Peak;
+    using FQTPeak = Digitizing::Neuland::Tamex::Peak;
+    using PMTPeak = Digitizing::Neuland::Tamex::PMTPeak;
     using Channel = Digitizing::Channel;
     using TmxPar = Digitizing::Neuland::Tamex::Params;
 
@@ -53,14 +53,14 @@ namespace
         void AddHit(double time, double light) { fChannel->AddHit({ time, light }); }
 
         [[nodiscard]] auto GetSignals() const -> const Channel::Signals& { return fChannel->GetSignals(); }
-
-        [[nodiscard]] auto GetPeaks() const -> const std::vector<TmxPeak>& { return fChannel->GetFQTPeaks(); }
+        [[nodiscard]] auto GetPMTPeaks() const -> const std::vector<PMTPeak>& { return fChannel->GetPMTPeaks(); }
+        [[nodiscard]] auto GetPeaks() const -> const std::vector<FQTPeak>& { return fChannel->GetFQTPeaks(); }
 
       private:
         std::unique_ptr<TmxChannel> fChannel = nullptr;
     };
 
-    TEST_F(testNeulandTamexChannel, basic_hit_processing)
+    TEST_F(testNeulandTamexChannel, basic_hit_processing) // NOLINT
     {
         AddHit(20., 20.);
         auto signals = GetSignals();
@@ -75,7 +75,7 @@ namespace
         ASSERT_NE(signals[0].tdc, 20.) << "tdc value is not smeared!";
     }
 
-    TEST_F(testNeulandTamexChannel, pmt_threshold_check)
+    TEST_F(testNeulandTamexChannel, pmt_threshold_check) // NOLINT
     {
         AddHit(20., 0.5);
         auto signals = GetSignals();
@@ -83,7 +83,7 @@ namespace
         ASSERT_EQ(signals.size(), 0) << "PMT threshold doesn't filter out low energy signals!";
     }
 
-    TEST_F(testNeulandTamexChannel, pmt_threshold_overlap)
+    TEST_F(testNeulandTamexChannel, pmt_threshold_overlap) // NOLINT
     {
         AddHit(20., 0.5);
         AddHit(20., 0.5);
@@ -94,18 +94,17 @@ namespace
         ASSERT_EQ(signals.size(), 1) << "overlapped signals cannot pass PMT threshold!";
     }
 
-    TEST_F(testNeulandTamexChannel, no_timeRes_check)
+    TEST_F(testNeulandTamexChannel, ifno_timeRes_check) // NOLINT
     {
         decltype(auto) par = GetPar();
         par.fTimeRes = 0.0;
 
         AddHit(20., 20.);
-        auto signals = GetSignals();
-        auto peaks = GetPeaks();
+        const auto& signals = GetSignals();
         ASSERT_DOUBLE_EQ(signals[0].tdc, 20.) << "tdc value is not correctly passed on!";
     }
 
-    TEST_F(testNeulandTamexChannel, signal_pileup_check)
+    TEST_F(testNeulandTamexChannel, signal_pileup_check) // NOLINT
     {
         AddHit(20., 20.);
         AddHit(20., 1.5);
@@ -116,7 +115,9 @@ namespace
         ASSERT_EQ(GetSignals().size(), 2) << "should not be overlapped!";
     }
 
-    TEST_F(testNeulandTamexChannel, signal_multiPileup_check)
+    // TODO: this test is highly depenedent on how signals are piled up. Therefore, it's better to have different tests
+    // for different pileup strategy.
+    TEST_F(testNeulandTamexChannel, signal_multiPileup_check) // NOLINT
     {
         AddHit(20., 5.);
         ASSERT_EQ(GetSignals().size(), 1);
@@ -130,8 +131,24 @@ namespace
         ASSERT_EQ(GetSignals().size(), 5);
         auto minTime = GetPeaks().front().GetLETime();
         auto maxTime = GetPeaks().back().GetTETime();
-        auto qdc_test = TmxPeak::WidthToQdc(maxTime - minTime + 10., GetPar());
+        auto qdc_test = FQTPeak::WidthToQdc(maxTime - minTime + 10., GetPar());
         AddHit(minTime - 5., qdc_test);
         ASSERT_NE(GetSignals().size(), 1);
+    }
+
+    constexpr auto AssessReduction(double inE, double outE) { return (inE - outE) / inE; }
+
+    TEST_F(testNeulandTamexChannel, PMT_saturation_check) // NOLINT
+    {
+        const auto lowE = 10.;
+        const auto highE = 40.;
+
+        AddHit(20., lowE);
+        AddHit(200., highE);
+        const auto& pmtSignals = GetPMTPeaks();
+        ASSERT_EQ(pmtSignals.size(), 2);
+        const auto lowE_out = pmtSignals[0].GetQDC();
+        const auto highE_out = pmtSignals[1].GetQDC();
+        ASSERT_LT(AssessReduction(lowE, lowE_out), AssessReduction(highE, highE_out)) << "PMT saturation not applied!";
     }
 } // namespace

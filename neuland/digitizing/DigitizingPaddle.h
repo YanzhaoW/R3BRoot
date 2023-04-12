@@ -79,13 +79,16 @@ namespace Digitizing
 
         void DepositLight(const Hit& hit);
 
+        void SetChannel(std::unique_ptr<Channel> channel);
+        void SetSignalCouplingStrategy(const SignalCouplingStrategy& strategy) { fSignalCouplingStrategy = strategy; }
+
+        // Getters:
         auto GetPaddleID() const -> int { return fPaddleID; }
         auto GetSignals() const -> const std::vector<Signal>&;
-
-        void SetChannel(std::unique_ptr<Channel> leftChannel);
-        void SetSignalCouplingStrategy(const SignalCouplingStrategy& strategy) { fSignalCouplingStrategy = strategy; }
         auto GetSignalCouplingStragtegy() const -> const SignalCouplingStrategy& { return fSignalCouplingStrategy; }
         auto GetLeftChannel() const -> const Channel* { return fLeftChannel.get(); }
+        auto& GetLeftChannelRef() { return *fLeftChannel; }
+        auto& GetRightChannelRef() { return *fRightChannel; }
         auto GetRightChannel() const -> const Channel* { return fRightChannel.get(); }
         auto GetTrigTime() const -> double;
 

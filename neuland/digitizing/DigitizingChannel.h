@@ -72,19 +72,22 @@ namespace Digitizing
         virtual auto HasFired() -> bool;
         virtual void AttachToPaddle(Paddle* paddle) { fPaddle = paddle; };
 
+        // Getters:
         virtual auto GetTrigTime() -> double;
         auto GetSignals() -> const Signals&;
         auto GetSide() const -> ChannelSide { return fSide; }
         auto GetPaddle() const -> Paddle* { return fPaddle; }
+
         void SetPaddle(Paddle* v_paddle) { fPaddle = v_paddle; }
+        auto Is_ValidSignals() -> bool { return fSignals.valid(); }
         void InvalidateSignals() { fSignals.invalidate(); }
         void InvalidateTrigTime() { fTrigTime.invalidate(); }
+        virtual auto ConstructSignals() -> Signals = 0;
 
       protected:
         static auto GetRandom3Ref() -> TRandom3&;
 
       private:
-        virtual auto ConstructSignals() -> Signals = 0;
         Paddle* fPaddle = nullptr;           // pointer to the paddle who owns this channel
         const ChannelSide fSide;             // side of the channel
         mutable Validated<Signals> fSignals; // output signals from the channel

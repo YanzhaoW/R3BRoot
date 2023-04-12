@@ -124,6 +124,7 @@ namespace Digitizing::Neuland
         return channelPairs;
     }
 
+    // check if a signal is matched to two or more signals. If so, discard the lastest match.
     static auto CheckMatchValidity(const std::vector<Paddle::ChannelSignalPair>& matchedPairs,
                                    const Channel::Signal& signal) -> bool
     {
@@ -133,7 +134,8 @@ namespace Digitizing::Neuland
                                   [&signal](const auto& pair) -> bool { return &(pair.right.get()) == &(signal); });
         if (it_existed != matchedPairs.end())
         {
-            LOG(warn) << "DigitizingPaddleNeuland.cxx::CheckMatchValidity(): matching elements overlapped!";
+            LOG(warn) << "DigitizingPaddleNeuland.cxx::CheckMatchValidity(): one signal is matched again to another "
+                         "signal! The signal is discarded.";
             is_valid = false;
         }
         return is_valid;
