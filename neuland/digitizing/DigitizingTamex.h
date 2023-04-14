@@ -130,12 +130,12 @@ namespace Digitizing::Neuland::Tamex
         auto GetFQTPeaks() -> const std::vector<Peak>&;
         auto GetPMTPeaks() -> const std::vector<PMTPeak>&;
 
-        void AttachToPaddle(Digitizing::Paddle* paddle) override;
-        auto ConstructSignals() -> Signals override;
         auto CreateSignal(const Peak& peak) const -> Signal;
 
       private:
         // mutable std::vector<FQTPeak> fFQTPeaks;
+        auto ConstructSignals() -> Signals override;
+        void AttachToPaddle(Digitizing::Paddle* paddle) override;
         std::vector<PMTPeak> fPMTPeaks;
         std::vector<Peak> fFQTPeaks;
         R3BNeulandHitPar* fNeulandHitPar = nullptr;

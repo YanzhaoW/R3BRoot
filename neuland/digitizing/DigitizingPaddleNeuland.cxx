@@ -84,8 +84,8 @@ namespace Digitizing::Neuland
     auto NeulandPaddle::GenerateChannelHit(const Double_t mcTime, const Double_t mcLight, const Double_t dist)
         -> Channel::Hit
     {
-        auto time = mcTime + (NeulandPaddle::gHalfLength + dist) / NeulandPaddle::gCMedium;
-        auto light = mcLight * std::exp(-NeulandPaddle::gAttenuation * (NeulandPaddle::gHalfLength + dist));
+        auto time = mcTime + (NeulandPaddle::gHalfLength - dist) / NeulandPaddle::gCMedium;
+        auto light = mcLight * std::exp(-NeulandPaddle::gAttenuation * (NeulandPaddle::gHalfLength - dist));
         return { time, light };
     }
 

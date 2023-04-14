@@ -26,17 +26,12 @@ namespace r3b::testing::Neuland
     using Digitizing::ChannelSide;
     using Digitizing::Paddle;
 
-    class GMockNeulandPaddle : public Paddle
+    struct GMockNeulandPaddle : public Paddle
     {
-      public:
         explicit GMockNeulandPaddle(uint16_t paddleID)
             : Paddle{ paddleID }
         {
         }
-
-      private:
-        template <typename Type>
-        using Pair = Digitizing::LRPair<Type>;
         MOCK_METHOD(double,
                     ComputeTime,
                     (const Channel::Signal& firstSignal, const Channel::Signal& secondSignal),
@@ -52,13 +47,14 @@ namespace r3b::testing::Neuland
         MOCK_METHOD(Pair<Channel::Hit>, ComputeChannelHits, (const Hit& hit), (const, override));
     };
 
-    class GMockChannel : public Channel
+    struct GMockChannel : public Channel
     {
-      public:
         explicit GMockChannel(ChannelSide side)
             : Digitizing::Channel{ side } {};
-        MOCK_METHOD(void, AddHit, (Hit), (override));
+        void AddHit(Hit hit) override { hits_.push_back(hit); }
+
         MOCK_METHOD(void, AttachToPaddle, (Paddle*), (override));
         MOCK_METHOD(Signals, ConstructSignals, (), (override));
+        std::vector<Hit> hits_;
     };
 } // namespace r3b::testing::Neuland

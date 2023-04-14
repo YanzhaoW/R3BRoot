@@ -49,11 +49,11 @@ namespace Digitizing::Neuland::TacQuila
         double GetTDC();
         double GetEnergy();
         double GetTrigTime() override { return GetTDC(); }
-        auto ConstructSignals() -> Signals override;
 
       private:
         // NOTE: Some expensive calculations and random distributions are cached
         // so they do not need to be recomputed every time a Getter is called
+        auto ConstructSignals() -> Signals override;
         std::vector<Hit> fPMTHits;
         mutable Validated<std::vector<Hit>::const_iterator> cachedFirstHitOverThresh;
         std::vector<Hit>::const_iterator FindThresholdExceedingHit() const;

@@ -26,11 +26,12 @@ namespace Digitizing
     template <typename Type>
     struct LRPair
     {
-        Type left;
-        Type right;
+        Type left{};
+        Type right{};
         LRPair(Type p_left, Type p_right)
             : left(p_left)
             , right(p_right){};
+        LRPair() = default;
     };
 
     struct PaddleSignal
@@ -49,9 +50,9 @@ namespace Digitizing
 
     struct PaddleHit
     {
-        double time;
-        double LightDep;
-        double DistToPaddleCenter;
+        double time;               // ns
+        double LightDep;           // MeV
+        double DistToPaddleCenter; // cm
     };
 
     class Paddle
