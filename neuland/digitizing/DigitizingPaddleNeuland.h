@@ -1,14 +1,23 @@
-#ifndef R3BROOT_DIGITIZING_PADDLE_NEULAND_H
-#define R3BROOT_DIGITIZING_PADDLE_NEULAND_H
+/******************************************************************************
+ *   Copyright (C) 2019 GSI Helmholtzzentrum für Schwerionenforschung GmbH    *
+ *   Copyright (C) 2019-2023 Members of R3B Collaboration                     *
+ *                                                                            *
+ *             This software is distributed under the terms of the            *
+ *                 GNU General Public Licence (GPL) version 3,                *
+ *                    copied verbatim in the file "LICENSE".                  *
+ *                                                                            *
+ * In applying this license GSI does not waive the privileges and immunities  *
+ * granted to it by virtue of its status as an Intergovernmental Organization *
+ * or submit itself to any jurisdiction.                                      *
+ ******************************************************************************/
+#pragma once
+#include "DigitizingEngine.h"
+
 /**
  * Simulation of NeuLAND Bar/Paddle
  * @author Yanzhao Wang
  * @since July 15, 2022
- *
- *
  */
-
-#include "DigitizingEngine.h"
 
 namespace Digitizing::Neuland
 {
@@ -40,5 +49,3 @@ namespace Digitizing::Neuland
         static auto GenerateChannelHit(Double_t mcTime, Double_t mcLight, Double_t dist) -> Channel::Hit;
     };
 } // namespace Digitizing::Neuland
-
-#endif // R3BROOT_DIGITIZING_PADDLE_NEULAND_H
