@@ -14,7 +14,6 @@
 #include "DigitizingPaddleNeuland.h"
 #include "MockModels.h"
 #include "gtest/gtest.h"
-#include <iostream>
 #include <vector>
 
 /**
@@ -59,8 +58,13 @@ namespace
         }
 
         template <ChannelSide side>
-        void AddChannelSignal(const Channel::Signal& signal)
+        void AddChannelSignal(const double& time, const double& energy)
         {
+            auto signal = Channel::Signal{};
+            signal.tdc = time;
+            signal.qdc = energy;
+            signal.qdcUnSat = energy;
+            signal.side = side;
             if constexpr (side == ChannelSide::right)
             {
                 channelSignals_.right.push_back(signal);
@@ -116,5 +120,53 @@ namespace
         const auto& rightHits = GetChannels().right->hits_;
         ASSERT_LT(leftHits[0].light, rightHits[0].light) << "left channel has larger light input with longer distance!";
         ASSERT_GT(leftHits[0].time, rightHits[0].time) << "light hit left channel ealier with longer distance!";
+    }
+
+    TEST_F(testNeulandPaddle, check_coupling_counts) // NOLINT
+    {
+        auto* paddle = GetPaddle();
+        paddle->DepositLight(PaddleHit{ 10., 20., 0.5 * NeulandPaddle::gHalfLength });
+        paddle->DepositLight(PaddleHit{ 60., 10., -0.3 * NeulandPaddle::gHalfLength });
+        const auto& leftHits = GetChannels().left->hits_;
+        const auto& rightHits = GetChannels().right->hits_;
+        AddChannelSignal<ChannelSide::left>(leftHits[0].time, leftHits[0].light);
+        AddChannelSignal<ChannelSide::left>(leftHits[1].time, leftHits[1].light);
+        AddChannelSignal<ChannelSide::right>(rightHits[1].time, rightHits[1].light);
+        AddChannelSignal<ChannelSide::right>(rightHits[0].time, rightHits[0].light);
+        SetExpectCall();
+        const auto& signals = paddle->GetSignals();
+        ASSERT_EQ(signals.size(), 2) << "Fail to reconstruct the same number of signals!";
+    }
+
+    TEST_F(testNeulandPaddle, check_coupling_NoEQ_counts) // NOLINT
+    {
+        auto* paddle = GetPaddle();
+        paddle->DepositLight(PaddleHit{ 10., 20., 0.5 * NeulandPaddle::gHalfLength });
+        paddle->DepositLight(PaddleHit{ 60., 10., -0.3 * NeulandPaddle::gHalfLength });
+        const auto& leftHits = GetChannels().left->hits_;
+        const auto& rightHits = GetChannels().right->hits_;
+        AddChannelSignal<ChannelSide::left>(leftHits[0].time, leftHits[0].light);
+        AddChannelSignal<ChannelSide::left>(leftHits[1].time, leftHits[1].light);
+        AddChannelSignal<ChannelSide::right>(rightHits[1].time, rightHits[1].light);
+        SetExpectCall();
+        const auto& signals = paddle->GetSignals();
+        ASSERT_EQ(signals.size(), 1) << "inequal number of channel signals are not paired correctly!";
+    }
+
+    TEST_F(testNeulandPaddle, check_coupling_badParing) // NOLINT
+    {
+        FairLogger::GetLogger()->SetLogScreenLevel("error");
+        auto* paddle = GetPaddle();
+        paddle->DepositLight(PaddleHit{ 10., 20., 0.5 * NeulandPaddle::gHalfLength });
+        paddle->DepositLight(PaddleHit{ 60., 10., -0.3 * NeulandPaddle::gHalfLength });
+        const auto& leftHits = GetChannels().left->hits_;
+        const auto& rightHits = GetChannels().right->hits_;
+        AddChannelSignal<ChannelSide::left>(leftHits[0].time, leftHits[0].light);
+        AddChannelSignal<ChannelSide::left>(leftHits[0].time, leftHits[0].light);
+        AddChannelSignal<ChannelSide::right>(rightHits[0].time, rightHits[0].light);
+        AddChannelSignal<ChannelSide::right>(rightHits[1].time, rightHits[1].light);
+        SetExpectCall();
+        const auto& signals = paddle->GetSignals();
+        ASSERT_EQ(signals.size(), 1) << "recursive paring is not prohibited!";
     }
 } // namespace
