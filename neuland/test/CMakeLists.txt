@@ -31,6 +31,8 @@ if(GTEST_FOUND)
     link_directories(${ROOT_LIBRARY_DIR} ${FAIRROOT_LIBRARY_DIR}
         ${Boost_LIBRARY_DIRS})
 
+    message(STATUS "GTest libs: ${GTEST_LIBRARIES}")
+
     set(TEST_DEPENDENCIES
         GTest::gtest_main
         GTest::gmock_main
