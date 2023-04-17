@@ -92,9 +92,6 @@ if( "${FairRoot_VERSION}"  VERSION_LESS 18.2.1 )
 else()
   message(STATUS "You seem to be using FairRoot ${FairRoot_VERSION}.")
 endif()
-message(STATUS "major: ${FR_MAJOR_VERSION}")
-message(STATUS "minor: ${FR_MINOR_VERSION}")
-message(STATUS "minor: ${FR_PATCH_VERSION}")
 
 # added a variable to point to r3broot path in the system
 set(R3BROOTPATH ${CMAKE_INSTALL_PREFIX})

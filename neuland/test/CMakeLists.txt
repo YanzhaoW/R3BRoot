@@ -31,23 +31,9 @@ if(GTEST_FOUND)
     link_directories(${ROOT_LIBRARY_DIR} ${FAIRROOT_LIBRARY_DIR}
         ${Boost_LIBRARY_DIRS})
 
-    message(STATUS "GTest libs: ${GTEST_LIBRARIES}")
-    if(NOT TARGET GTest::gmock_main)
-        message("no gmock_main")
-    else()
-        message("have gmock_main")
-    endif()
-
-    if(NOT TARGET GTest::gtest_main)
-        message("no gtest_main")
-    else()
-        message("have gtest_main")
-    endif()
-
     set(TEST_DEPENDENCIES
         GTest::gtest_main
-        # GTest::gmock_main
-        GTest::gmock
+        GTest::gmock_main
         ${ROOT_LIBRARIES}
         FairTools
         R3BData
