@@ -15,9 +15,6 @@
 #include "TStopwatch.h"
 #include <boost/program_options.hpp>
 
-using std::cout;
-using std::endl;
-
 using NeulandPaddle = Digitizing::Neuland::NeulandPaddle;
 using MockPaddle = Digitizing::Neuland::MockPaddle;
 using TamexChannel = Digitizing::Neuland::Tamex::Channel;
@@ -33,7 +30,7 @@ using Digitizing::UsePaddle;
 
 int main(int argc, const char** argv)
 {
-    TStopwatch timer;
+    auto timer = TStopwatch{};
     timer.Start();
 
     auto programOptions = r3b::ProgramOptions("options for neuland data analysis");
@@ -105,6 +102,6 @@ int main(int argc, const char** argv)
     timer.Stop();
     auto* sink = run->GetSink();
     sink->Close();
-    cout << "Macro finished successfully." << endl;
-    cout << "Real time: " << timer.RealTime() << "s, CPU time: " << timer.CpuTime() << "s" << endl;
+    std::cout << "Macro finished successfully." << std::endl;
+    std::cout << "Real time: " << timer.RealTime() << "s, CPU time: " << timer.CpuTime() << "s" << std::endl;
 }
