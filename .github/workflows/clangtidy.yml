@@ -52,7 +52,6 @@ jobs:
     - name: clang-tidy check
       run: |
         mkdir -p clang-tidy-result
-        git diff -U0 HEAD^
         git diff -U0 HEAD^ | python3 $PWD/util/clang-tidy-diff.py -p1 -path build -j4 -use-color \
         -iregex '.*\.(cpp|cc|c\+\+|cxx|cl|h|hh|hpp|m|mm|inc)' \
         > clang-tidy-result/fixes.yml
