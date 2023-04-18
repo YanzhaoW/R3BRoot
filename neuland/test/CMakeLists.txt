@@ -65,7 +65,15 @@ set_tests_properties(NeulandSimulation PROPERTIES TIMEOUT "2000")
 set_tests_properties(NeulandSimulation PROPERTIES PASS_REGULAR_EXPRESSION
     "Macro finished successfully.")
 
-add_test(NeulandDigitizer ${R3BROOT_BINARY_DIR}/bin/neulandAna --simuFile test.simu.root --paraFile test.para.root)
+set(digiPars
+    --simuFile test.simu.root
+    --paraFile test.para.root
+    --paddle neuland
+    --channel tamex
+    --digiFile test.digi.root
+    -v info
+    )
+add_test(NeulandDigitizer ${R3BROOT_BINARY_DIR}/bin/neulandAna ${digiPars})
 set_tests_properties(NeulandDigitizer PROPERTIES DEPENDS NeulandSimulation)
 set_tests_properties(NeulandDigitizer PROPERTIES TIMEOUT "1000")
 set_tests_properties(NeulandDigitizer PROPERTIES PASS_REGULAR_EXPRESSION

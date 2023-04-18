@@ -115,11 +115,9 @@ namespace Digitizing::Neuland::Tamex
     class Channel : public Digitizing::Channel
     {
       public:
-        Channel(ChannelSide, TRandom3&, const std::optional<R3BNeulandHitPar*>& hitpar = {});
-        Channel(ChannelSide side, const std::optional<R3BNeulandHitPar*>& hitpar)
-            : Channel(side, GetRandom3Ref(), hitpar){};
+        Channel(ChannelSide, TRandom3&);
         explicit Channel(ChannelSide side)
-            : Channel(side, {})
+            : Channel(side, GetRandom3Ref())
         {
         }
         void AddHit(Hit /*hit*/) override;
@@ -131,6 +129,7 @@ namespace Digitizing::Neuland::Tamex
         auto GetPMTPeaks() -> const std::vector<PMTPeak>&;
 
         auto CreateSignal(const Peak& peak) const -> Signal;
+        static void GetHitPar(const std::string& hitParName);
 
       private:
         // mutable std::vector<FQTPeak> fFQTPeaks;
@@ -138,13 +137,12 @@ namespace Digitizing::Neuland::Tamex
         void AttachToPaddle(Digitizing::Paddle* paddle) override;
         std::vector<PMTPeak> fPMTPeaks;
         std::vector<Peak> fFQTPeaks;
-        R3BNeulandHitPar* fNeulandHitPar = nullptr;
+        static R3BNeulandHitPar const* fNeulandHitPar; // NOLINT
         R3BNeulandHitModulePar* fNeulandHitModulePar = nullptr;
         Tamex::Params par;
 
         auto CheckPaddleIDInHitPar() const -> bool;
         auto CheckPaddleIDInHitModulePar() const -> bool;
-        void SetHitPar(R3BNeulandHitPar* hitpar) { fNeulandHitPar = hitpar; }
         void SetHitModulePar(int PaddleId);
         auto ToQdc(double) const -> double;
         auto ToTdc(double) const -> double;

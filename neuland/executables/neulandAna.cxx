@@ -26,19 +26,10 @@ using MockChannel = Digitizing::Neuland::MockChannel;
 using Digitizing::UseChannel;
 using Digitizing::UsePaddle;
 
-const auto neulandEngines = std::map<std::pair<const std::string, const std::string>,
-                                     std::function<std::unique_ptr<Digitizing::DigitizingEngineInterface>()>>{
-    { { "neuland", "tamex" },
-      []() { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<TamexChannel>()); } },
-    { { "neuland", "tacquila" },
-      []() { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<TacquilaChannel>()); } },
-    { { "mock", "tamex" },
-      []() { return Digitizing::CreateEngine(UsePaddle<MockPaddle>(), UseChannel<TamexChannel>()); } },
-    { { "neuland", "mock" },
-      []() { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<MockChannel>()); } },
-    { { "mock", "mock" },
-      []() { return Digitizing::CreateEngine(UsePaddle<MockPaddle>(), UseChannel<MockChannel>()); } }
-};
+// auto GetHitPar(const std::string& parName)
+// {
+//     return []() { Digitizing::Neuland::Tamex::Channel::GetHitPar("test"); };
+// }
 
 int main(int argc, const char** argv)
 {
@@ -59,6 +50,8 @@ int main(int argc, const char** argv)
         programOptions.Create_Option<std::string>("digiFile", "set the filename of digitization output", "digi.root");
     auto logLevel = programOptions.Create_Option<std::string>("logLevel,v", "set log level of fairlog", "error");
     auto eventNum = programOptions.Create_Option<int>("eventNum,n", "set total event number", 0);
+    auto hitLevelPar =
+        programOptions.Create_Option<std::string>("hitLevelPar", "set the name of hit level parameter if needed.", "");
 
     if (!programOptions.Verify(argc, argv))
     {
@@ -70,6 +63,23 @@ int main(int argc, const char** argv)
         std::cout << programOptions.Get_DescRef() << std::endl;
         return 0;
     }
+
+    auto const channelInit = [&]() { Digitizing::Neuland::Tamex::Channel::GetHitPar(hitLevelPar->value()); };
+    const auto neulandEngines = std::map<std::pair<const std::string, const std::string>,
+                                         std::function<std::unique_ptr<Digitizing::DigitizingEngineInterface>()>>{
+        { { "neuland", "tamex" },
+          [&]()
+          { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<TamexChannel>(), channelInit); } },
+        { { "neuland", "tacquila" },
+          []() { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<TacquilaChannel>()); } },
+        { { "mock", "tamex" },
+          [&]()
+          { return Digitizing::CreateEngine(UsePaddle<MockPaddle>(), UseChannel<TamexChannel>(), channelInit); } },
+        { { "neuland", "mock" },
+          []() { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<MockChannel>()); } },
+        { { "mock", "mock" },
+          []() { return Digitizing::CreateEngine(UsePaddle<MockPaddle>(), UseChannel<MockChannel>()); } }
+    };
 
     FairLogger::GetLogger()->SetLogScreenLevel(logLevel->value().c_str());
 
@@ -84,9 +94,7 @@ int main(int argc, const char** argv)
     run->GetRuntimeDb()->setFirstInput(fileio.release());
 
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
-    digiNeuland->SetPaddleChannel((neulandEngines.at({ paddleName->value(), channelName->value() }))());
-    // digiNeuland->SetPaddleChannel(UsePaddle<NeulandPaddle>(),
-    //                               UseChannel<TamexChannel>(digiNeuland->GetNeulandHitParRef()));
+    digiNeuland->SetEngine((neulandEngines.at({ paddleName->value(), channelName->value() }))());
     run->AddTask(digiNeuland.release());
     auto hitmon = std::make_unique<R3BNeulandHitMon>();
     run->AddTask(hitmon.release());

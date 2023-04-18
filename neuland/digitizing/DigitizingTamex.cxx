@@ -13,10 +13,12 @@
 
 #include "DigitizingTamex.h"
 
+#include <FairRuntimeDb.h>
 #include <cmath>
 
 #include "R3BNeulandHitModulePar.h"
 #include "R3BNeulandHitPar.h"
+#include <FairRunAna.h>
 #include <algorithm>
 #include <iostream>
 #include <utility>
@@ -36,6 +38,7 @@ namespace Digitizing::Neuland::Tamex
     // global variables for default options:
     const size_t TmxPeaksInitialCapacity = 10;
     const double PMTPeak::peakWidth = 15.0; // ns
+    R3BNeulandHitPar const* Channel::fNeulandHitPar = nullptr; // NOLINT
 
     Params::Params(TRandom3& rnd)
         : fPMTThresh(1.)                // [MeV]
@@ -111,12 +114,32 @@ namespace Digitizing::Neuland::Tamex
         fQdc = WidthToQdc(fWidth, fChannel->GetParConstRef());
     }
 
-    Channel::Channel(ChannelSide side, TRandom3& rnd, const std::optional<R3BNeulandHitPar*>& hitpar)
+    Channel::Channel(ChannelSide side, TRandom3& rnd)
         : Digitizing::Channel{ side }
-        , fNeulandHitPar{ hitpar.value_or(nullptr) }
         , par{ rnd }
     {
         fPMTPeaks.reserve(TmxPeaksInitialCapacity);
+    }
+
+    void Channel::GetHitPar(const std::string& hitParName)
+    {
+        if (hitParName.empty())
+        {
+            LOG(info) << "DigitizingTamex: Using default parameter for Tamex Channels.";
+            return;
+        }
+        auto* run = FairRunAna::Instance();
+        auto* rtdb = run->GetRuntimeDb();
+        fNeulandHitPar = dynamic_cast<R3BNeulandHitPar*>(rtdb->findContainer(hitParName.c_str()));
+        if (fNeulandHitPar != nullptr)
+        {
+            LOG(info) << "DigitizingTamex: HitPar " << hitParName << " has been found in the root file";
+        }
+        else
+        {
+            LOG(info) << "DigitizingTamex: HitPar " << hitParName << " cannot be found. Using default values.";
+            fNeulandHitPar = nullptr;
+        }
     }
 
     void Channel::AttachToPaddle(Digitizing::Paddle* /*v_paddle*/)

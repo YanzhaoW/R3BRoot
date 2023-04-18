@@ -134,8 +134,8 @@ namespace Digitizing::Neuland
                                   [&signal](const auto& pair) -> bool { return &(pair.right.get()) == &(signal); });
         if (it_existed != matchedPairs.end())
         {
-            LOG(warn) << "DigitizingPaddleNeuland.cxx::CheckMatchValidity(): one signal is matched again to another "
-                         "signal! The signal is discarded.";
+            LOG(debug) << "DigitizingPaddleNeuland.cxx::CheckMatchValidity(): one signal is matched again to another "
+                          "signal! The signal is discarded.";
             is_valid = false;
         }
         return is_valid;

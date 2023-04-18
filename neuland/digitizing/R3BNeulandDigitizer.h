@@ -11,8 +11,7 @@
  * or submit itself to any jurisdiction.                                      *
  ******************************************************************************/
 
-#ifndef R3B_NEULAND_DIGITIZER_H
-#define R3B_NEULAND_DIGITIZER_H
+#pragma once
 
 #include "DigitizingEngine.h"
 #include "FairTask.h"
@@ -57,9 +56,6 @@ class R3BNeulandDigitizer : public FairTask
     R3BNeulandDigitizer& operator=(const R3BNeulandDigitizer&) = delete; // copy assignment
     R3BNeulandDigitizer& operator=(R3BNeulandDigitizer&&) = delete;      // move assignment
 
-    void SetPaddleChannel(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine);
-    [[nodiscard]] auto GetNeulandHitParRef() const -> const std::optional<R3BNeulandHitPar*>& { return fNeulandHitPar; }
-
   protected:
     InitStatus Init() override;
     void Finish() override;
@@ -67,8 +63,8 @@ class R3BNeulandDigitizer : public FairTask
 
   public:
     void Exec(Option_t* /*option*/) override;
+    void SetEngine(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine);
     void AddFilter(const Filterable<R3BNeulandHit&>::Filter& filter) { fHitFilters.Add(filter); }
-    void SetHitParName(const TString& name) { fHitParName = name; };
 
   private:
     TCAInputConnector<R3BNeulandPoint> fPoints;
@@ -79,14 +75,11 @@ class R3BNeulandDigitizer : public FairTask
     Filterable<R3BNeulandHit&> fHitFilters;
 
     R3BNeulandGeoPar* fNeulandGeoPar = nullptr; // non-owning
-    std::optional<R3BNeulandHitPar*> fNeulandHitPar = nullptr;
 
-    TString fHitParName{};
     TH1I* hMultOne = nullptr;
     TH1I* hMultTwo = nullptr;
+    TH1F* hRLTimeToTrig = nullptr;
 
   public:
     ClassDefOverride(R3BNeulandDigitizer, 1) // NOLINT
 };
-
-#endif // R3B_NEULAND_DIGITIZER_H

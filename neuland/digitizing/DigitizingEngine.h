@@ -39,14 +39,14 @@ namespace Digitizing
         virtual void DepositLight(int paddle_id, double time, double light, double dist) = 0;
         [[nodiscard]] virtual auto GetTriggerTime() const -> double = 0;
         virtual auto ExtractPaddles() -> std::map<int, std::unique_ptr<Paddle>> = 0;
+        virtual void Init() = 0;
     };
 
     // factory classes for paddle and channel:
     template <typename ChannelClass,
               typename = typename std::enable_if<std::is_base_of<Channel, ChannelClass>::value>::type>
-    class UseChannel
+    struct UseChannel
     {
-      public:
         template <typename... Args>
         explicit UseChannel(Args&&... args)
             : BuildChannel([&](ChannelSide side)
@@ -58,9 +58,8 @@ namespace Digitizing
 
     template <typename PaddleClass,
               typename = typename std::enable_if<std::is_base_of<Paddle, PaddleClass>::value>::type>
-    class UsePaddle
+    struct UsePaddle
     {
-      public:
         template <typename... Args>
         explicit UsePaddle(Args&&... args)
             : BuildPaddle([&](int paddleID)
@@ -70,19 +69,24 @@ namespace Digitizing
         std::function<std::unique_ptr<PaddleClass>(int)> BuildPaddle;
     };
 
-    template <typename PaddleClass, typename ChannelClass>
+    template <typename PaddleClass, typename ChannelClass, typename InitFunc = std::function<void()>>
     class DigitizingEngine : public DigitizingEngineInterface
     {
       private:
-        UsePaddle<PaddleClass> paddleClass;
-        UseChannel<ChannelClass> channelClass;
+        UsePaddle<PaddleClass> paddleClass_;
+        UseChannel<ChannelClass> channelClass_;
         std::map<int, std::unique_ptr<Paddle>> paddles;
+        InitFunc initFunc_;
 
       public:
-        DigitizingEngine(const UsePaddle<PaddleClass>& p_paddleClass, const UseChannel<ChannelClass>& p_channelClass)
-            : paddleClass{ p_paddleClass }
-            , channelClass{ p_channelClass }
+        DigitizingEngine(
+            const UsePaddle<PaddleClass>& p_paddleClass,
+            const UseChannel<ChannelClass>& p_channelClass,
+            InitFunc initFunc = []() {})
+            : paddleClass_{ p_paddleClass }
+            , channelClass_{ p_channelClass }
             , DigitizingEngineInterface()
+            , initFunc_{ initFunc }
         {
         }
 
@@ -90,9 +94,9 @@ namespace Digitizing
         {
             if (paddles.find(paddle_id) == paddles.end())
             {
-                auto newPaddle = paddleClass.BuildPaddle(paddle_id);
-                newPaddle->SetChannel(channelClass.BuildChannel(Digitizing::ChannelSide::left));
-                newPaddle->SetChannel(channelClass.BuildChannel(Digitizing::ChannelSide::right));
+                auto newPaddle = paddleClass_.BuildPaddle(paddle_id);
+                newPaddle->SetChannel(channelClass_.BuildChannel(Digitizing::ChannelSide::left));
+                newPaddle->SetChannel(channelClass_.BuildChannel(Digitizing::ChannelSide::right));
                 paddles[paddle_id] = std::move(newPaddle);
             }
             paddles.at(paddle_id)->DepositLight({ time, light, dist });
@@ -111,6 +115,9 @@ namespace Digitizing
         {
             return std::move(paddles);
         }
+
+        void Init() override { initFunc_(); }
+        void SetInit(const InitFunc& initFunc) { initFunc_ = initFunc; }
     };
 
     // helper to create owning digitizingEngine:

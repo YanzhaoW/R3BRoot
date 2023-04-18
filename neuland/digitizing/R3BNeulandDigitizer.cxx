@@ -53,7 +53,7 @@ R3BNeulandDigitizer::R3BNeulandDigitizer(std::unique_ptr<Digitizing::DigitizingE
     , fDigitizingEngine(std::move(engine))
 {
 }
-void R3BNeulandDigitizer::SetPaddleChannel(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine)
+void R3BNeulandDigitizer::SetEngine(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine)
 {
     fDigitizingEngine = std::move(engine);
 }
@@ -78,16 +78,17 @@ void R3BNeulandDigitizer::SetParContainers()
         LOG(fatal) << "R3BNeulandDigitizer::SetParContainers: No R3BNeulandGeoPar";
     }
 
-    fNeulandHitPar = dynamic_cast<R3BNeulandHitPar*>(rtdb->findContainer(fHitParName));
-    if (fNeulandHitPar != nullptr)
-    {
-        LOG(info) << "R3BNeulandDigitizer::SetHitParContainers: HitPar found from " << fHitParName;
-    }
-    else
-    {
-        LOG(info) << "R3BNeulandDigitizer::SetHitParContainers: HitPar rootfile not found. Using default values.";
-        fNeulandHitPar.reset();
-    }
+    fDigitizingEngine->Init();
+    // fNeulandHitPar = dynamic_cast<R3BNeulandHitPar*>(rtdb->findContainer(fHitParName));
+    // if (fNeulandHitPar != nullptr)
+    // {
+    //     LOG(info) << "R3BNeulandDigitizer::SetHitParContainers: HitPar found from " << fHitParName;
+    // }
+    // else
+    // {
+    //     LOG(info) << "R3BNeulandDigitizer::SetHitParContainers: HitPar rootfile not found. Using default values.";
+    //     fNeulandHitPar.reset();
+    // }
 }
 
 InitStatus R3BNeulandDigitizer::Init()
@@ -96,11 +97,13 @@ InitStatus R3BNeulandDigitizer::Init()
     fHits.Init();
 
     // Initialize control histograms
-    const int PaddleMulSize = 3000;
+    auto const PaddleMulSize = 3000;
     hMultOne = r3b::root_owned<TH1I>(
         "MultiplicityOne", "Paddle multiplicity: only one PMT per paddle", PaddleMulSize, 0, PaddleMulSize);
     hMultTwo = r3b::root_owned<TH1I>(
         "MultiplicityTwo", "Paddle multiplicity: both PMTs of a paddle", PaddleMulSize, 0, PaddleMulSize);
+    auto const timeBinSize = 200;
+    hRLTimeToTrig = r3b::root_owned<TH1F>("hRLTimeToTrig", "R/Ltime-triggerTime", timeBinSize, -100., 100.);
 
     return kSUCCESS;
 }
@@ -144,12 +147,11 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
     hMultTwo->Fill(static_cast<int>(std::count_if(
         paddles.begin(), paddles.end(), [](const auto& keyValue) { return keyValue.second->HasFired(); })));
 
-    // Create Hits
-    for (const auto& keyValue : paddles)
-    {
-        const auto paddleID = keyValue.first;
-        const auto& paddle = keyValue.second;
+    hRLTimeToTrig->Fill(triggerTime);
 
+    // Create Hits
+    for (const auto& [paddleID, paddle] : paddles)
+    {
         if (!paddle->HasFired())
         {
             continue;
