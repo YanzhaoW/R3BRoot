@@ -19,7 +19,7 @@
 
 int main(int argc, const char** argv)
 {
-    TStopwatch timer;
+    auto timer = TStopwatch{};
     auto const PID = 2112;
     auto const defaultEventNum = 10;
     timer.Start();
