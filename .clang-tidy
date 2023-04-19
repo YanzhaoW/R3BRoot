@@ -48,4 +48,3 @@ CheckOptions:
     value: 'true'
 
 FormatStyle: 'file'
-HeaderFilterRegex: '.*(?<!gmock)\.h$'
