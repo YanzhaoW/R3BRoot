@@ -48,4 +48,4 @@ CheckOptions:
     value: 'true'
 
 FormatStyle: 'file'
-HeaderFilterRegex: '(?!build).*'
+HeaderFilterRegex: '.*(?<!gmock)\.h$'
