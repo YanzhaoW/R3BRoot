@@ -44,7 +44,10 @@ if(GTEST_FOUND)
         R3BNeulandReconstruction
         Alignment)
 
+    get_target_property(GMock_include_dir GTest::gmock_main INTERFACE_INCLUDE_DIRECTORIES)
+
     add_executable(${PROJECT_TEST_NAME} ${TEST_SRC_FILES})
+    target_include_directories(${PROJECT_TEST_NAME} SYSTEM PRIVATE ${GMock_include_dir})
     target_link_libraries(${PROJECT_TEST_NAME} ${TEST_DEPENDENCIES})
     gtest_discover_tests(${PROJECT_TEST_NAME} DISCOVERY_TIMEOUT 600)
 endif(GTEST_FOUND)
