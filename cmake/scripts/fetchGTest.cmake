@@ -11,7 +11,8 @@
 # or submit itself to any jurisdiction.                                      #
 ##############################################################################
 
-# find_package(GTest)
+find_package(GTest)
+
 if(NOT GTEST_FOUND)
     message(STATUS "GTest is not found in local system!")
     message(STATUS "Fetching GTest...")
