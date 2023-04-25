@@ -20,7 +20,7 @@ runs:
         path: |
           ${{ env.UCESB_DIR }}
           ${{ github.workspace }}/build/_deps
-        key: r3b-build-deps
+        key: build-deps
 
     - name: cache r3b
       if: matrix.save != 'false'

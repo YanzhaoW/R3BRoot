@@ -30,7 +30,7 @@ runs:
         ctest -S cmake/CI_CD/CDash.cmake -DBUILD_J=${NUM_THREADS}\
               -DTEST_MODEL=${TEST_MODEL}\
               -DTEST_NAME=${TEST_NAME}\
-              -DSITE_NAME="Github hosted"\
+              -DSITE_NAME="Github hosted(${{ github.repository_owner }})"\
               -V -E "(run_gen_sim|run_digi|run_aladin_digi|califasim2|landreco|elsim)"
       shell: bash
   
