@@ -1,5 +1,5 @@
-name: cache-restore
-description: 'steps to restore cache R3BRoot and ucesb'
+name: install-deps
+description: 'steps to install deps'
 
 inputs:
   r3b-dev-key:
@@ -15,6 +15,7 @@ runs:
   using: composite
   steps:
     - name: cache ucesb
+      if: github.event_name == 'pull_request'
       id: cache-ucesb
       uses: actions/cache/restore@v3
       with:
@@ -24,7 +25,7 @@ runs:
         key: build-deps
 
     - name: cache r3b
-      if: inputs.cache-name != 'false'
+      if: inputs.cache-name != 'false' && github.event_name == 'pull_request'
       id: cache-r3b
       uses: actions/cache/restore@v3
       with:

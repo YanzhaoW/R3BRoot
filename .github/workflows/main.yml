@@ -148,18 +148,18 @@ jobs:
         uses: './.github/actions/pre-build'
 
       # A self-defined composite action, which restores the caches of
-      # dependencies and builds. The two inputs for this action, r3b-dev-key
-      # and cache-name, determine the name (key) of r3b build cache being
-      # used in the the run. Its name is defined as
+      # dependencies and builds and install them if the cache doesn't exit.
+      # The two inputs for this action, r3b-dev-key and cache-name, determine
+      # the name (key) of r3b build cache being used in the the run. Its name
+      # is defined as
       # "r3b-build-${cache-name}-${r3b-dev-key}". Apart from r3b build cache,
       # there is another cache called "r3b-build-deps", which contains all
       # dependencies for r3broot build, such as googletest and ucesb. Cache
       # restoring step is only used for the run triggered with "pull_request"
       # and disabled for the merge event.
-      - name: restore-cache
-        if: github.event_name == 'pull_request'
+      - name: install dependencies
         id: restore-cache
-        uses: './.github/actions/cache-restore'
+        uses: './.github/actions/install-deps'
         with: 
           cache-name: ${{ matrix.cache }}
           r3b-dev-key: ${{ env.cacheSHA }}

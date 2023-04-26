@@ -13,7 +13,7 @@ runs:
       if: github.event_name == 'push'
       run: |
         echo "TEST_MODEL=Continuous" >> $GITHUB_ENV
-        echo "TEST_NAME=${{ inputs.repo }}_commit ${cacheSHA}" >> $GITHUB_ENV
+        echo "TEST_NAME=\"${{ inputs.repo }} (commit ${cacheSHA})\"" >> $GITHUB_ENV
       shell: bash
 
     - name: set env variables for pull request
@@ -33,4 +33,3 @@ runs:
               -DSITE_NAME="Github hosted (${{ github.repository }})"\
               -V -E "(run_gen_sim|run_digi|run_aladin_digi|califasim2|landreco|elsim)"
       shell: bash
-  
