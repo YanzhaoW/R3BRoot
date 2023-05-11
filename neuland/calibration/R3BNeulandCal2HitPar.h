@@ -28,7 +28,7 @@ class R3BEventHeader;
 class R3BNeulandHitPar;
 class R3BNeulandHitModulePar;
 
-namespace Neuland
+namespace R3B::Neuland
 {
     namespace Calibration
     {
@@ -58,8 +58,8 @@ class R3BNeulandCal2HitPar : public FairTask
   private:
     bool IsCosmicEvent() const;
 
-    std::unique_ptr<Neuland::Calibration::HitCalibrationEngine> fHitCalEngine; //!
-    std::unique_ptr<Neuland::Calibration::CosmicTracker> fCosmicTracker;       //!
+    std::unique_ptr<R3B::Neuland::Calibration::HitCalibrationEngine> fHitCalEngine; //!
+    std::unique_ptr<R3B::Neuland::Calibration::CosmicTracker> fCosmicTracker;       //!
 
     TClonesArray* fCalNeuland;        //!
     TClonesArray* fMappedLos;         //!

@@ -29,7 +29,7 @@
 #include "TH2F.h"
 #include "TROOT.h"
 
-using namespace Neuland;
+using namespace R3B::Neuland;
 
 R3BNeulandCal2HitPar::R3BNeulandCal2HitPar(const char* name, const Int_t iVerbose)
     : FairTask(name, iVerbose)
@@ -123,7 +123,7 @@ void R3BNeulandCal2HitPar::Exec(Option_t* option)
 
     for (Int_t i = 0; i < nItems; i++)
     {
-        const auto pmt = static_cast<R3BNeulandCalData*>(fCalNeuland->At(i));
+        auto* pmt = dynamic_cast<R3BNeulandCalData*>(fCalNeuland->At(i));
 
         const auto id = pmt->GetBarId() - 1;
         const auto plane = GetPlaneNumber(id);

@@ -28,41 +28,38 @@
 class R3BNeulandHitPar;
 class TDirectory;
 
-namespace Neuland
+namespace R3B::Neuland::Calibration
 {
-    namespace Calibration
+    class HitCalibrationEngine
     {
-        class HitCalibrationEngine
-        {
-          public:
-            HitCalibrationEngine();
+      public:
+        HitCalibrationEngine();
 
-            void Init(const R3BNeulandHitPar* hitpar);
-            void Set(const Int_t id, const Int_t side, const Double_t time, const Int_t qdc);
-            inline Bool_t IsValid(const Int_t id) { return fBars[id].IsValid(); }
-            inline Double_t GetPosition(const Int_t id) { return fBars[id].GetPosition(); }
-            void Add(const R3BNeulandCosmicTrack& track, const UInt_t eventNumber);
-            void Reset();
-            std::vector<R3BNeulandHitModulePar> Calibrate(TDirectory* histoDir = nullptr);
+        void Init(const R3BNeulandHitPar* hitpar);
+        void Set(const Int_t id, const Int_t side, const Double_t time, const Int_t qdc);
+        inline Bool_t IsValid(const Int_t id) { return fBars[id].IsValid(); }
+        inline Double_t GetPosition(const Int_t id) { return fBars[id].GetPosition(); }
+        void Add(const R3BNeulandCosmicTrack& track, const UInt_t eventNumber);
+        void Reset();
+        std::vector<R3BNeulandHitModulePar> Calibrate(TDirectory* histoDir = nullptr);
 
-          private:
-            void draw() const;
+      private:
+        void draw() const;
 
-            TSyncer fTSyncer;
-            std::vector<HitCalibrationBar> fBars;
-            std::vector<ULong64_t> fHitMask;
+        TSyncer fTSyncer;
+        std::vector<HitCalibrationBar> fBars;
+        std::vector<ULong64_t> fHitMask;
 
-            TH1F fBarDistribution;
-            TH1F fStoppedDistribution;
-            TH1F fInteractionsDistribution;
-            TH1F fStoppedInteractionsDistribution;
-            TH1F fTrackLengthDistribution;
-            TH1F fTotalTrackLengthDistribution;
-            TH1F fTotalStoppedTrackLengthDistribution;
-            TH2F fCorrelationMatrix;
-            TH3F fTrackEntryPointDistribution; // Z X Y
-            TH3F fTrackDirectionDistribution;  // Z X Y
-        };
-    } // namespace Calibration
-} // namespace Neuland
+        TH1F fBarDistribution;
+        TH1F fStoppedDistribution;
+        TH1F fInteractionsDistribution;
+        TH1F fStoppedInteractionsDistribution;
+        TH1F fTrackLengthDistribution;
+        TH1F fTotalTrackLengthDistribution;
+        TH1F fTotalStoppedTrackLengthDistribution;
+        TH2F fCorrelationMatrix;
+        TH3F fTrackEntryPointDistribution; // Z X Y
+        TH3F fTrackDirectionDistribution;  // Z X Y
+    };
+} // namespace R3B::Neuland::Calibration
 #endif

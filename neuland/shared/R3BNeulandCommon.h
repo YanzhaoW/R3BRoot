@@ -18,11 +18,11 @@
 #include <limits>
 #include <vector>
 
-namespace Neuland
+namespace R3B::Neuland
 {
     // Constants
 
-    constexpr auto __sqrt12 = 3.464101615;
+    constexpr auto SQRT12 = 3.464101615;
     constexpr auto NaN = std::numeric_limits<double>::quiet_NaN();
     constexpr auto Inf = std::numeric_limits<double>::infinity();
 
@@ -60,9 +60,9 @@ namespace Neuland
     // Geometry & Material Constants
 
     constexpr auto BarSize_XY = 5.0;                                  // cm NeuLAND parameter
-    constexpr auto BarUncertainty_XY = BarSize_XY / __sqrt12;         // cm NeuLAND parameter
+    constexpr auto BarUncertainty_XY = BarSize_XY / SQRT12;           // cm NeuLAND parameter
     constexpr auto BarSize_Z = 5.0;                                   // cm NeuLAND parameter
-    constexpr auto BarUncertainty_Z = BarSize_Z / __sqrt12;           // cm NeuLAND parameter
+    constexpr auto BarUncertainty_Z = BarSize_Z / SQRT12;             // cm NeuLAND parameter
     constexpr auto BarLength = 250.0;                                 // cm NeuLAND parameter
     constexpr auto LightGuideLength = 10.0;                           // cm NeuLAND parameter
     constexpr auto TotalBarLength = BarLength + 2 * LightGuideLength; // cm NeuLAND parameter, Bar including Light Guide
@@ -90,6 +90,6 @@ namespace Neuland
 
     constexpr auto SaturationCoefficient = 1.75e-3; // 1 / ns
 
-} // namespace Neuland
+} // namespace R3B::Neuland
 
 #endif

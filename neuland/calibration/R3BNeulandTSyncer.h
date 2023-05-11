@@ -23,49 +23,46 @@
 
 struct LSQR_DOUBLE_VECTOR;
 
-namespace Neuland
+namespace R3B::Neuland::Calibration
 {
-    namespace Calibration
+    class TSyncer
     {
-        class TSyncer
+      public:
+        struct ValueErrorPair
         {
-          public:
-            struct ValueErrorPair
-            {
-                Double_t Value;
-                Double_t Error;
-            };
-
-            TSyncer();
-
-            void AddBarData(const Int_t barID, const Double_t time);
-            void ClearBarData(const Int_t barID);
-            void DoEvent();
-
-            std::vector<ValueErrorPair> GetTSync(UInt_t nPlanes = Neuland::MaxNumberOfPlanes);
-
-          private:
-            void calcTSyncs();
-
-            struct Bar
-            {
-                ValueErrorPair TSyncNextBar;
-                std::array<ValueErrorPair, BarsPerPlane> TSyncNextPlane;
-
-                TH1F NextBar;
-                std::array<TH1F, BarsPerPlane> NextPlane;
-
-                std::vector<Double_t> NextBarLog;
-                std::array<std::vector<Double_t>, BarsPerPlane> NextPlaneLog;
-            };
-
-            std::array<ULong64_t, Neuland::MaxNumberOfPlanes> HitMask;
-            std::array<Double_t, Neuland::MaxNumberOfBars> EventData;
-            std::array<Bar, Neuland::MaxNumberOfBars> Data;
-
-            TH1F SamplingHistogram;
+            Double_t Value;
+            Double_t Error;
         };
-    } // namespace Calibration
-} // namespace Neuland
+
+        TSyncer();
+
+        void AddBarData(const Int_t barID, const Double_t time);
+        void ClearBarData(const Int_t barID);
+        void DoEvent();
+
+        std::vector<ValueErrorPair> GetTSync(UInt_t nPlanes = Neuland::MaxNumberOfPlanes);
+
+      private:
+        void calcTSyncs();
+
+        struct Bar
+        {
+            ValueErrorPair TSyncNextBar;
+            std::array<ValueErrorPair, BarsPerPlane> TSyncNextPlane;
+
+            TH1F NextBar;
+            std::array<TH1F, BarsPerPlane> NextPlane;
+
+            std::vector<Double_t> NextBarLog;
+            std::array<std::vector<Double_t>, BarsPerPlane> NextPlaneLog;
+        };
+
+        std::array<ULong64_t, Neuland::MaxNumberOfPlanes> HitMask;
+        std::array<Double_t, Neuland::MaxNumberOfBars> EventData;
+        std::array<Bar, Neuland::MaxNumberOfBars> Data;
+
+        TH1F SamplingHistogram;
+    };
+} // namespace R3B::Neuland::Calibration
 
 #endif

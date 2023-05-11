@@ -30,6 +30,8 @@
 
 #include <array>
 
+namespace Neuland = R3B::Neuland;
+
 R3BNeulandCal2Hit::R3BNeulandCal2Hit(const char* name, const Int_t iVerbose)
     : FairTask(name, iVerbose)
     , fEventHeader(nullptr)

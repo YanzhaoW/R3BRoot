@@ -17,6 +17,8 @@
 #include "FairLogger.h"
 #include "FairParamList.h" // for FairParamList
 
+namespace Neuland = R3B::Neuland;
+
 R3BNeulandHitPar::R3BNeulandHitPar(const char* name, const char* title, const char* context, Bool_t own)
     : FairParGenericSet(name, title, context, own)
     , fParams(new TObjArray(Neuland::MaxNumberOfBars))

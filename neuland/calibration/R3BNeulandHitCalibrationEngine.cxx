@@ -22,9 +22,9 @@
 #include <cmath>
 
 using DPair = std::array<Double_t, 2>;
-using CalibrationStatus = Neuland::Calibration::HitCalibrationBar::CalibrationStatus;
+using CalibrationStatus = R3B::Neuland::Calibration::HitCalibrationBar::CalibrationStatus;
 
-namespace Neuland
+namespace R3B::Neuland
 {
 
     // NaN2Value maps NaNs and Infs to a finite value.
@@ -487,4 +487,4 @@ namespace Neuland
         }
 
     } // namespace Calibration
-} // namespace Neuland
+} // namespace R3B::Neuland

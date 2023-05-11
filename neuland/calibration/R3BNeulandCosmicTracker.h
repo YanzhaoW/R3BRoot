@@ -24,43 +24,40 @@
 #include "R3BNeulandCommon.h"
 #include "R3BNeulandCosmicTrack.h"
 
-namespace Neuland
+namespace R3B::Neuland::Calibration
 {
-    namespace Calibration
+    class CosmicTracker
     {
-        class CosmicTracker
-        {
-            using DPair = std::array<Double_t, 2>;
+        using DPair = std::array<Double_t, 2>;
 
-          public:
-            CosmicTracker();
+      public:
+        CosmicTracker();
 
-            void SetDistances(const std::vector<Double_t>& distances) { fDistances = distances; }
-            void AddPoint(const Int_t barID, const Double_t pos = NaN);
-            const R3BNeulandCosmicTrack& GetTrack();
-            void Reset();
+        void SetDistances(const std::vector<Double_t>& distances) { fDistances = distances; }
+        void AddPoint(Int_t barID, Double_t pos = NaN);
+        const R3BNeulandCosmicTrack& GetTrack();
+        void Reset();
 
-          private:
-            void filter(TGraphErrors& graph) const;
-            DPair fit(TGraphErrors& graph);
-            DPair linearRegression(const Double_t* x, const Double_t* y, const Int_t points) const;
-            void fillInteractions(R3BNeulandCosmicTrack& track) const;
-            Double_t getCrossPointTime(const TVector3& point,
-                                       const TVector3& direction,
-                                       const TVector3& invDirection,
-                                       const DPair& xBounds,
-                                       const DPair& yBounds,
-                                       const DPair& zBounds) const;
+      private:
+        void filter(TGraphErrors& graph) const;
+        DPair fit(TGraphErrors& graph);
+        auto linearRegression(const Double_t*, const Double_t*, Int_t points) const -> DPair;
+        void fillInteractions(R3BNeulandCosmicTrack& track) const;
+        [[nodiscard]] auto getCrossPointTime(const TVector3& point,
+                                             const TVector3& direction,
+                                             const TVector3& invDirection,
+                                             const DPair& xBounds,
+                                             const DPair& yBounds,
+                                             const DPair& zBounds) const -> double;
 
-            std::vector<Double_t> fDistances;
-            std::vector<Int_t> fBarIDs;
+        std::vector<Double_t> fDistances;
+        std::vector<Int_t> fBarIDs;
 
-            R3BNeulandCosmicTrack fTrack;
+        R3BNeulandCosmicTrack fTrack;
 
-            TF1 fFit;
-            TGraphErrors fXZ; // i.e. Vertical Bars
-            TGraphErrors fYZ; // i.e. Horizontal Bars
-        };
-    } // namespace Calibration
-} // namespace Neuland
+        TF1 fFit;
+        TGraphErrors fXZ; // i.e. Vertical Bars
+        TGraphErrors fYZ; // i.e. Horizontal Bars
+    };
+} // namespace R3B::Neuland::Calibration
 #endif
