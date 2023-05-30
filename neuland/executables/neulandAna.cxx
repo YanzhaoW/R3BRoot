@@ -29,12 +29,12 @@ using Digitizing::UsePaddle;
 //     return []() { Digitizing::Neuland::Tamex::Channel::GetHitPar("test"); };
 // }
 
-int main(int argc, const char** argv)
+auto main(int argc, const char** argv) -> int
 {
     auto timer = TStopwatch{};
     timer.Start();
 
-    auto programOptions = r3b::ProgramOptions("options for neuland data analysis");
+    auto programOptions = R3B::ProgramOptions("options for neuland data analysis");
     auto help = programOptions.Create_Option<bool>("help,h", "help message", false);
     auto paddleName =
         programOptions.Create_Option<std::string>("paddle", R"(set the paddle name. e.g. "neuland")", "neuland");

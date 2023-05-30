@@ -39,187 +39,243 @@
 #include <set>
 #include <typeinfo>
 
-using std::map;
 using std::set;
 
 #include <cstdlib>
 #include <iostream>
-using namespace std;
 
 TMCThreadLocal R3BFileSource* R3BFileSource::fSourceInstance = 0;
 
-R3BFileSource::R3BFileSource(TFile* f, const char* Title, UInt_t)
-    : FairSource()
-    , fInputTitle(Title)
-    , fRootFile(f)
-    , fCurrentEntryNr(0)
-    , fFriendFileList()
-    , fInputChainList()
-    , fFriendTypeList()
-    , fCheckInputBranches()
-    , fInputLevel()
-    , fRunIdInfoAll()
-    , fInChain(0)
-    , fInTree(0)
-    , fListFolder(new TObjArray(16))
-    , fRtdb(FairRuntimeDb::instance())
-    , fFolderOut(0)
-    , fFolderIn(0)
-    , fSourceIdentifier(0)
-    , fNoOfEntries(-1)
-    , IsInitialized(kFALSE)
-    , fMCHeader(0)
-    , fEvtHeader(0)
-    , fFileHeader(0)
-    , fEventTimeInMCHeader(kTRUE)
-    , fEvtHeaderIsNew(kFALSE)
-    , fCurrentEntryNo(0)
-    , fTimeforEntryNo(-1)
-    , fEventTimeMin(0.)
-    , fEventTimeMax(0.)
-    , fEventTime(0.)
-    , fBeamTime(-1.)
-    , fGapTime(-1.)
-    , fEventMeanTime(0.)
-    , fTimeProb(0)
-    , fCheckFileLayout(kTRUE)
-    , fInputFile()
-    , fExpid(0)
-    , prevts(0)
-    , nextts(0)
+namespace
 {
-    if (fSourceInstance)
-    {
-        R3BLOG(fatal, "Singleton instance already exists.");
-        return;
-    }
-    fSourceInstance = this;
+    auto const DEFAULT_LISTSIZE = 16;
+    auto const DEFAULT_TITLE = "InputRootFile";
+} // namespace
 
-    if (fRootFile->IsZombie())
-    {
-        R3BLOG(fatal, "Error opening the Input file");
-    }
-    R3BLOG(debug, "R3BFileSource created------------");
+R3BFileSource::R3BFileSource()
+    : R3BFileSource(std::string{})
+{
 }
 
-R3BFileSource::R3BFileSource(const TString* RootFileName, const char* Title, UInt_t)
-    : FairSource()
-    , fInputTitle(Title)
-    , fRootFile(0)
-    , fCurrentEntryNr(0)
-    , fFriendFileList()
-    , fInputChainList()
-    , fFriendTypeList()
-    , fCheckInputBranches()
-    , fInputLevel()
-    , fRunIdInfoAll()
-    , fInChain(0)
-    , fInTree(0)
-    , fListFolder(new TObjArray(16))
+// R3BFileSource::R3BFileSource(std::string file)
+//     : R3BFileSource(std::move(file), DEFAULT_TITLE)
+// {
+// }
+
+R3BFileSource::R3BFileSource(std::string file, std::string title)
+    : fInputTitle(std::move(title))
+    , fRootFileName(std::move(file))
+    , fListFolder(new TObjArray(DEFAULT_LISTSIZE))
     , fRtdb(FairRuntimeDb::instance())
-    , fFolderOut(0)
-    , fFolderIn(0)
-    , fSourceIdentifier(0)
-    , fNoOfEntries(-1)
-    , IsInitialized(kFALSE)
-    , fMCHeader(0)
-    , fEvtHeader(0)
-    , fFileHeader(0)
-    , fEventTimeInMCHeader(kTRUE)
-    , fEvtHeaderIsNew(kFALSE)
-    , fCurrentEntryNo(0)
-    , fTimeforEntryNo(-1)
-    , fEventTimeMin(0.)
-    , fEventTimeMax(0.)
-    , fEventTime(0.)
-    , fBeamTime(-1.)
-    , fGapTime(-1.)
-    , fEventMeanTime(0.)
-    , fTimeProb(0)
-    , fCheckFileLayout(kTRUE)
-    , fInputFile()
-    , fExpid(0)
-    , prevts(0)
-    , nextts(0)
 {
-    if (fSourceInstance)
+    if (fSourceInstance != nullptr)
     {
         R3BLOG(fatal, "Singleton instance already exists.");
         return;
     }
     fSourceInstance = this;
-
-    fRootFile = TFile::Open(RootFileName->Data());
-    if (fRootFile->IsZombie())
-    {
-        R3BLOG(fatal, "Error opening the Input file");
-    }
-    R3BLOG(debug, "R3BFileSource created------------");
 }
 
-R3BFileSource::R3BFileSource(const TString RootFileName, const char* Title, UInt_t)
-    : FairSource()
-    , fInputTitle(Title)
-    , fRootFile(0)
-    , fCurrentEntryNr(0)
-    , fFriendFileList()
-    , fInputChainList()
-    , fFriendTypeList()
-    , fCheckInputBranches()
-    , fInputLevel()
-    , fRunIdInfoAll()
-    , fInChain(0)
-    , fInTree(0)
-    , fListFolder(new TObjArray(16))
+R3BFileSource::R3BFileSource(std::vector<std::string> fileNames, std::string title)
+    : fInputTitle(std::move(title))
+    , fInputChainList(std::move(fileNames))
+    , fListFolder(new TObjArray(DEFAULT_LISTSIZE))
     , fRtdb(FairRuntimeDb::instance())
-    , fFolderOut(0)
-    , fFolderIn(0)
-    , fSourceIdentifier(0)
-    , fNoOfEntries(-1)
-    , IsInitialized(kFALSE)
-    , fMCHeader(0)
-    , fEvtHeader(0)
-    , fFileHeader(0)
-    , fEventTimeInMCHeader(kTRUE)
-    , fEvtHeaderIsNew(kFALSE)
-    , fCurrentEntryNo(0)
-    , fTimeforEntryNo(-1)
-    , fEventTimeMin(0.)
-    , fEventTimeMax(0.)
-    , fEventTime(0.)
-    , fBeamTime(-1.)
-    , fGapTime(-1.)
-    , fEventMeanTime(0.)
-    , fTimeProb(0)
-    , fCheckFileLayout(kTRUE)
-    , fInputFile()
-    , fExpid(0)
-    , prevts(0)
-    , nextts(0)
 {
-    if (fSourceInstance)
+    if (fSourceInstance != nullptr)
     {
         R3BLOG(fatal, "Singleton instance already exists.");
         return;
     }
     fSourceInstance = this;
+}
 
-    fRootFile = TFile::Open(RootFileName.Data());
-    if (fRootFile->IsZombie())
+R3BFileSource::R3BFileSource(std::vector<std::string> fileNames)
+    : R3BFileSource(std::move(fileNames), DEFAULT_TITLE)
+{
+}
+
+// R3BFileSource::R3BFileSource(const std::string& fileName, std::string title)
+//     : R3BFileSource(TFile::Open(fileName.c_str()), std::move(title))
+// {
+//     if (fRootFile->IsZombie())
+//     {
+//         R3BLOG(fatal, "Error opening the Input file");
+//     }
+//     R3BLOG(debug, "R3BFileSource created------------");
+// }
+
+static auto GetBranchList(TFile* rootFile) -> std::vector<std::string>
+{
+    auto* list = dynamic_cast<TList*>(rootFile->Get("BranchList"));
+    if (list == nullptr)
     {
-        R3BLOG(fatal, "Error opening the Input file");
+        R3BLOG(fatal, "No Branch list in input file");
     }
-    R3BLOG(debug, "R3BFileSource created------------");
+
+    auto branchList = std::vector<std::string>{};
+    if (list != nullptr)
+    {
+        for (auto iter = list->begin(); iter != list->end(); ++iter)
+        {
+            auto* branchName = dynamic_cast<TObjString*>(*iter);
+            if (branchName != nullptr)
+            {
+                auto ObjName = branchName->GetString();
+                branchList.emplace_back(ObjName.Data());
+            }
+        }
+    }
+    return branchList;
 }
 
 R3BFileSource* R3BFileSource::Instance() { return fSourceInstance; }
 
-R3BFileSource::~R3BFileSource()
+// Get The list of branches from the input file and add it to the
+// actual list of existing branches.
+// Add this list of branches also to the map of input trees, which
+// stores the information which branches belong to which input tree.
+// There is at least one primary input tree, but there can be many
+// additional friend trees.
+// This information is needed to add new files to the correct friend
+// tree. With this information it is also possible to check if the
+// input files which are added to the input chain all have the same
+// branch structure. Without this check it is possible to add trees
+// with a different branch structure but the same tree name. ROOT
+// probably only checks if the name of the tree is the same.
+void R3BFileSource::RegisterBranchList(TFile* rootFile)
 {
-    LOG(debug) << "Enter Destructor of R3BFileSource";
-    if (fEvtHeader)
-        delete fEvtHeader;
-    LOG(debug) << "Leave Destructor of R3BFileSource";
+    auto branchList = GetBranchList(rootFile);
+    for (auto const& branchName : branchList)
+    {
+        FairRootManager::Instance()->AddBranchToList(branchName.c_str());
+    }
+    fInputLevel.push_back(fInputTitle);
+    fCheckInputBranches[fInputTitle] = std::move(branchList);
+
+    auto* timebasedlist = dynamic_cast<TList*>(rootFile->Get("TimeBasedBranchList"));
+    if (timebasedlist == nullptr)
+    {
+        LOG(warn) << "No time based branch list in input file";
+    }
+    else
+    {
+        FairRootManager::Instance()->SetTimeBasedBranchNameList(timebasedlist);
+    }
+}
+
+static auto HasBranchList(TFile* rootFile, const std::vector<std::string>& branchList) -> bool
+{
+    auto newBranchList = GetBranchList(rootFile);
+    return newBranchList == branchList;
+}
+
+template <typename ContainerType>
+static auto GetDataFolder(TFile* rootFile, const ContainerType& folderNames) -> std::optional<TFolder*>
+{
+
+    for (auto const& name : folderNames)
+    {
+        R3BLOG(debug, "looking for " + name);
+        auto* dataFolder = dynamic_cast<TFolder*>(rootFile->Get(name.c_str()));
+        if (dataFolder != nullptr)
+        {
+            R3BLOG(debug, name + " has been found!");
+            return dataFolder;
+        }
+    }
+    return {};
+}
+
+static auto GetRootManagerInChain() -> TChain*
+{
+    auto const chainTitle = "/" + std::string{ FairRootManager::GetFolderName() };
+    auto inChain = std::make_unique<TChain>(FairRootManager::GetTreeName(), chainTitle.c_str());
+    R3BLOG(debug, "Chain created");
+    LOG(info) << "chain name: " << FairRootManager::GetTreeName();
+    FairRootManager::Instance()->SetInChain(inChain.release());
+    return FairRootManager::Instance()->GetInChain();
+}
+
+void R3BFileSource::InChainInit()
+{
+    for (auto input_chain = fInputChainList.cbegin(); input_chain != fInputChainList.cend(); ++input_chain)
+    {
+        auto fileHandler = R3B::make_rootfile(input_chain->c_str());
+
+        auto const folderNames =
+            std::array<std::string, 4>{ FairRootManager::GetFolderName(), "r3broot", "cbmout", "cbmroot" };
+
+        auto treeFolder = GetDataFolder(fileHandler.get(), folderNames);
+        if (treeFolder.has_value())
+        {
+            fListFolder->Add(treeFolder.value());
+        }
+        else
+        {
+            LOG(fatal) << "Could not find folder r3broot, cbmout nor cbmroot.";
+        }
+
+        if (input_chain == fInputChainList.cbegin())
+        {
+            RegisterBranchList(fileHandler.get());
+        }
+        else
+        {
+            if (!HasBranchList(fileHandler.get(), fCheckInputBranches.at(fInputTitle)))
+            {
+                LOG(error) << "Branch structure of the input file " << fInputChainList.front()
+                           << " and the file to be added " << *input_chain << " are different.";
+                break;
+            }
+        }
+        fInChain->Add(input_chain->c_str());
+        fRootFiles.push_back(std::move(fileHandler));
+    }
+    FairRootManager::Instance()->SetListOfFolders(fListFolder);
+    fNoOfEntries = fInChain->GetEntries();
+
+    R3BLOG(debug, "Entries in this Source " << fNoOfEntries);
+
+    AddFriendsToChain();
+}
+
+void R3BFileSource::TextFileInit()
+{
+    // Open configuration file with runid values if needed in this step
+    fInputTxTFile.open(fInputFileName.Data(), std::fstream::in);
+    if (!fInputTxTFile.is_open())
+    {
+        R3BLOG(warn, "Input file for RunIds was not found, it is Ok!");
+    }
+    else
+    {
+        R3BLOG(info, "Input file for RunIds " << fInputFileName.Data() << " was found");
+        fInputTxTFile.clear();
+        fInputTxTFile.seekg(0, std::ios::beg);
+    }
+
+    if (fInputTxTFile.is_open())
+    {
+        R3BLOG(info, "Reading RunId file");
+        Int_t rid = 0;
+        Int_t expRun = 0;
+        int64_t timeStamp = 0;
+        while (fInputTxTFile >> std::hex >> rid >> expRun >> timeStamp)
+        {
+            fRunid.push_back(rid);
+            fTimestamp.push_back(timeStamp);
+            // Ignore the other stuff that might still be on that line
+            fInputTxTFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+
+        R3BLOG(info, "End of reading RunId file");
+        fInputTxTFile.close();
+    }
+    else
+    {
+        nextts = 0;
+    }
 }
 
 Bool_t R3BFileSource::Init()
@@ -231,191 +287,19 @@ Bool_t R3BFileSource::Init()
         R3BLOG(info, "R3BFileSource already initialized");
         return kTRUE;
     }
-    if (!fInChain)
+    if (fInChain == nullptr)
     {
-        fInChain = new TChain(FairRootManager::GetTreeName(), Form("/%s", FairRootManager::GetFolderName()));
-        R3BLOG(debug, "Chain created");
-        FairRootManager::Instance()->SetInChain(fInChain);
-    }
-    fInChain->Add(fRootFile->GetName());
-
-    // Get the folder structure from file which describes the input tree.
-    // There are two different names possible, so check both.
-    fFolderIn = dynamic_cast<TFolder*>(fRootFile->Get(FairRootManager::GetFolderName()));
-    if (!fFolderIn)
-    {
-        fFolderIn = dynamic_cast<TFolder*>(fRootFile->Get("r3broot"));
-        if (!fFolderIn)
-        {
-            fFolderIn = dynamic_cast<TFolder*>(fRootFile->Get("cbmout"));
-            if (!fFolderIn)
-            {
-                fFolderIn = dynamic_cast<TFolder*>(fRootFile->Get("cbmroot"));
-                if (!fFolderIn)
-                {
-                    fFolderIn = gROOT->GetRootFolder()->AddFolder(FairRootManager::GetFolderName(), "Main Folder");
-                }
-                else
-                {
-                    fFolderIn->SetName(FairRootManager::GetFolderName());
-                }
-            }
-        }
-    }
-    // Get The list of branches from the input file and add it to the
-    // actual list of existing branches.
-    // Add this list of branches also to the map of input trees, which
-    // stores the information which branches belong to which input tree.
-    // There is at least one primary input tree, but there can be many
-    // additional friend trees.
-    // This information is needed to add new files to the correct friend
-    // tree. With this information it is also possible to check if the
-    // input files which are added to the input chain all have the same
-    // branch structure. Without this check it is possible to add trees
-    // with a different branch structure but the same tree name. ROOT
-    // probably only checks if the name of the tree is the same.
-    TList* list = dynamic_cast<TList*>(fRootFile->Get("BranchList"));
-    if (list == 0)
-    {
-        R3BLOG(fatal, "No Branch list in input file");
-    }
-    TString chainName = fInputTitle;
-    TString ObjName;
-    fInputLevel.push_back(chainName);
-    fCheckInputBranches[chainName] = new std::list<TString>;
-    if (list)
-    {
-        TObjString* Obj = 0;
-        R3BLOG(debug, "Enteries in the list " << list->GetEntries());
-        for (Int_t i = 0; i < list->GetEntries(); i++)
-        {
-            Obj = dynamic_cast<TObjString*>(list->At(i));
-            if (Obj != 0)
-            {
-                ObjName = Obj->GetString();
-                R3BLOG(debug, "Branch name " << ObjName.Data());
-                fCheckInputBranches[chainName]->push_back(ObjName.Data());
-
-                FairRootManager::Instance()->AddBranchToList(ObjName.Data());
-            }
-        }
+        fInChain = GetRootManagerInChain();
     }
 
-    gROOT->GetListOfBrowsables()->Add(fFolderIn);
-    fListFolder->Add(fFolderIn);
-
-    // Store the information about the unique runids in the input file
-    // together with the filename and the number of events for each runid
-    // this information is needed later to check if inconsitencies exist
-    // between the main input chain and any of the friend chains.
-
-    //  GetRunIdInfo(fInFile->GetName(), chainName);
-
-    // Add all additional input files to the input chain and do a
-    // consitency check
-    for (auto fileName : fInputChainList)
+    if (fRootFile != nullptr)
     {
-        // Store global gFile pointer for safety reasons.
-        // Set gFile to old value at the end of the routine.R
-        TFile* temp = gFile;
-
-        // Temporarily open the input file to extract information which
-        // is needed to bring the friend trees in the correct order
-        TFile* inputFile = TFile::Open(fileName);
-        if (inputFile->IsZombie())
-        {
-            LOG(fatal) << "Error opening the file " << fileName.Data()
-                       << " which should be added to the input chain or as friend chain";
-        }
-
-        if (fCheckFileLayout)
-        {
-            // Check if the branchlist is the same as for the first input file.
-            Bool_t isOk = CompareBranchList(inputFile, chainName);
-            if (!isOk)
-            {
-                LOG(fatal) << "Branch structure of the input file " << fRootFile->GetName()
-                           << " and the file to be added " << fileName.Data() << " are different.";
-                return kFALSE;
-            }
-        }
-
-        // Add the runid information for all files in the chain.
-        // GetRunIdInfo(inputFile->GetName(), chainName);
-        // Add the file to the input chain
-        fInChain->Add(fileName);
-
-        // Close the temporarly file and restore the gFile pointer.
-        inputFile->Close();
-        gFile = temp;
-    }
-    fNoOfEntries = fInChain->GetEntries();
-
-    R3BLOG(debug, "Entries in this Source " << fNoOfEntries);
-
-    for (Int_t i = 0; i < fListFolder->GetEntriesFast(); i++)
-    {
-        TFolder* fold = static_cast<TFolder*>(fListFolder->At(i));
-        fEvtHeader = static_cast<R3BEventHeader*>(fold->FindObjectAny("EventHeader."));
-        fMCHeader = static_cast<FairMCEventHeader*>(fold->FindObjectAny("MCEventHeader."));
-        if (fEvtHeader)
-        {
-            ActivateObject(reinterpret_cast<TObject**>(&fEvtHeader), "EventHeader.");
-        }
-        if (fMCHeader)
-        {
-            ActivateObject(reinterpret_cast<TObject**>(&fMCHeader), "MCEventHeader.");
-        }
+        fInputChainList.push_back(fRootFileName);
     }
 
-    FairRootManager::Instance()->SetListOfFolders(fListFolder);
+    InChainInit();
 
-    AddFriendsToChain();
-
-    TList* timebasedlist = dynamic_cast<TList*>(fRootFile->Get("TimeBasedBranchList"));
-    if (timebasedlist == 0)
-    {
-        LOG(warn) << "No time based branch list in input file";
-    }
-    else
-    {
-        FairRootManager::Instance()->SetTimeBasedBranchNameList(timebasedlist);
-    }
-
-    // Open configuration file with runid values if needed in this step
-    fInputFile.open(fInputFileName.Data(), std::fstream::in);
-    if (!fInputFile.is_open())
-    {
-        R3BLOG(warn, "Input file for RunIds was not found, it is Ok!");
-    }
-    else
-    {
-        R3BLOG(info, "Input file for RunIds " << fInputFileName.Data() << " was found");
-        fInputFile.clear();
-        fInputFile.seekg(0, std::ios::beg);
-    }
-
-    if (fInputFile.is_open())
-    {
-        R3BLOG(info, "Reading RunId file");
-        Int_t rid;
-        Int_t expRun;
-        int64_t ts;
-        while (fInputFile >> hex >> rid >> expRun >> ts)
-        {
-            fRunid.push_back(rid);
-            fTimestamp.push_back(ts);
-            // Ignore the other stuff that might still be on that line
-            fInputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        }
-
-        R3BLOG(info, "End of reading RunId file");
-        fInputFile.close();
-    }
-    else
-    {
-        nextts = 0;
-    }
+    TextFileInit();
 
     return kTRUE;
 }
@@ -502,13 +386,15 @@ Int_t R3BFileSource::ReadEvent(UInt_t i)
     return 1;
 }
 
-void R3BFileSource::Close() { CloseInFile(); }
+void R3BFileSource::Close()
+{ /*CloseInFile();*/
+}
 
 void R3BFileSource::Reset() {}
 
 void R3BFileSource::AddFriend(TString fName) { fFriendFileList.push_back(fName); }
 
-void R3BFileSource::AddFile(TString FileName) { fInputChainList.push_back(FileName); }
+void R3BFileSource::AddFile(std::string fileName) { fInputChainList.push_back(std::move(fileName)); }
 
 void R3BFileSource::AddFriendsToChain()
 {
@@ -555,10 +441,11 @@ void R3BFileSource::AddFriendsToChain()
         {
             inputLevel = level;
 
+            LOG(debug2) << "open root file " << fileName;
             inputFile = TFile::Open(fileName);
             if (inputFile->IsZombie())
             {
-                LOG(fatal) << "Error opening the file " << level.Data()
+                LOG(fatal) << "Error opening the file " << level
                            << " which should be added to the input chain or as friend chain";
             }
 
@@ -571,6 +458,7 @@ void R3BFileSource::AddFriendsToChain()
                 inputFile->Close();
                 continue;
             }
+            LOG(debug2) << "close root file " << inputFile->GetName();
             inputFile->Close();
         }
         if (!inputLevelFound)
@@ -720,6 +608,7 @@ void R3BFileSource::CreateNewFriendChain(TString inputFile, TString inputLevel)
 {
 
     TFile* temp = gFile;
+    LOG(debug2) << "open root file " << inputFile;
     TFile* f = TFile::Open(inputFile);
 
     TFolder* added = NULL;
@@ -755,16 +644,16 @@ void R3BFileSource::CreateNewFriendChain(TString inputFile, TString inputLevel)
 
     /**Get The list of branches from the friend file and add it to the actual list*/
     TList* list = dynamic_cast<TList*>(f->Get("BranchList"));
-    TString chainName = inputLevel;
+    std::string chainName = inputLevel.Data();
     fInputLevel.push_back(chainName);
-    fCheckInputBranches[chainName] = new std::list<TString>;
+    fCheckInputBranches[chainName] = std::vector<std::string>{};
     if (list)
     {
         TObjString* Obj = 0;
         for (Int_t i = 0; i < list->GetEntries(); i++)
         {
             Obj = dynamic_cast<TObjString*>(list->At(i));
-            fCheckInputBranches[chainName]->push_back(Obj->GetString().Data());
+            fCheckInputBranches[chainName].emplace_back(Obj->GetString().Data());
             std::cout << Obj->GetString().Data() << std::endl;
             FairRootManager::Instance()->AddBranchToList(Obj->GetString().Data());
         }
@@ -782,7 +671,7 @@ Bool_t R3BFileSource::CompareBranchList(TFile* fileHandle, TString inputLevel)
     // fill a set with the original branch structure
     // This allows to use functions find and erase
     std::set<TString> branches;
-    for (auto li : *(fCheckInputBranches[inputLevel]))
+    for (auto li : (fCheckInputBranches[inputLevel]))
     {
         branches.insert(li);
     }
@@ -851,6 +740,7 @@ Bool_t R3BFileSource::ActivateObject(TObject** obj, const char* BrName)
 
 void R3BFileSource::SetInputFile(TString name)
 {
+    LOG(debug2) << "open root file " << name;
     fRootFile = TFile::Open(name.Data());
     if (fRootFile->IsZombie())
     {
@@ -998,15 +888,12 @@ void R3BFileSource::ReadBranchEvent(const char* BrName, Int_t Entry)
     {
         fInTree->FindBranch(BrName)->GetEntry(Entry);
         fEventTime = GetEventTime();
-        return;
     }
     if (fInChain)
     {
         fInChain->FindBranch(BrName)->GetEntry(Entry);
         fEventTime = GetEventTime();
-        return;
     }
-    return;
 }
 
 Bool_t R3BFileSource::SpecifyRunId()

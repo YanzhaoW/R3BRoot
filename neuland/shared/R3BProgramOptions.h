@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <utility>
 
-namespace r3b
+namespace R3B
 {
     using std::runtime_error;
 
@@ -50,10 +50,10 @@ namespace r3b
             return option;
         }
 
-        bool Verify(int argc, const char** argv);
+        auto Verify(int argc, const char** argv) -> bool;
         void Delete_Option(const std::string& optionName) { registries_.erase(optionName); }
-        auto& Get_PosDescRef() { return pos_desc_; }
-        auto& Get_DescRef() { return desc_; }
+        auto Get_PosDescRef() -> auto& { return pos_desc_; }
+        auto Get_DescRef() -> auto& { return desc_; }
 
       private:
         std::unordered_map<std::string, OptionConcept*> registries_;
@@ -67,8 +67,8 @@ namespace r3b
       public:
         OptionConcept(const OptionConcept&) = delete;
         OptionConcept(OptionConcept&&) = delete;
-        OptionConcept& operator=(const OptionConcept&) = delete;
-        OptionConcept& operator=(OptionConcept&&) = delete;
+        auto operator=(const OptionConcept&) -> OptionConcept& = delete;
+        auto operator=(OptionConcept&&) -> OptionConcept& = delete;
         virtual ~OptionConcept() = default;
         OptionConcept() = default;
         virtual void Retrieve(const po::variables_map& varMap) = 0;
@@ -81,8 +81,8 @@ namespace r3b
         using type = Type;
         Option(const Option&) = delete;
         Option(Option&&) = delete;
-        Option& operator=(const Option&) = delete;
-        Option& operator=(Option&&) = delete;
+        auto operator=(const Option&) -> Option& = delete;
+        auto operator=(Option&&) -> Option& = delete;
         Option(std::string name, Type defaultValue, ProgramOptions* program)
             : name_{ std::move(name) }
             , value_{ std::move(defaultValue) }

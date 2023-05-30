@@ -9,11 +9,17 @@ set(DEPENDENCIES
     ${Geant4_LIBRARIES}
     ${Geant4VMC_LIBRARIES}
     ExTestDetector
-    Boost::program_options)
+    Boost::program_options
+    )
 
 set(INCLUDE_DIRECTORIES
-    ${INCLUDE_DIRECTORIES} ${R3BROOT_SOURCE_DIR}/passive ${R3BROOT_SOURCE_DIR}/neuland/executables
-    ${R3BROOT_SOURCE_DIR}/neuland/simulation ${Geant4_INCLUDE_DIRS} ${Geant4VMC_INCLUDE_DIRS})
+    ${INCLUDE_DIRECTORIES}
+    ${R3BROOT_SOURCE_DIR}/passive
+    ${R3BROOT_SOURCE_DIR}/neuland/executables
+    ${R3BROOT_SOURCE_DIR}/neuland/simulation
+    ${Geant4_INCLUDE_DIRS}
+    ${Geant4VMC_INCLUDE_DIRS}
+    )
 
 message(STATUS "include dir: ${Geant4_INCLUDE_DIRS}")
 include_directories(${INCLUDE_DIRECTORIES})
@@ -29,13 +35,38 @@ set(DEPENDENCIES
     R3BData
     R3BBase
     Gen
-    Boost::program_options)
+    Boost::program_options
+    )
 
 set(INCLUDE_DIRECTORIES
-    ${INCLUDE_DIRECTORIES} ${R3BROOT_SOURCE_DIR}/passive ${R3BROOT_SOURCE_DIR}/neuland/executables
-    ${R3BROOT_SOURCE_DIR}/neuland/digitizing ${R3BROOT_SOURCE_DIR}/neuland/calibration)
+    ${INCLUDE_DIRECTORIES}
+    ${R3BROOT_SOURCE_DIR}/passive
+    ${R3BROOT_SOURCE_DIR}/neuland/executables
+    ${R3BROOT_SOURCE_DIR}/neuland/digitizing
+    ${R3BROOT_SOURCE_DIR}/neuland/calibration
+    )
 
 include_directories(${INCLUDE_DIRECTORIES})
 set(SRCS neulandAna.cxx)
+
+generate_executable()
+
+set(EXE_NAME neulandExp)
+set(DEPENDENCIES
+    R3BNeulandCalibration
+    R3BNeulandShared
+    R3BPassive
+    R3BData
+    R3BBase
+    Gen
+    )
+
+set(INCLUDE_DIRECTORIES
+    ${INCLUDE_DIRECTORIES}
+    ${R3BROOT_SOURCE_DIR}/passive
+    )
+
+include_directories(${INCLUDE_DIRECTORIES} ${Boost_INCLUDE_DIRS})
+set(SRCS neulandExp.cxx)
 
 generate_executable()

@@ -11,8 +11,12 @@
 # or submit itself to any jurisdiction.                                      #
 ##############################################################################
 
-set(INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${R3BROOT_SOURCE_DIR}/neuland/calibration
-                        ${R3BROOT_SOURCE_DIR}/neuland/digitizing)
+set(INCLUDE_DIRECTORIES
+    ${INCLUDE_DIRECTORIES}
+    ${R3BROOT_SOURCE_DIR}/neuland/calibration
+    ${R3BROOT_SOURCE_DIR}/neuland/calibration/hitParameter
+    ${R3BROOT_SOURCE_DIR}/neuland/digitizing
+    )
 include_directories(${INCLUDE_DIRECTORIES})
 
 set(SRCS
@@ -24,7 +28,8 @@ set(SRCS
     R3BNeulandHitMon.cxx
     R3BNeulandDigitizer.cxx
     R3BDigitizingPaddleMock.h
-    R3BDigitizingChannelMock.h)
+    R3BDigitizingChannelMock.h
+    )
 
 set(HEADERS
     R3BDigitizingChannel.h
@@ -36,7 +41,8 @@ set(HEADERS
     R3BDigitizingTacQuila.h
     R3BDigitizingTamex.h
     R3BNeulandDigitizer.h
-    R3BNeulandHitMon.h)
+    R3BNeulandHitMon.h
+    )
 
 set(LINKDEF NeulandDigitizingLinkDef.h)
 set(LIBRARY_NAME R3BNeulandDigitizing)

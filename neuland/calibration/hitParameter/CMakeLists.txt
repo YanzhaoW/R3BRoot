@@ -11,47 +11,34 @@
 # or submit itself to any jurisdiction.                                      #
 ##############################################################################
 
-set(LIBRARY_NAME R3BNeulandCalibration)
-set(LINKDEF NeulandCalibrationLinkDef.h)
+set(PROJECT_NAME R3BNeulandHitParameter)
 
-#set(CMAKE_CXX_STANDARD 14)
+set(LIBRARY_NAME ${PROJECT_NAME})
+set(LINKDEF NeulandHitParameterLinkDef.h)
 
-add_subdirectory(hitParameter)
-
-set(DEPENDENCIES
-    R3BBase
-    R3BData
-    R3BTCal
-    R3BNeulandShared
-    R3BNeulandHitParameter
-    )
+# set(DEPENDENCIES R3BBase R3BData R3BTCal R3BNeulandShared)
+set(DEPENDENCIES R3BBase R3BData R3BNeulandShared)
 
 set(INCLUDE_DIRECTORIES
     ${INCLUDE_DIRECTORIES}
-    ${R3BROOT_SOURCE_DIR}/neuland/calibration
-    ${R3BROOT_SOURCE_DIR}/neuland/calibration/hitParameter
-    ${R3BROOT_SOURCE_DIR}/neuland/shared
-    ${R3BROOT_SOURCE_DIR}/r3bdata/losData
-    ${R3BROOT_SOURCE_DIR}/tcal
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    # ${R3BROOT_SOURCE_DIR}/neuland/calibration
+    # ${R3BROOT_SOURCE_DIR}/neuland/calibration/hitParameter
+    # ${R3BROOT_SOURCE_DIR}/neuland/shared
+    # ${R3BROOT_SOURCE_DIR}/r3bdata/losData ${R3BROOT_SOURCE_DIR}/tcal
     )
+
 include_directories(${INCLUDE_DIRECTORIES})
 
 set(SRCS
-    R3BNeulandMappedHist.cxx
-    R3BNeulandMapped2Cal.cxx
-    R3BNeulandMapped2CalPar.cxx
-    R3BNeulandTacquilaMapped2Cal.cxx
-    R3BNeulandTacquilaMapped2CalPar.cxx
-    R3BNeulandTacquilaMapped2QCalPar.cxx
-    R3BNeulandHitHist.cxx
-    # R3BNeulandCalTest.cxx
-    R3BNeulandParFact.cxx
-    R3BNeulandCal2Hit.cxx
-    R3BNeulandQCalPar.cxx
-    R3BNeulandQCalFiller.cxx
-    R3BNeulandProvideTStart.cxx
-    R3BNeulandMappingPar.cxx
+    R3BNeulandCosmicTracker.cxx
+    R3BNeulandHitCalibrationBar.cxx
+    R3BNeulandHitCalibrationEngine.cxx
+    R3BNeulandHitModulePar.cxx
+    R3BNeulandHitPar.cxx
+    LSQR.cxx
+    R3BNeulandTSyncer.cxx
     )
 change_file_extension(*.cxx *.h HEADERS "${SRCS}")
-
 generate_library()
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

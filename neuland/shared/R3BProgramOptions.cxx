@@ -1,8 +1,8 @@
 #include "R3BProgramOptions.h"
 
-namespace r3b
+namespace R3B
 {
-    bool ProgramOptions::Verify(int argc, const char** argv)
+    auto ProgramOptions::Verify(int argc, const char** argv) -> bool
     {
 
         try

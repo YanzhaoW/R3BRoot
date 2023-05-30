@@ -36,6 +36,8 @@ set(HEADERS
 
 generate_library()
 
+target_include_directories(R3BNeulandShared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 # find_package(Protobuf REQUIRED) protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS neuland.proto)
 # protobuf_generate_python(PROTO_PY neuland.proto) set(SRCS ${SRCS} ${PROTO_SRCS}) set(HEADERS
 # ${HEADERS} ${PROTO_HDRS}) Include directory such that protoc generated headers are found

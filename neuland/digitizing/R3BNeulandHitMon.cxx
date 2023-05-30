@@ -42,17 +42,18 @@ R3BNeulandHitMon::R3BNeulandHitMon(TString input, TString output, const Option_t
     }
 }
 
-InitStatus R3BNeulandHitMon::Init()
+auto R3BNeulandHitMon::Init() -> InitStatus
 {
     fHits.Init();
 
+    using R3B::root_owned;
     if (fIs3DTrackEnabled)
     {
         // XYZ -> ZXY (side view)
         const auto xbinN = 60;
         const auto ybinN = 50;
         const auto zbinN = 50;
-        fh3 = r3b::root_owned<TH3D>("hHits", "hHits", xbinN, 1400., 1700., ybinN, -125., 125., zbinN, -125., 125.);
+        fh3 = root_owned<TH3D>("hHits", "hHits", xbinN, 1400., 1700., ybinN, -125., 125., zbinN, -125., 125.);
         fh3->SetTitle("NeuLAND Hits");
         fh3->GetXaxis()->SetTitle("Z");
         fh3->GetYaxis()->SetTitle("X");
@@ -69,31 +70,31 @@ InitStatus R3BNeulandHitMon::Init()
     const auto posXYBinN = 300;
     const auto velocityBinN = 200;
 
-    hTime = r3b::root_owned<TH1D>("hTime", "Hit time", timeBinN, -1000., 1000.);
-    hTimeAdj = r3b::root_owned<TH1D>("hTimeAdj", "Hit Time adjusted for flight path", timeBinN, -1000., 1000.);
+    hTime = root_owned<TH1D>("hTime", "Hit time", timeBinN, -1000., 1000.);
+    hTimeAdj = root_owned<TH1D>("hTimeAdj", "Hit Time adjusted for flight path", timeBinN, -1000., 1000.);
 
-    hMult = r3b::root_owned<TH1I>("hMult", "Hit Multiplicity", maxHitNum, 0, maxHitNum);
+    hMult = root_owned<TH1I>("hMult", "Hit Multiplicity", maxHitNum, 0, maxHitNum);
 
-    hDepth = r3b::root_owned<TH1D>("hDepth", "Maxial penetration depth", zDepBinN, 1400., 1700.);
-    hDepthVSForemostEnergy = r3b::root_owned<TH2D>(
+    hDepth = root_owned<TH1D>("hDepth", "Maxial penetration depth", zDepBinN, 1400., 1700.);
+    hDepthVSForemostEnergy = root_owned<TH2D>(
         "hDepthVSFrontEnergy", "Depth vs Foremost Energy", zDepBinN, 1400., 1700., energyBinN, 0., 100.);
-    hDepthVSSternmostEnergy = r3b::root_owned<TH2D>(
+    hDepthVSSternmostEnergy = root_owned<TH2D>(
         "hDepthVSSternmostEnergy", "Depth vs Sternmost Energy", zDepBinN, 1400., 1700., energyBinN, 0, 100.);
     hDepthVSEtot =
-        r3b::root_owned<TH2D>("hDepthVSEtot", "Depth vs Total Energy", zDepBinN, 1400., 1700., totenergyBinN, 0, 1000.);
-    hForemostEnergy = r3b::root_owned<TH1D>("hForemostEnergy", "Foremost energy deposition", energyBinN, 0, 100.);
-    hSternmostEnergy = r3b::root_owned<TH1D>("hSternmostEnergy", "Sternmost energy deposition", energyBinN, 0, 100.);
-    hEtot = r3b::root_owned<TH1D>("hEtot", "Total Energy", totenergyBinN, 0, 10000.);
-    hdeltaEE = r3b::root_owned<TH2D>(
-        "hdeltaEE", "Energy in Foremost Plane vs Etot", energyBinN, 0, 2000., energyBinN, 0, 250.);
-    hPosVSEnergy = r3b::root_owned<TH2D>(
+        root_owned<TH2D>("hDepthVSEtot", "Depth vs Total Energy", zDepBinN, 1400., 1700., totenergyBinN, 0, 1000.);
+    hForemostEnergy = root_owned<TH1D>("hForemostEnergy", "Foremost energy deposition", energyBinN, 0, 100.);
+    hSternmostEnergy = root_owned<TH1D>("hSternmostEnergy", "Sternmost energy deposition", energyBinN, 0, 100.);
+    hEtot = root_owned<TH1D>("hEtot", "Total Energy", totenergyBinN, 0, 10000.);
+    hdeltaEE =
+        root_owned<TH2D>("hdeltaEE", "Energy in Foremost Plane vs Etot", energyBinN, 0, 2000., energyBinN, 0, 250.);
+    hPosVSEnergy = root_owned<TH2D>(
         "hPosVSEnergy", "Position vs Energy deposition", zDepBinN, 1400., 1700., totenergyBinN, 0, 1000.);
-    hBeta = r3b::root_owned<TH1D>("hBeta", "Velocity", velocityBinN, 0., 1.);
-    hE = r3b::root_owned<TH1D>("hE", "Hit Energy", energyBinN, 0., 100.);
-    hX = r3b::root_owned<TH1D>("hX", "Hit X", posXYBinN, -150., 150.);
-    hY = r3b::root_owned<TH1D>("hY", "Hit Y", posXYBinN, -150., 150.);
-    hT = r3b::root_owned<TH1D>("hT", "Hit Delta T", timeBinN, -15., -15.);
-    hTNeigh = r3b::root_owned<TH1D>("hTNeigh", "Hit Neigh Delta T", timeBinN, -15., -15.);
+    hBeta = root_owned<TH1D>("hBeta", "Velocity", velocityBinN, 0., 1.);
+    hE = root_owned<TH1D>("hE", "Hit Energy", energyBinN, 0., 100.);
+    hX = root_owned<TH1D>("hX", "Hit X", posXYBinN, -150., 150.);
+    hY = root_owned<TH1D>("hY", "Hit Y", posXYBinN, -150., 150.);
+    hT = root_owned<TH1D>("hT", "Hit Delta T", timeBinN, -15., -15.);
+    hTNeigh = root_owned<TH1D>("hTNeigh", "Hit Neigh Delta T", timeBinN, -15., -15.);
 
     return kSUCCESS;
 }

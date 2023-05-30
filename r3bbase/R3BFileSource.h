@@ -20,6 +20,7 @@
 #define R3BFileSource_H 1
 
 #include "FairSource.h"
+#include "R3BShared.h"
 #include "TChain.h"
 #include "TF1.h"
 #include "TFile.h"
@@ -39,11 +40,16 @@ class R3BEventHeader;
 class R3BFileSource : public FairSource
 {
   public:
-    R3BFileSource(TFile* f, const char* Title = "InputRootFile", UInt_t identifier = 0);
-    R3BFileSource(const TString* RootFileName, const char* Title = "InputRootFile", UInt_t identifier = 0);
-    R3BFileSource(const TString RootFileName, const char* Title = "InputRootFile", UInt_t identifier = 0);
+    R3BFileSource();
+    explicit R3BFileSource(std::string file, std::string title = "InputRootFile");
+    // explicit R3BFileSource(std::string file);
+    R3BFileSource(std::vector<std::string> fileNames, std::string title);
+    explicit R3BFileSource(std::vector<std::string> fileNames);
+    // R3BFileSource(TFile* f, const char* Title = "InputRootFile", UInt_t identifier = 0);
+    // R3BFileSource(const TString* RootFileName, const char* Title = "InputRootFile", UInt_t identifier = 0);
+    // R3BFileSource(const TString RootFileName, const char* Title = "InputRootFile", UInt_t identifier = 0);
 
-    ~R3BFileSource() override;
+    ~R3BFileSource() override = default;
 
     /**
      * static instance
@@ -71,22 +77,22 @@ class R3BFileSource : public FairSource
     void ReadBranchEvent(const char* BrName, Int_t Entry) override;
     void FillEventHeader(FairEventHeader* feh) override;
 
-    const TFile* GetRootFile() { return fRootFile; }
+    auto GetRootFiles() const -> const std::vector<R3B::unique_rootfile>& { return fRootFiles; }
+    [[deprecated("Use GetRootFiles instead!")]] const TFile* GetRootFile() { return fRootFile; }
     /** Add a friend file (input) by name)*/
     void AddFriend(TString FileName);
     /**Add ROOT file to input, the file will be chained to already added files*/
-    void AddFile(TString FileName);
+    void AddFile(std::string fileName);
     void AddFriendsToChain();
     void PrintFriendList();
-    Bool_t CompareBranchList(TFile* fileHandle, TString inputLevel);
     void CheckFriendChains();
     void CreateNewFriendChain(TString inputFile, TString inputLevel);
     TTree* GetInTree() { return fInChain->GetTree(); }
     TChain* GetInChain() { return fInChain; }
     TFile* GetInFile() { return fRootFile; }
-    void CloseInFile()
+    [[deprecated("Root files are closed automatically")]] void CloseInFile()
     {
-        if (fRootFile)
+        if (fRootFile != nullptr)
         {
             fRootFile->Close();
         }
@@ -94,8 +100,8 @@ class R3BFileSource : public FairSource
     /**Set the input tree when running on PROOF worker*/
     void SetInTree(TTree* tempTree);
     TObjArray* GetListOfFolders() { return fListFolder; }
-    TFolder* GetBranchDescriptionFolder() { return fFolderIn; }
-    UInt_t GetEntries() { return fNoOfEntries; }
+    TFolder* GetBranchDescriptionFolder() { return nullptr; }
+    UInt_t GetEntries() const { return fNoOfEntries; }
 
     void SetInputFile(TString name);
 
@@ -137,94 +143,99 @@ class R3BFileSource : public FairSource
     // static pointer to this class
     static TMCThreadLocal R3BFileSource* fSourceInstance;
     /** Title of input source, could be input, background or signal*/
-    TString fInputTitle;
+    std::string fInputTitle;
     /**ROOT file*/
-    TFile* fRootFile;
+    TFile* fRootFile = nullptr;
+    std::string fRootFileName;
+    std::vector<R3B::unique_rootfile> fRootFiles;
     /** Current Entry number */
-    Int_t fCurrentEntryNr; //!
+    Int_t fCurrentEntryNr = 0; //!
     /** List of all files added with AddFriend */
     std::list<TString> fFriendFileList;                               //!
-    std::list<TString> fInputChainList;                               //!
+    std::vector<std::string> fInputChainList;                         //!
     std::map<TString, TChain*> fFriendTypeList;                       //!
-    std::map<TString, std::list<TString>*> fCheckInputBranches;       //!
-    std::list<TString> fInputLevel;                                   //!
+    std::map<TString, std::vector<std::string>> fCheckInputBranches;  //!
+    std::vector<std::string> fInputLevel;                             //!
     std::map<TString, std::multimap<TString, TArrayI>> fRunIdInfoAll; //!
     /**Input Chain */
-    TChain* fInChain;
+    TChain* fInChain = nullptr;
     /**Input Tree */
-    TTree* fInTree;
+    TTree* fInTree = nullptr;
     /** list of folders from all input (and friends) files*/
-    TObjArray* fListFolder; //!
+    TObjArray* fListFolder = nullptr; //!
     /** RuntimeDb*/
-    FairRuntimeDb* fRtdb;
+    FairRuntimeDb* fRtdb = nullptr;
     /**folder structure of output*/
-    TFolder* fFolderOut;
-    /**folder structure of input*/
-    TFolder* fFolderIn;
+    TFolder* fFolderOut = nullptr;
     /***/
-    UInt_t fSourceIdentifier;
+    unsigned int fSourceIdentifier = 0;
     /**No of Entries in this source*/
-    UInt_t fNoOfEntries;
+    unsigned int fNoOfEntries = 0;
     /**Initialization flag, true if initialized*/
-    Bool_t IsInitialized;
+    Bool_t IsInitialized = false;
 
     /** MC Event header */
-    FairMCEventHeader* fMCHeader; //!
+    FairMCEventHeader* fMCHeader = nullptr; //!
 
     /**Event Header*/
-    R3BEventHeader* fEvtHeader; //!
+    R3BEventHeader* fEvtHeader = nullptr; //!
 
     /**File Header*/
-    FairFileHeader* fFileHeader; //!
+    FairFileHeader* fFileHeader = nullptr; //!
 
     /** This is true if the event time used, came from simulation*/
-    Bool_t fEventTimeInMCHeader; //!
+    Bool_t fEventTimeInMCHeader = true; //!
     /**This flag is true if the event header was created in this session
      * otherwise it is false which means the header was created in a previous data
      * level and used here (e.g. in the digi)
      */
-    Bool_t fEvtHeaderIsNew; //!
+    Bool_t fEvtHeaderIsNew = false; //!
 
     /** for internal use, to return the same event time for the same entry*/
-    UInt_t fCurrentEntryNo; //!
+    UInt_t fCurrentEntryNo = 0; //!
     /** for internal use, to return the same event time for the same entry*/
-    UInt_t fTimeforEntryNo; //!
+    UInt_t fTimeforEntryNo = -1; //!
 
     /** min time for one event (ns) */
-    Double_t fEventTimeMin; //!
+    Double_t fEventTimeMin = 0; //!
     /** max time for one Event (ns) */
-    Double_t fEventTimeMax; //!
+    Double_t fEventTimeMax = 0; //!
     /** Time of event since th start (ns) */
-    Double_t fEventTime; //!
+    Double_t fEventTime = 0; //!
     /** Time of particles in beam (ns) */
-    Double_t fBeamTime; //!
+    Double_t fBeamTime = 0; //!
     /** Time without particles in beam (gap) (ns) */
-    Double_t fGapTime; //!
+    Double_t fGapTime = -1; //!
     /** EventMean time used (P(t)=1/fEventMeanTime*Exp(-t/fEventMeanTime) */
-    Double_t fEventMeanTime; //!
+    Double_t fEventMeanTime = 0; //!
     /** used to generate random numbers for event time; */
-    TF1* fTimeProb; //!
+    TF1* fTimeProb = nullptr; //!
     /** True if the file layout should be checked when adding files to a chain.
      *  Default value is true.
      */
-    Bool_t fCheckFileLayout; //!
+    Bool_t fCheckFileLayout = true; //!
 
     /** GetRunid method to obtain the runid as function of timestamps */
     Int_t GetRunid(uint64_t ts);
 
     /** input file with runids */
-    std::ifstream fInputFile;
+    std::ifstream fInputTxTFile;
     TString fInputFileName;
 
-    UInt_t fExpid;
+    UInt_t fExpid = 0;
     std::vector<UInt_t> fRunid;
     std::vector<uint64_t> fTimestamp;
-    uint64_t prevts, nextts;
+    uint64_t prevts = 0;
+    uint64_t nextts = 0;
 
     R3BFileSource(const R3BFileSource&);
     R3BFileSource operator=(const R3BFileSource&);
+    void RegisterBranchList(TFile* rootFile);
+    void InChainInit();
+    void TextFileInit();
+    Bool_t CompareBranchList(TFile* fileHandle, TString inputLevel);
 
-    ClassDefOverride(R3BFileSource, 0)
+    ClassDefOverride(R3BFileSource, 0) // NOLINT
 };
 
 #endif /* R3BFileSource_H */

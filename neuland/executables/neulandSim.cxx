@@ -17,14 +17,14 @@
 #include <iostream>
 #include <string>
 
-int main(int argc, const char** argv)
+auto main(int argc, const char** argv) -> int
 {
     auto timer = TStopwatch{};
     auto const PID = 2112;
     auto const defaultEventNum = 10;
     timer.Start();
 
-    auto programOptions = r3b::ProgramOptions("options for neuland simulation");
+    auto programOptions = R3B::ProgramOptions("options for neuland simulation");
 
     auto help = programOptions.Create_Option<bool>("help,h", "help message", false);
     auto eventNum = programOptions.Create_Option<int>("eventNum", "set total event number", defaultEventNum);
