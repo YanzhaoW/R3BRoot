@@ -1,0 +1,40 @@
+general:
+  threads: 2
+  log-level: 'error'
+  inputfile:
+    para: 'para.root'
+    digi: 'digi.root'
+    simu: 'simu.root'
+  outputfile:
+    para: 'para.root'
+    digi: 'digi.root'
+    simu: 'simu.root'
+  simulation:
+    material-file: 'media_r3b.geo'
+    simu-engine: 'TGeant4'
+    store-trajectory: on
+    event:
+      number: 200
+      print: 10
+    particle-gun:
+      particle-name: 'neutron'
+      multiplicity: 2
+      position: [0., 0., 0.]
+      theta: [0., 3.]
+      phi: [0., 360.]
+      energy: [1., 1.]
+    
+cave:
+  simulation:
+    status: on
+    geo-file: 'r3b_cave.geo'
+
+neuland:
+  simulation:
+    status: on
+    position: [0., 0., 1650.]
+    nDP: 13
+  analysis:
+    digitizer:
+      paddle: 'mock'
+      channel: 'tacquila'

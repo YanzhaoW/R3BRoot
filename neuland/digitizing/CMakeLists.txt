@@ -43,3 +43,4 @@ set(LIBRARY_NAME R3BNeulandDigitizing)
 set(DEPENDENCIES R3BNeulandShared R3BData R3BNeulandCalibration)
 
 generate_library()
+target_include_directories(R3BNeulandDigitizing PUBLIC .)

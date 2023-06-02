@@ -52,3 +52,4 @@ set(SRCS
   change_file_extension(*.cxx *.h HEADERS "${SRCS}")
   
 generate_library()
+target_include_directories(R3BNeulandCalibration PUBLIC .)

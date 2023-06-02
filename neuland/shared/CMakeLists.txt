@@ -14,7 +14,10 @@
 set(LIBRARY_NAME R3BNeulandShared)
 set(LINKDEF NeulandSharedLinkDef.h)
 
-set(DEPENDENCIES R3BData R3BBase ParBase Boost::program_options)
+add_subdirectory(cppreflct)
+add_subdirectory(ymlConfig)
+
+set(DEPENDENCIES R3BData R3BBase ParBase Boost::program_options R3BYMLConfig)
 
 include_directories(${INCLUDE_DIRECTORIES})
 
@@ -32,9 +35,11 @@ set(HEADERS
     R3BNeulandGeoPar.h
     R3BNeulandContFact.h
     R3BNeulandVisualizer.h
-    R3BNeulandCommon.h)
+    R3BNeulandCommon.h
+    )
 
 generate_library()
+target_include_directories(R3BNeulandShared PUBLIC .)
 
 # find_package(Protobuf REQUIRED) protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS neuland.proto)
 # protobuf_generate_python(PROTO_PY neuland.proto) set(SRCS ${SRCS} ${PROTO_SRCS}) set(HEADERS
