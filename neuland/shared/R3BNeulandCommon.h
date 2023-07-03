@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <limits>
+#include <string>
 #include <vector>
 
 namespace Neuland
@@ -90,6 +91,20 @@ namespace Neuland
 
     constexpr auto SaturationCoefficient = 1.75e-3; // 1 / ns
 
+    template <typename String>
+    inline auto StringsConcat(const std::vector<String>& list, std::string_view delimeter = ".")
+    {
+        auto chain = std::string{};
+        for (auto iter = list.begin(); iter != list.end(); ++iter)
+        {
+            if (iter != list.begin())
+            {
+                chain += std::string{ delimeter };
+            }
+            chain += std::string{ *iter };
+        }
+        return chain;
+    }
 } // namespace Neuland
 
 #endif

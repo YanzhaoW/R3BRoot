@@ -1,32 +1,46 @@
 general:
   threads: 1
+  multi-process:
+    status: on
+    suffix-len: 3
+    max: 2
   log-level: 'error'
   inputfile:
-    para: 'para.root'
-    ana: 'simu.root'
+    para: 'para(.+)\.root'
+    ana: 'simu(.+)\.root'
     simu: ''
     online: ''
   outputfile:
     para: 'para.root'
-    ana: 'digi.root'
+    ana: 'digi%1%.root'
     simu: 'simu.root'
     online: ''
-  analysis:
-    event: [0, 0]
-  simulation:
-    material-file: 'media_r3b.geo'
-    simu-engine: 'TGeant4'
-    store-trajectory: off
-    event:
-      number: 10
-      print: 2
-    particle-gun:
-      particle-name: 'neutron'
-      multiplicity: 1
-      position: [0., 0., 0.]
-      theta: [0., 3.]
-      phi: [0., 360.]
-      energy: [1., 1.]
+
+analysis:
+  fileIO:
+    input:
+    in-par:
+    output:
+  event: [0, 0]
+
+simulation:
+  fileIO:
+    input:
+    in-par:
+    output:
+  material-file: 'media_r3b.geo'
+  simu-engine: 'TGeant4'
+  store-trajectory: off
+  event:
+    number: 10
+    print: 2
+  particle-gun:
+    particle-name: 'neutron'
+    multiplicity: [1, 2, 3]
+    position: [0., 0., 0.]
+    theta: [0., 3.]
+    phi: [0., 360.]
+    energy: [1., 1.]
     
 cave:
   simulation:

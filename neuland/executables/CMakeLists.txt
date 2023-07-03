@@ -3,6 +3,7 @@ set(DEPENDENCIES
     R3BNeulandShared
     R3BNeulandSimulation
     R3BNeulandDigitizing
+    R3BMultiProc
     R3BPassive
     R3BData
     R3BBase
@@ -19,6 +20,6 @@ set(INCLUDE_DIRECTORIES
 message(STATUS "include dir: ${Geant4_INCLUDE_DIRS}")
 include_directories(${INCLUDE_DIRECTORIES})
 set(SRCS neulandRun.cxx R3BYamlDetectors.cxx R3BNeulandSimulator.cxx R3BNeulandRunner.cxx
-    R3BNeulandAnalyser.cxx R3BYamlTasks.cxx)
+    R3BNeulandAnalyser.cxx R3BYamlTasks.cxx R3BIOFiles.cxx)
 
 generate_executable()

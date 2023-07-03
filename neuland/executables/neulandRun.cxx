@@ -16,6 +16,7 @@
 #include <FairTask.h>
 #include <G4RunManager.hh>
 #include <G4UserEventAction.hh>
+#include <R3BIOFiles.h>
 #include <R3BProgramOptions.h>
 #include <TG4EventAction.h>
 #include <boost/exception/diagnostic_information.hpp>
@@ -29,7 +30,7 @@ namespace fs = std::filesystem;
 
 void RunOnline(const R3B::yml::Manager& ymlMan);
 void RunAnalysis(const R3B::yml::Manager& ymlMan);
-void RunSimulation(const R3B::yml::Manager& ymlMan);
+void RunSimulation(const R3B::yml::Manager& ymlMan, std::string suffix);
 
 enum class Mode
 {
@@ -72,29 +73,69 @@ int main(int argc, const char** argv) // NOLINT
     auto ymlMan = R3B::yml::Manager();
     ymlMan.AddFile(source_directory / "config/default.yml");
     ymlMan.AddFile(ymlFile->value());
+    R3B::yml::DNode<R3B::yml::General> general = { "general" };
+    ymlMan.Parse(general);
 
-    switch (ModeMap.at(mode->value()))
+    auto ioFiles = R3B::yml::R3BIOManager{};
+    ioFiles.SetInputParRegex(general().inputfile().para());
+    ioFiles.SetInputRootRegex(general().inputfile().ana());
+    ioFiles.SetOutputForamt(general().outputfile().ana());
+    ioFiles.GetFiles();
+
+    auto multiProcess = R3B::yml::MultiProc();
+    multiProcess.SetMaxNTread(general().multi_process().max());
+
+    auto* indexMan = R3B::yml::GetGlobalIndexManager();
+    indexMan->Create_packs();
+    indexMan->Set_suffix_len(general().multi_process().suffix_len());
+    const auto& packs = indexMan->Get_packs();
+
+    // for (const auto& pack : packs)
+    // {
+    //     auto const runSim = [&, pack]()
+    //     {
+    //         R3B::yml::SetGlobalIndices(pack);
+    //         auto simulator = R3B::Neuland::Simulator{};
+    //         auto suffix = indexMan->GetSuffix(pack);
+    //         simulator.SetOutput_suffix(std::move(suffix));
+    //         simulator.InitConfig(ymlMan);
+
+    //         simulator.AddModule(CreateDetWithYaml<R3BCave>(ymlMan));
+    //         simulator.AddModule(CreateDetWithYaml<R3BNeuland>(ymlMan));
+
+    //         simulator.Run();
+    //     };
+
+    //     // switch (ModeMap.at(mode->value()))
+    //     // {
+    //     //     case Mode::sim:
+    //     //         multiProcess.AddProcess(runSim);
+    //     //         break;
+    //     //     case Mode::ana:
+    //     //         RunAnalysis(ymlMan);
+    //     //         break;
+    //     //     case Mode::online:
+    //     //         RunOnline(ymlMan);
+    //     //         break;
+    //     // }
+    // }
+
+    multiProcess.Run();
+    if (getpid() != multiProcess.GetMotherPID())
     {
-        case Mode::sim:
-            RunSimulation(ymlMan);
-            break;
-        case Mode::ana:
-            RunAnalysis(ymlMan);
-            break;
-        case Mode::online:
-            RunOnline(ymlMan);
-            break;
+        return 0;
     }
 
     timer.Stop();
-    std::cout << "Macro finished successfully." << std::endl;
+    std::cout << "Executable finished successfully." << std::endl;
     std::cout << "Real time: " << timer.RealTime() << "s, CPU time: " << timer.CpuTime() << "s" << std::endl;
     return 0;
 }
 
-void RunSimulation(const R3B::yml::Manager& ymlMan)
+void RunSimulation(const R3B::yml::Manager& ymlMan, std::string suffix)
 {
     auto simulator = R3B::Neuland::Simulator{};
+    simulator.SetOutput_suffix(std::move(suffix));
     simulator.InitConfig(ymlMan);
 
     simulator.AddModule(CreateDetWithYaml<R3BCave>(ymlMan));

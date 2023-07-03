@@ -23,10 +23,21 @@ namespace R3B::Neuland
         gSystem->Setenv("CONFIG_DIR", geantConfigDir.c_str());
     }
 
-    // TODO: in base class
     void Runner::InitConfig(const R3B::yml::Manager& manager)
     {
         manager.Parse(general_);
         SetupEnv();
+    }
+
+    auto Runner::GetOutputStr(const std::string& basename) -> std::string
+    {
+        if (auto const pos = basename.find(".root"); pos != std::string::npos)
+        {
+            auto temp = basename;
+            temp.insert(pos, output_suffix_);
+            temp.insert(0, output_prefix_);
+            return temp;
+        }
+        throw std::runtime_error("Output file name must end with \".root\".");
     }
 } // namespace R3B::Neuland

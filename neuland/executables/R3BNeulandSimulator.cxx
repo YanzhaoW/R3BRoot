@@ -49,7 +49,7 @@ namespace R3B::Neuland
         const auto& general = GetGeneralConfig();
         const auto& config = general().outputfile();
         auto parFileIO = std::make_unique<FairParRootFileIo>(true);
-        parFileIO->open(config.para().c_str());
+        parFileIO->open(GetOutputStr(config.para()).c_str());
         auto* rtdb = run_->GetRuntimeDb();
         rtdb->setOutput(parFileIO.release());
         rtdb->saveOutput();
@@ -89,7 +89,7 @@ namespace R3B::Neuland
         run->SetStoreTraj(simuConfig.store_trajectory());
         run->SetMaterials(simuConfig.material_file().c_str());
 
-        run->SetSink(std::make_unique<FairRootFileSink>(ymlConfig.inputfile().simu().c_str()));
+        run->SetSink(std::make_unique<FairRootFileSink>(GetOutputStr(ymlConfig.outputfile().simu()).c_str()));
         auto fairField = std::make_unique<FairConstField>();
         run->SetField(fairField.release());
     }

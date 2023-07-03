@@ -4,7 +4,6 @@ general:
   inputfile:
     para: 'para.root'
     digi: 'digi.root'
-    simu: 'simu.root'
   outputfile:
     para: 'para.root'
     digi: 'digi.root'

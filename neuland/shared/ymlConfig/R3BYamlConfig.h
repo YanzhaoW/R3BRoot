@@ -1,6 +1,7 @@
 #pragma once
 #include "R3BYamlExceptions.h"
 #include <R3BCppReflct.h>
+#include <R3BYamlConfigNode.h>
 #include <filesystem>
 #include <iostream>
 #include <map>
@@ -19,67 +20,8 @@ namespace R3B::yml
 
     template <typename Type>
     constexpr bool is_basic_types_v =
-        is_among_types_v<Type, std::string, int, bool> || std::is_floating_point_v<Type> || is_vector<Type>::value;
-
-    template <typename DType>
-    class DNode
-    {
-      public:
-        DNode(std::string_view label) // NOLINT
-            : label_{ label }
-        {
-        }
-        [[nodiscard]] auto label() const -> const std::string& { return label_; }
-        [[nodiscard]] auto mu_value() -> auto&
-        {
-            if (!data_.has_value())
-            {
-                data_.emplace();
-            }
-
-            return data_.value();
-        }
-
-        auto operator()() const -> const DType&
-        {
-
-            if (!data_.has_value())
-            {
-                throw No_definition{ label_, label_chain_ };
-            }
-
-            return data_.value();
-        }
-
-        void reset() { data_.reset(); }
-
-        template <typename InputType>
-        void set(InputType&& value)
-        {
-            static_assert(!std::is_const_v<std::remove_reference_t<decltype(data_)>>, "can not set a const variable!");
-
-            if (value.has_value())
-            {
-                data_ = std::forward<InputType>(value);
-                has_set = true;
-            }
-            else
-            {
-                if (!has_set)
-                {
-                    data_.reset();
-                }
-            }
-        };
-
-        void set_labelChain(const std::vector<std::string_view>& chain) { label_chain_ = chain; }
-
-      private:
-        bool has_set = false;
-        const std::string label_;
-        std::vector<std::string_view> label_chain_;
-        std::optional<DType> data_ = {};
-    };
+        is_among_types_v<Type, std::string, int, bool> || std::is_floating_point_v<Type> || is_vector<Type>::value ||
+        is_MPValue<Type>::value;
 
     class NodeVisitor
     {
@@ -89,12 +31,12 @@ namespace R3B::yml
         {
             static_assert(!std::is_const_v<std::remove_reference_t<decltype(member)>>,
                           "visitor can not visit a data structure with constant member variables!");
-            using raw_type = remove_cvref<decltype(member())>;
+            using raw_type = typename remove_cvref<decltype(member)>::type;
             const auto& label = member.label();
             if constexpr (is_basic_types_v<raw_type>)
             {
-                member.set(GetValueFromNode<raw_type>(label, yaml_node_));
                 member.set_labelChain(label_chain_);
+                member.set(GetValueFromNode<raw_type>(label, yaml_node_));
             }
             else
             {
@@ -102,16 +44,22 @@ namespace R3B::yml
                 new_visitor.SetLabel_list(label_chain_);
                 new_visitor.Append_label(label);
                 Visit_members(member.mu_value(), new_visitor);
-                // Visit_members(member.mu_value(), new_visitor);
             }
         }
 
         template <typename RawType>
-        auto GetValueFromNode(const std::string& label, const YAML::Node& node)
+        auto GetValueFromNode(const std::string& label, const YAML::Node& node) -> std::optional<RawType>
         {
             try
             {
-                return std::optional<RawType>{ node[label].template as<RawType>() };
+                if constexpr (is_MPValue<RawType>::value)
+                {
+                    return GetValueFromMPNode<RawType>(label, node);
+                }
+                else
+                {
+                    return std::optional<RawType>{ node[label].template as<RawType>() };
+                }
             }
             catch (const YAML::InvalidNode& ex)
             {
@@ -119,8 +67,17 @@ namespace R3B::yml
             }
             catch (const YAML::BadConversion& ex)
             {
-                throw Bad_conversion{ label, label_chain_ };
+                auto chains = label_chain_;
+                chains.push_back(label);
+                throw Bad_conversion{ chains };
             }
+        }
+
+        template <typename MPType>
+        inline auto GetValueFromMPNode(const std::string& label, const YAML::Node& node) -> std::optional<MPType>
+        {
+            using Type = typename MPType::type;
+            return std::optional<MPType>{ node[label].template as<std::vector<Type>>() };
         }
 
         explicit NodeVisitor(const YAML::Node& node)
@@ -183,12 +140,15 @@ namespace R3B::yml
             using namespace std::string_literals;
             try
             {
-                root_nodes_.push_back(YAML::LoadFile(filename.string()));
-                yamlFiles_.emplace_back(filename);
+                if (!filename.empty())
+                {
+                    root_nodes_.push_back(YAML::LoadFile(filename.string()));
+                    yamlFiles_.emplace_back(filename);
+                }
             }
             catch (...)
             {
-                auto msg = "Following YAML config path " + filename.string() + " cannot be read by yaml-cpp!"s;
+                auto msg = "Following YAML config path \"" + filename.string() + "\" cannot be read by yaml-cpp!"s;
                 throw std::runtime_error(msg);
             }
         }

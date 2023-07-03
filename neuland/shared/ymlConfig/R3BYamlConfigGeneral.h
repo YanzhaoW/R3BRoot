@@ -6,11 +6,17 @@
 namespace R3B::yml
 {
 
-    struct FileIO
+    struct OutputFile
     {
         DNode<std::string> para = { "para" };
         DNode<std::string> ana = { "ana" };
         DNode<std::string> simu = { "simu" };
+        DNode<std::string> online = { "simu" };
+    };
+    struct InputFile
+    {
+        DNode<std::string> para = { "para" };
+        DNode<std::string> ana = { "ana" };
         DNode<std::string> online = { "simu" };
     };
 
@@ -29,7 +35,7 @@ namespace R3B::yml
         struct Particle_gun
         {
             DNode<std::string> particle_name = { "particle-name" };
-            DNode<int> multiplicity = { "multiplicity" };
+            DNode<MPValue<int>> multiplicity = { "multiplicity" };
             DNode<std::vector<double>> position = { "position" };
             DNode<std::vector<double>> theta = { "theta" };
             DNode<std::vector<double>> phi = { "phi" };
@@ -43,13 +49,21 @@ namespace R3B::yml
         DNode<std::vector<int>> event = { "event" };
     };
 
+    struct Multi_Process
+    {
+        DNode<bool> status = { "status" };
+        DNode<int> max = { "max" };
+        DNode<int> suffix_len = { "suffix-len" };
+    };
+
     struct General
     {
         DNode<int> threads = { "threads" };
+        DNode<Multi_Process> multi_process = { "multi-process" };
         DNode<std::string> source_directory = { "source-directory" };
         DNode<std::string> log_level = { "log-level" };
-        DNode<FileIO> inputfile = { "inputfile" };
-        DNode<FileIO> outputfile = { "outputfile" };
+        DNode<InputFile> inputfile = { "inputfile" };
+        DNode<OutputFile> outputfile = { "outputfile" };
         DNode<Simulation> simulation = { "simulation" };
         DNode<Analysis> analysis = { "analysis" };
     };

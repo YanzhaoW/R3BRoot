@@ -1,5 +1,6 @@
 #pragma once
 
+#include <R3BNeulandCommon.h>
 #include <exception>
 #include <iostream>
 #include <string>
@@ -7,6 +8,7 @@
 
 namespace R3B::yml
 {
+    using Neuland::StringsConcat;
     class GeneralException : public std::exception
     {
       public:
@@ -32,10 +34,10 @@ namespace R3B::yml
     class No_definition : public GeneralException
     {
       public:
-        explicit No_definition(const std::string& label, const std::vector<std::string_view>& list)
+        explicit No_definition(const std::vector<std::string_view>& list)
         {
             using namespace std::string_literals;
-            auto msg = "Requesting a value with the label \""s + GetLabel(label, list) +
+            auto msg = "Requesting a value with the label \""s + StringsConcat(list) +
                        "\" which is not defined in the yaml config file!"s;
             Set_msg(msg);
         }
@@ -44,10 +46,10 @@ namespace R3B::yml
     class Bad_conversion : public GeneralException
     {
       public:
-        explicit Bad_conversion(const std::string& label, const std::vector<std::string_view>& list)
+        explicit Bad_conversion(const std::vector<std::string_view>& list)
         {
             using namespace std::string_literals;
-            auto msg = "Conversion fails with the label \""s + GetLabel(label, list) +
+            auto msg = "Conversion fails with the label \""s + StringsConcat(list) +
                        "\". Please check whether the type is defined correctly!"s;
             Set_msg(msg);
         }

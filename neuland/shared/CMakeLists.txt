@@ -45,3 +45,4 @@ target_include_directories(R3BNeulandShared PUBLIC .)
 # protobuf_generate_python(PROTO_PY neuland.proto) set(SRCS ${SRCS} ${PROTO_SRCS}) set(HEADERS
 # ${HEADERS} ${PROTO_HDRS}) Include directory such that protoc generated headers are found
 # include_directories(${CMAKE_CURRENT_BINARY_DIR}) ${PROTOBUF_LIBRARY}
+add_subdirectory(multiProc)
