@@ -21,7 +21,6 @@ class R3BEventHeader : public FairEventHeader
 {
   public:
     R3BEventHeader();
-    virtual ~R3BEventHeader();
 
     void SetExpId(const Int_t expid) { fExpId = expid; }
     void SetEventno(const uint64_t eventno) { fEventno = eventno; }

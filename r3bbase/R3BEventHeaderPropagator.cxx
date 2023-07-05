@@ -49,7 +49,7 @@ InitStatus R3BEventHeaderPropagator::Init()
 
     frm->Register(fNameHeader, "EventHeader", fHeader, kTRUE);
 
-    fSource = R3BFileSource::Instance();
+    fSource = dynamic_cast<R3BFileSource*>(FairRootManager::Instance()->GetSource());
     R3BLOG_IF(fatal, !fSource, "R3BFileSource not found.");
 
     return kSUCCESS;

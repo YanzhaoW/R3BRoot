@@ -26,7 +26,7 @@ auto main(int argc, const char** argv) -> int
 
     auto programOptions = R3B::ProgramOptions("options for neuland exp data analysis");
     auto help = programOptions.Create_Option<bool>("help,h", "help message", false);
-    auto logLevel = programOptions.Create_Option<std::string>("logLevel,v", "set log level of fairlog", "error");
+    auto logLevel = programOptions.Create_Option<std::string>("logLevel,v", "set log level of fairlog", "debug3");
 
     if (!programOptions.Verify(argc, argv))
     {
@@ -43,8 +43,6 @@ auto main(int argc, const char** argv) -> int
     auto const fileID = 159;
 
     auto const fileNum = 10;
-
-    auto const runID = 999;
 
     auto const calParFolder = std::string{ "/lustre/r3b/202205_s509/NeuLAND_CalData" };
 
@@ -70,7 +68,6 @@ auto main(int argc, const char** argv) -> int
     auto sinkFile = R3B::make_rootfile(outputFileName.str().c_str());
     auto sink = std::make_unique<FairRootFileSink>(sinkFile.get());
 
-    source->SetRunId(runID);
     for (auto i = 0; i < fileNum; ++i)
     {
         source->AddFile((boost::format{ inputMapFilePattern } % (fileID + i)).str());
@@ -82,7 +79,6 @@ auto main(int argc, const char** argv) -> int
     auto EvntHeader = std::make_unique<R3BEventHeader>();
     run->SetEventHeader(EvntHeader.release());
     run->SetSource(source.release());
-    run->SetRunId(runID);
     run->SetSink(sink.release());
 
     auto inputPars = std::make_unique<TList>();
@@ -104,10 +100,10 @@ auto main(int argc, const char** argv) -> int
     rtdb->setFirstInput(parIn.release());
     rtdb->setOutput(parOut.release());
     rtdb->getContainer("LandTCalPar");
-    rtdb->addRun(runID);
+    // rtdb->addRun();
     rtdb->getContainer("neulandMappingPar");
-    rtdb->setInputVersion(runID, const_cast<char*>("neulandMappingPar"), 1, 1);
-    rtdb->setInputVersion(runID, const_cast<char*>("LandTCalPar"), 1, 1);
+    // rtdb->setInputVersion(runID, const_cast<char*>("neulandMappingPar"), 1, 1);
+    // rtdb->setInputVersion(runID, const_cast<char*>("LandTCalPar"), 1, 1);
 
     auto* neulandHitPar = dynamic_cast<R3BNeulandHitPar*>(rtdb->getContainer("NeulandHitPar"));
     neulandHitPar->SetNumberOfPlanes(nPlanes);

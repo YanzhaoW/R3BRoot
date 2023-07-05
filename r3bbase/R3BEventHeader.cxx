@@ -24,8 +24,6 @@ R3BEventHeader::R3BEventHeader()
 {
 }
 
-R3BEventHeader::~R3BEventHeader() {}
-
 void R3BEventHeader::Register(Bool_t Persistence) {}
 
 ClassImp(R3BEventHeader);
