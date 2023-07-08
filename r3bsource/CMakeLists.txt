@@ -221,7 +221,7 @@ Set(HEADERS ${STRUCT_HEADERS} ${HEADERS})
 
 set(LINKDEF SourceLinkDef.h)
 set(DEPENDENCIES
-    GeoBase ParBase MbsAPI Base FairTools
+    GeoBase ParBase Base FairTools
     R3BBase R3BData Core Geom GenVector
     Physics Matrix MathCore R3BPsp
     ${ucesb_LIBRARY_SHARED})

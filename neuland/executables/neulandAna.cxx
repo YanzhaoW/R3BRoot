@@ -8,6 +8,7 @@
 #include "R3BDigitizingPaddleNeuland.h"
 #include "R3BDigitizingTacQuila.h"
 #include "R3BDigitizingTamex.h"
+#include "R3BFileSource2.h"
 #include "R3BNeulandDigitizer.h"
 #include "R3BNeulandHitMon.h"
 #include "R3BProgramOptions.h"
@@ -82,7 +83,7 @@ auto main(int argc, const char** argv) -> int
     FairLogger::GetLogger()->SetLogScreenLevel(logLevel->value().c_str());
 
     auto run = std::make_unique<FairRunAna>();
-    auto filesource = std::make_unique<FairFileSource>(simuFileName->value().c_str());
+    auto filesource = std::make_unique<R3BFileSource2>(simuFileName->value().c_str());
     auto filesink = std::make_unique<FairRootFileSink>(digiFileName->value().c_str());
     run->SetSource(filesource.release());
     run->SetSink(filesink.release());

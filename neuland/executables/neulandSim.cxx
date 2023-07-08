@@ -35,7 +35,7 @@ auto main(int argc, const char** argv) -> int
         programOptions.Create_Option<std::string>("simuFile", "set the base filename of simulation ouput", "simu.root");
     auto paraFileName =
         programOptions.Create_Option<std::string>("paraFile", "set the base filename of parameter sink", "para.root");
-    auto logLevel = programOptions.Create_Option<std::string>("logLevel", "set log level of fairlog", "error");
+    auto logLevel = programOptions.Create_Option<std::string>("logLevel", "set log level of fairlog", "info");
 
     if (!programOptions.Verify(argc, argv))
     {
@@ -62,7 +62,7 @@ auto main(int argc, const char** argv) -> int
     run->SetName("TGeant4");
     run->SetStoreTraj(false);
     run->SetMaterials("media_r3b.geo");
-    run->SetSink(std::make_unique<FairRootFileSink>(simuFileName->value().c_str()));
+    run->SetSink(std::make_unique<FairRootFileSink>(simuFileName->value().c_str()).release());
     auto fairField = std::make_unique<FairConstField>();
     run->SetField(fairField.release());
 

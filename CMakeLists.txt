@@ -81,6 +81,7 @@ else()
 endif()
 
 # FairRoot_VERSION is eventually set by find_package, for now let's set it explicitly
+message(STATUS " fairrot path: ${FAIRROOTPATH}")
 execute_process(
   COMMAND ${FAIRROOTPATH}/bin/fairroot-config --version
   COMMAND sed "s/^v//"

@@ -58,12 +58,14 @@ set(DEPENDENCIES
     R3BPassive
     R3BData
     R3BBase
+    R3BTCal
     Gen
     )
 
 set(INCLUDE_DIRECTORIES
     ${INCLUDE_DIRECTORIES}
     ${R3BROOT_SOURCE_DIR}/passive
+    ${R3BROOT_SOURCE_DIR}/tcal
     )
 
 include_directories(${INCLUDE_DIRECTORIES} ${Boost_INCLUDE_DIRS})
