@@ -20,7 +20,9 @@
 #include <R3BNeulandPrimaryClusterFinder.h>
 #include <TObjString.h>
 #include <boost/program_options.hpp>
+#include <filesystem>
 
+namespace fs = std::filesystem;
 namespace Digitizing = R3B::Digitizing;
 using NeulandPaddle = Digitizing::Neuland::NeulandPaddle;
 using MockPaddle = Digitizing::Neuland::MockPaddle;
@@ -30,16 +32,20 @@ using MockChannel = Digitizing::Neuland::MockChannel;
 using Digitizing::UseChannel;
 using Digitizing::UsePaddle;
 
-// auto GetHitPar(const std::string& parName)
-// {
-//     return []() { Digitizing::Neuland::Tamex::Channel::GetHitPar("test"); };
-// }
+inline auto ConcatPath(std::string_view dir_str, std::string_view filepath_str) -> fs::path
+{
+    auto dir = fs::path{ dir_str };
+    auto filepath = fs::path{ filepath_str };
+    return (filepath.is_absolute()) ? filepath : dir / filepath;
+}
 
 auto main(int argc, const char** argv) -> int
 {
     auto timer = TStopwatch{};
     timer.Start();
 
+    // ===================================================================
+    // program options
     auto programOptions = R3B::ProgramOptions("options for neuland data analysis");
     auto help = programOptions.Create_Option<bool>("help,h", "help message", false);
     auto paddleName =
@@ -56,6 +62,10 @@ auto main(int argc, const char** argv) -> int
         "parOut", "set the filename of the parameter output", "trainPar.root");
     auto digiFileName =
         programOptions.Create_Option<std::string>("digiFile", "set the filename of digitization output", "digi.root");
+    auto inDir = programOptions.Create_Option<std::string>(
+        "inDir", "set the file path of input directory (containing input tree data and parameter)", ".");
+    auto outDir = programOptions.Create_Option<std::string>(
+        "outDir", "set the file path of output directory (containing output tree data and parameter)", ".");
     auto logLevel = programOptions.Create_Option<std::string>("logLevel,v", "set log level of fairlog", "error");
     auto eventNum = programOptions.Create_Option<int>("eventNum,n", "set total event number", 0);
     auto hitLevelPar =
@@ -71,6 +81,10 @@ auto main(int argc, const char** argv) -> int
         std::cout << programOptions.Get_DescRef() << std::endl;
         return 0;
     }
+
+    // ===================================================================
+    // variable definitions
+    const auto outputFilePath = ConcatPath(outDir->value(), digiFileName->value());
 
     auto const channelInit = [&]()
     {
@@ -118,21 +132,22 @@ auto main(int argc, const char** argv) -> int
     {
         filename_end = simuFileNames->value().find(';', filename_begin);
         auto filename = simuFileNames->value().substr(filename_begin, filename_end - filename_begin);
-        filesource->AddFile(filename);
+        auto filepath = ConcatPath(inDir->value(), filename);
+        filesource->AddFile(filepath);
     }
 
-    auto filesink = std::make_unique<FairRootFileSink>(digiFileName->value().c_str());
+    auto filesink = std::make_unique<FairRootFileSink>(outputFilePath.c_str());
     run->SetSource(filesource.release());
     run->SetSink(filesink.release());
 
     auto fileio = std::make_unique<FairParRootFileIo>();
-    fileio->open(paraFileName->value().c_str());
+    fileio->open((ConcatPath(inDir->value(), paraFileName->value())).c_str());
     run->GetRuntimeDb()->setFirstInput(fileio.release());
 
     if (const auto& filename = paraFileName2->value(); not filename.empty())
     {
         auto fileio2 = std::make_unique<FairParRootFileIo>();
-        fileio2->open(paraFileName2->value().c_str());
+        fileio2->open((ConcatPath(inDir->value(), paraFileName2->value())).c_str());
         run->GetRuntimeDb()->setSecondInput(fileio2.release());
     }
 
@@ -158,7 +173,7 @@ auto main(int argc, const char** argv) -> int
     // ===================================================================
     // parameter output
     auto parFileIO = std::make_unique<FairParRootFileIo>(true);
-    parFileIO->open(parOut->value().c_str());
+    parFileIO->open((ConcatPath(inDir->value(), parOut->value())).c_str());
     auto* rtdb = run->GetRuntimeDb();
     rtdb->setOutput(parFileIO.release());
     rtdb->saveOutput();
