@@ -30,17 +30,28 @@ namespace R3B
     class UcesbServerLauncher
     {
       public:
+        struct ResolveResult
+        {
+            std::string executable;
+            std::vector<std::string> options;
+            std::vector<std::string> lmds;
+            std::vector<std::string> others;
+        };
+
         explicit UcesbServerLauncher(ext_data_clnt* client)
             : client_{ client }
         {
         }
-        void Launch(std::string command_string);
-        void Setup(ext_data_struct_info& struct_info, size_t event_struct_size);
+        void Launch();
+        // void Setup(ext_data_struct_info& struct_info, size_t event_struct_size);
+        void SetLaunchCmd(const std::string& command_string);
         void Close();
 
       private:
         ext_data_clnt* client_ = nullptr;
         std::unique_ptr<bpv2::process> ucesb_server_;
+        ResolveResult launch_strings_{};
+        std::vector<std::string> launch_args;
         boost::asio::io_service ios_;
         boost::asio::readable_pipe server_pipe_{ ios_ };
     };
