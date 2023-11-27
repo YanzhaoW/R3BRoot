@@ -97,6 +97,7 @@ set(SRCS
     califa/R3BCalifaJulichReader.cxx
     tofd/R3BPtofReader.cxx
     neuland/R3BNeulandTamexReader.cxx
+    neuland/R3BNeulandTamexReader2.cxx
     neuland/R3BNeulandTacquilaReader.cxx
     stubes/R3BStrawtubesReader.cxx
     ams/R3BAmsReader.cxx
@@ -235,6 +236,7 @@ set(HEADERS
     califa/R3BCalifaJulichReader.h
     tofd/R3BPtofReader.h
     neuland/R3BNeulandTamexReader.h
+    neuland/R3BNeulandTamexReader2.h
     neuland/R3BNeulandTacquilaReader.h
     stubes/R3BStrawtubesReader.h
     ams/R3BAmsReader.h
@@ -293,4 +295,7 @@ add_library_with_dictionary(
     ${DIRS}
     DEPENDENCIES
     R3BData
-    Ucesb)
+    Ucesb
+    PRIVATE_DEPENDENCIES
+    Microsoft.GSL::GSL
+    range-v3::range-v3)
