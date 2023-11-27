@@ -46,6 +46,10 @@ if(NOT DEFINED ENV{SIMPATH})
     )
 endif(NOT DEFINED ENV{SIMPATH})
 
+# fairsoft lib path needed to be added for root dictionary detection:
+set(LD_LIBRARY_PATH ${SIMPATH}/lib ${LD_LIBRARY_PATH})
+set(GRAPHVIZ_EXTERNAL_LIBS FALSE)
+
 if(NOT DEFINED ENV{FAIRROOTPATH})
     message(
         FATAL_ERROR
@@ -92,6 +96,7 @@ if(NOT FairCMakeModules_FOUND)
     message(FATAL_ERROR "Could not find FairCMakeModules! ")
 endif()
 
+include(create_library_with_dictionary)
 include(FairFindPackage2)
 include(FairFormattedOutput)
 
@@ -511,6 +516,15 @@ r3b_generate_version_info()
 find_package(VMC QUIET)
 set(BASE_INCLUDE_DIRECTORIES ${BASE_INCLUDE_DIRECTORIES} ${VMC_INCLUDE_DIRS})
 set(ROOT_CINT_EXECUTABLE ${ROOT_rootcling_CMD})
+
+include(CTest)
+include(RootCTest)
+
+find_program(
+    ROOT_CINT_EXECUTABLE
+    NAMES rootcint
+    PATHS ${ROOT_BINDIR}
+    NO_DEFAULT_PATH)
 
 include(CTest)
 include(RootCTest)
