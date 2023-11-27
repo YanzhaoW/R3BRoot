@@ -29,11 +29,16 @@ runs:
         echo ""
         echo "path environment variable: $PATH\n"
         echo ""
+<<<<<<< HEAD
         cmake --preset ${{ matrix.preset }} . -C "$GITHUB_WORKSPACE/cmake/CI_CD/configure_options.cmake"
+=======
+        ./build.py -p -c --cmake-extra-args="-DBUILD_GEOMETRY=OFF;-C $GITHUB_WORKSPACE/cmake/CI_CD/configure_options.cmake"
+>>>>>>> 3a7c47f7 (Conan package manager, build.py and Neuland calibration rewrite)
       shell: bash
 
     - name: build ${{ matrix.repos }}
       if: inputs.build-needed == 'true'
       run: |
-        cmake --build ./build -- -j ${NUM_THREADS}
+        ./build.py -b -j ${NUM_THREADS} 
+        # ./build_thisr3broot.sh -b build -j ${NUM_THREADS}
       shell: bash

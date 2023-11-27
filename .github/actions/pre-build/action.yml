@@ -25,11 +25,19 @@ runs:
     - name: mount cvmfs
       run: |
         apt-get update
+<<<<<<< HEAD
         apt-get install --fix-missing -y sudo
         if [ "${{ matrix.os }}" == "debian10" ]; then
           sudo apt upgrade libc6
         fi
         sudo -H pip3 install -U conan
+=======
+        apt-get install --fix-missing -y ccache sudo
+<<<<<<< HEAD
+        conda install -y conda-forge::ninja
+=======
+>>>>>>> d4adb981 (Find ROOT using config mode and cmake targets)
+>>>>>>> 4b1b666c (neuland calibration process reformat and millepde)
         wget https://cernbox.cern.ch/remote.php/dav/public-files/RmnTeeOZpYjCJQb/masterkey.gsi.de.pub
         mv masterkey.gsi.de.pub /etc/cvmfs/keys
         cp .github/config/fairsoft.gsi.de.conf /etc/cvmfs/config.d

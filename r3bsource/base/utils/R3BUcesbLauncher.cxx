@@ -14,6 +14,7 @@
 #include "R3BUcesbLauncher.h"
 #include <R3BException.h>
 #include <R3BLogger.h>
+#include <R3BShared.h>
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <fmt/os.h>
@@ -24,16 +25,9 @@
 constexpr auto CHILD_CLOSE_WAITING_TIME = std::chrono::seconds(5);
 
 namespace fs = std::filesystem;
+namespace bp = boost::process;
 namespace
 {
-    struct ResolveResult
-    {
-        std::string executable;
-        std::vector<std::string> options;
-        std::vector<std::string> lmds;
-        std::vector<std::string> others;
-    };
-
     bool Check_exist(std::string_view exe)
     {
         auto exe_path = fs::path{ exe };
@@ -51,41 +45,15 @@ namespace
         }
     }
 
-    auto get_regex_filelist(std::string filename_regex) -> std::vector<std::string>
-    {
-        auto wildcard_path = fs::path{ filename_regex };
-        auto parent_folder = wildcard_path.parent_path();
-        if (not fs::exists(parent_folder))
-        {
-            R3BLOG(error, fmt::format("Cannot get the parent folder of the regex path {}", filename_regex));
-            return {};
-        }
-        // const auto regex_string = std::regex_replace(wildcard_path.filename().string(), std::regex{ "\\*" }, ".*");
-        const auto regex_string = wildcard_path.filename().string();
-        auto filelist = std::vector<std::string>{};
-        for (const auto& dir_entry : fs::directory_iterator(parent_folder))
-        {
-            if (std::regex_match(dir_entry.path().filename().string(), std::regex{ regex_string }))
-            {
-                filelist.emplace_back(fs::absolute(dir_entry.path()));
-            }
-        }
-        if (filelist.empty())
-        {
-            R3BLOG(error, fmt::format(R"(Cannot find any files with regex "{}")", regex_string));
-        }
-        return filelist;
-    }
-
-    void Append_lmds(std::vector<std::string>& lmds, std::string filename_regex)
+    void Append_lmds(std::vector<std::string>& lmds, std::string_view filename_regex)
     {
         // expand filenames on regex
-        Append_elements(lmds, get_regex_filelist(std::move(filename_regex)));
+        Append_elements(lmds, R3B::GetFilesFromRegex(filename_regex));
     }
 
-    auto parse_splits(std::vector<std::string> splits) -> ResolveResult
+    auto parse_splits(std::vector<std::string> splits) -> R3B::UcesbServerLauncher::ResolveResult
     {
-        auto result = ResolveResult{};
+        auto result = R3B::UcesbServerLauncher::ResolveResult{};
 
         auto option_regex = std::regex{ "^--[0-9A-z,=\\-]+" };
         auto lmd_regex = std::regex{ "^.*\\.lmd$" };
@@ -98,7 +66,7 @@ namespace
             }
             else if (std::regex_match(split_item, lmd_regex))
             {
-                Append_lmds(result.lmds, std::move(split_item));
+                Append_lmds(result.lmds, split_item);
             }
             else if (Check_exist(split_item))
             {
@@ -109,6 +77,7 @@ namespace
                     R3BLOG(error, fmt::format("Found another executable \"{}\" but only one is allowed!", split_item));
                     continue;
                 }
+                R3BLOG(info, fmt::format("Ucesb Executable is set to \"{}\" ", split_item));
                 result.executable = std::move(split_item);
             }
             else
@@ -126,7 +95,7 @@ namespace
         std::sort(filenames.begin(), filenames.end());
     }
 
-    auto resolve_exe_options_lmd(std::string cmd) -> ResolveResult
+    auto resolve_exe_options_lmd(std::string cmd) -> R3B::UcesbServerLauncher::ResolveResult
     {
         if (cmd.empty())
         {
@@ -149,21 +118,29 @@ namespace
 
 namespace R3B
 {
-    void UcesbServerLauncher::Launch(std::string command_string)
+    void UcesbServerLauncher::SetLaunchCmd(const std::string& command_string)
     {
-        auto launch_strings = resolve_exe_options_lmd(std::move(command_string));
-        auto launch_args = std::vector<std::string>{};
-        Append_elements(launch_args, std::move(launch_strings.options));
-        Append_elements(launch_args, std::move(launch_strings.lmds));
-        Append_elements(launch_args, std::move(launch_strings.others));
+        launch_strings_ = resolve_exe_options_lmd(command_string);
+        if (launch_strings_.executable.empty())
+        {
+            R3BLOG(error, fmt::format("An unpacker executable doesn't exist in options {:?}", command_string));
+        }
+        Append_elements(launch_args, std::move(launch_strings_.options));
+        Append_elements(launch_args, std::move(launch_strings_.lmds));
+        Append_elements(launch_args, std::move(launch_strings_.others));
 
         R3BLOG(debug,
                fmt::format("Ucesb command after resolving wildcard filename: \n {} {}",
-                           launch_strings.executable,
+                           launch_strings_.executable,
                            fmt::join(launch_args, " ")));
+    }
 
+    void UcesbServerLauncher::Launch()
+    {
+        server_pipe_ = boost::process::async_pipe{ ios_ };
         ucesb_server_ = std::make_unique<boost::process::child>(
-            launch_strings.executable, boost::process::args(launch_args), boost::process::std_out > server_pipe_);
+            launch_strings_.executable, boost::process::args(launch_args), boost::process::std_out > server_pipe_);
+        R3BLOG(info, fmt::format("Launching an ucesb server with pid: {}", ucesb_server_->id()));
         if (auto is_status_ok = client_->connect(server_pipe_.native_source()); not is_status_ok)
         {
             R3BLOG(error, "ext_data_clnt::connect() failed");
@@ -172,15 +149,20 @@ namespace R3B
         }
     }
 
-    void UcesbServerLauncher::Setup(ext_data_struct_info& struct_info, size_t event_struct_size) {}
+    // void UcesbServerLauncher::Setup(ext_data_struct_info& struct_info, size_t event_struct_size) {}
 
     void UcesbServerLauncher::Close()
     {
         if (auto ret_val = client_->close(); ret_val != 0)
         {
-            throw R3B::runtime_error("ext_data_clnt::close() failed");
+            R3BLOG(error, "ext_data_clnt::close() failed");
         }
         auto err_code = std::error_code{};
+        auto boost_err = boost::system::error_code{};
+
+        server_pipe_.close(boost_err);
+        R3BLOG(info, fmt::format("pipe closed: {}", boost_err.what()));
+
         if (not ucesb_server_->wait_for(CHILD_CLOSE_WAITING_TIME, err_code))
         {
             R3BLOG(warn, fmt::format("Failed to close Ucesb server! Error code: {}", err_code.value()));
@@ -191,5 +173,12 @@ namespace R3B
         {
             R3BLOG(info, "Ucesb server is closed successfully");
         }
+
+        auto child_handle = bp::child::child_handle{ ucesb_server_->id() };
+        R3BLOG(warn, fmt::format("Trying to killing Ucesb server with pid: {}", child_handle.id()));
+        bp::detail::api::terminate(child_handle, err_code);
+        // ucesb_server_->terminate(err_code);
+        // std::this_thread::sleep_for(std::chrono::seconds(1));
+        R3BLOG(info, fmt::format("Killed: {}", err_code));
     }
 } // namespace R3B
