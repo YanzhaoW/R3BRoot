@@ -5,11 +5,10 @@
 #include "FairRunSim.h"
 #include "R3BCave.h"
 #include "R3BNeuland.h"
-#include "R3BShared.h"
 #include "TStopwatch.h"
-#include <FairConstField.h>
 #include <G4RunManager.hh>
 #include <G4UserEventAction.hh>
+#include <R3BFieldConst.h>
 #include <R3BProgramOptions.h>
 #include <TG4EventAction.h>
 #include <boost/exception/diagnostic_information.hpp>
@@ -52,7 +51,7 @@ int main(int argc, const char** argv)
     }
 
     // Logging
-    FairLogger::GetLogger()->SetLogVerbosityLevel("LOW");
+    // FairLogger::GetLogger()->SetLogVerbosityLevel("LOW");
     FairLogger::GetLogger()->SetLogScreenLevel(logLevel->value().c_str());
 
     // System paths
@@ -67,7 +66,7 @@ int main(int argc, const char** argv)
     run->SetStoreTraj(false);
     run->SetMaterials("media_r3b.geo");
     run->SetSink(std::make_unique<FairRootFileSink>(simuFileName->value().c_str()));
-    auto fairField = std::make_unique<FairConstField>();
+    auto fairField = std::make_unique<R3BFieldConst>();
     run->SetField(fairField.release());
 
     // Primary particle generator
