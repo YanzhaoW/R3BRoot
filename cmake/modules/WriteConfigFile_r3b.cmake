@@ -168,9 +168,9 @@ macro(WRITE_CONFIG_FILE filename)
 
     if(FAIRSOFT_EXTERN)
         set(PYTHIA8DATA "${SIMPATH}/share/pythia8/xmldoc")
-    else(FAIRSOFT_EXTERN)
+    else()
         set(PYTHIA8DATA "${SIMPATH}/generators/pythia8/xmldoc")
-    endif(FAIRSOFT_EXTERN)
+    endif()
 
     convert_list_to_string($ENV{NEW_CLASSPATH})
     set(MY_CLASSPATH ${output})
@@ -187,7 +187,7 @@ macro(WRITE_CONFIG_FILE filename)
                            ${CMAKE_CURRENT_BINARY_DIR}/${filename})
         endif(R3BROOTPATH)
 
-    else(${filename} MATCHES "[.]csh.*$")
+    else()
         if(R3BROOTPATH)
             configure_file(${PROJECT_SOURCE_DIR}/cmake/scripts/config.sh.in
                            ${CMAKE_CURRENT_BINARY_DIR}/${filename})
@@ -196,12 +196,11 @@ macro(WRITE_CONFIG_FILE filename)
                            ${CMAKE_CURRENT_BINARY_DIR}/${filename})
         endif(R3BROOTPATH)
 
-    endif(${filename} MATCHES "[.]csh.*$")
+    endif()
 
 endmacro(WRITE_CONFIG_FILE)
 
 macro(CONVERT_LIST_TO_STRING)
-
     set(tmp "")
     foreach(_current ${ARGN})
 
@@ -215,5 +214,4 @@ macro(CONVERT_LIST_TO_STRING)
     else(tmp)
         set(output "")
     endif(tmp)
-
 endmacro(CONVERT_LIST_TO_STRING LIST)

@@ -37,6 +37,7 @@ struct ext_data_structure_item
     uint32_t _var_type;
     uint32_t _limit_min;
     uint32_t _limit_max;
+    uint32_t _flags;
 
     uint32_t _map_success;
 

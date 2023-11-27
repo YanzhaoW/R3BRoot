@@ -29,6 +29,9 @@ cmake_policy(VERSION 3.15...3.24)
 # Set name of our project to "R3BROOT". Has to be done after check of cmake version
 project(R3BROOT LANGUAGES C CXX Fortran)
 
+# use default gnu install convention:
+include(GNUInstallDirs)
+
 if(NOT EXISTS "${PROJECT_SOURCE_DIR}/macros")
     message(STATUS "  ")
     message(
@@ -281,6 +284,14 @@ else()
         REQUIRED)
 endif()
 
+find_package(range-v3 REQUIRED)
+find_package(Microsoft.GSL REQUIRED)
+find_package(nlohmann_json REQUIRED)
+set(JSON_ImplicitConversions
+    OFF
+    CACHE BOOL "disable implicit conversion of JSON" FORCE)
+find_package(GTest REQUIRED)
+
 find_package2(PUBLIC Pythia6)
 find_package2(PUBLIC Pythia8)
 find_package2(PUBLIC Protobuf)
@@ -335,7 +346,7 @@ if(USE_PATH_INFO)
     else(APPLE)
         set(LD_LIBRARY_PATH $ENV{LD_LIBRARY_PATH})
     endif(APPLE)
-endif(USE_PATH_INFO)
+endif()
 
 # Check if the user wants to build the project in the source directory
 check_out_of_source_build()
@@ -378,7 +389,7 @@ if(yaml-cpp_FOUND
                                               "${YAML_CPP_INCLUDE_DIR}")
 endif()
 
-include(${CMAKE_SOURCE_DIR}/cmake/scripts/fetchGTest.cmake)
+# include(${CMAKE_SOURCE_DIR}/cmake/scripts/fetchGTest.cmake)
 
 setbasicvariables()
 

@@ -32,12 +32,23 @@ namespace R3B
         auto is_match_ok = ((map_flag & ~(map_success_conditions_)) == UcesbMap::zero);
         if (is_match_ok)
         {
+            R3BLOG(debug2, fmt::format("Ucesb struct item {:?} is mapped ok.", item->_var_name));
             return true;
         }
         auto* required_reader = check_struct_item_requried(item->_var_name, source);
-        if (required_reader == nullptr || required_reader->AllowExtraCondition(map_flag, map_success_conditions_))
+        if (required_reader == nullptr)
         {
-            // no reader requries this item or reader accepts extra flag
+            R3BLOG(
+                debug2,
+                fmt::format("Ucesb struct item {:?} is mapped not ok. But no detector requires it.", item->_var_name));
+            return true;
+        }
+        if (required_reader->AllowExtraCondition(map_flag, map_success_conditions_))
+        {
+            R3BLOG(debug2,
+                   fmt::format("Ucesb struct item {:?} is mapped not ok. But the condition {} is allowed",
+                               item->_var_name,
+                               map_flag));
             return true;
         }
 
@@ -51,6 +62,7 @@ namespace R3B
 
     void UcesbStructInfo::CheckStructMapping(UcesbSource* source)
     {
+        R3BLOG(debug, "Checking struct mapping.");
         auto* struct_info = static_cast<ext_data_structure_info*>(struct_info_);
         auto is_checking_ok = true;
         for (auto* item = struct_info->_items; item != nullptr; item = item->_next_off_item)
@@ -77,17 +89,4 @@ namespace R3B
         throw R3B::runtime_error("ext_data_clnt::setup() mapping failure may cause unexpected analysis results "
                                  "due to missing data members. Unpacker needs fixing.\n\n\n");
     }
-
-    // void UcesbStructInfo::check_struct_info_mapping_old(const UcesbMap& is_map_success)
-    // {
-    //     if ((is_map_success & ~(map_success_conditions_)) != UcesbMap::zero)
-    //     {
-    //         R3BLOG(error, "ext_data_clnt::setup() failed to map all items:");
-    //         ext_data_struct_info_print_map_success(static_cast<ext_data_structure_info*>(ucesb_client_struct_info_),
-    //                                                stderr,
-    //                                                static_cast<UcesbMapUType>(map_success_conditions_));
-    //         throw R3B::runtime_error("ext_data_clnt::setup() mapping failure may cause unexpected analysis results "
-    //                                  "due to missing data members. Unpacker needs fixing.");
-    //     }
-    // }
 } // namespace R3B
