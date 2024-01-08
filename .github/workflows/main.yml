@@ -122,7 +122,7 @@ jobs:
     # tool-kits for the building, such as clang-tidy and cvmfs. For more
     # information, please visit the Docker repository at Dockerhub.
     container: 
-      image: yanzhaowang/cvmfs_clang:latest
+      image: yanzhaowang/cvmfs_clang:v15
       volumes:
         - /tmp:/cvmfs
       env:
