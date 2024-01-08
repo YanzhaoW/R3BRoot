@@ -122,7 +122,7 @@ jobs:
     # tool-kits for the building, such as clang-tidy and cvmfs. For more
     # information, please visit the Docker repository at Dockerhub.
     container: 
-      image: yanzhaowang/cvmfs_clang:v15
+      image: yanzhaowang/cvmfs_clang:latest
       volumes:
         - /tmp:/cvmfs
       env:
@@ -186,7 +186,7 @@ jobs:
       # Cache names (key) should be consistent with the names used in the
       # cache restoring step.
       - name: save-cache
-        if: github.event_name == 'push' && matrix.skip-save != true
+        # if: github.event_name == 'push' && matrix.skip-save != true
         id: save-cache
         uses: './.github/actions/cache-save'
         with: 
