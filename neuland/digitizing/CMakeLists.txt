@@ -21,7 +21,8 @@ set(SRCS
     R3BDigitizingTacQuila.cxx
     R3BDigitizingTamex.cxx
     R3BNeulandDigitizer.cxx
-    R3BNeulandHitMon.cxx)
+    R3BNeulandHitMon.cxx
+    NeulandPointFilter.cxx)
 
 set(HEADERS
     # cmake-format: sortable
@@ -34,7 +35,8 @@ set(HEADERS
     R3BDigitizingTacQuila.h
     R3BDigitizingTamex.h
     R3BNeulandDigitizer.h
-    R3BNeulandHitMon.h)
+    R3BNeulandHitMon.h
+    NeulandPointFilter.h)
 
 add_library_with_dictionary(
     LIBNAME
