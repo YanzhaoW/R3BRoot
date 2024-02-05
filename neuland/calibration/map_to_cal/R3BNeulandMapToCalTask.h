@@ -1,15 +1,15 @@
 /******************************************************************************
- *   Copyright (C) 2019 GSI Helmholtzzentrum für Schwerionenforschung GmbH    *
- *   Copyright (C) 2019-2023 Members of R3B Collaboration                     *
- *                                                                            *
- *             This software is distributed under the terms of the            *
- *                 GNU General Public Licence (GPL) version 3,                *
- *                    copied verbatim in the file "LICENSE".                  *
- *                                                                            *
- * In applying this license GSI does not waive the privileges and immunities  *
- * granted to it by virtue of its status as an Intergovernmental Organization *
- * or submit itself to any jurisdiction.                                      *
- ******************************************************************************/
+*   Copyright (C) 2019 GSI Helmholtzzentrum für Schwerionenforschung GmbH    *
+*   Copyright (C) 2019-2023 Members of R3B Collaboration                     *
+*                                                                            *
+*             This software is distributed under the terms of the            *
+*                 GNU General Public Licence (GPL) version 3,                *
+*                    copied verbatim in the file "LICENSE".                  *
+*                                                                            *
+* In applying this license GSI does not waive the privileges and immunities  *
+* granted to it by virtue of its status as an Intergovernmental Organization *
+* or submit itself to any jurisdiction.                                      *
+******************************************************************************/
 #pragma once
 
 #include "R3BNeulandCalData2.h"
@@ -24,27 +24,27 @@
 class R3BEventHeader;
 namespace R3B::Neuland
 {
-    class Map2CalTask : public CalibrationTask
-    {
-      public:
-        Map2CalTask();
-        Map2CalTask(std::string_view name, int iVerbose);
-        void SetPulserMode(bool pulser_mode = true) { is_pulse_mode_ = pulser_mode; }
-        void SetNhitmin(unsigned int size) { signal_min_size_ = size; }
-        void EnableWak(bool is_walk_enabled = true) { is_walk_enabled_ = is_walk_enabled; }
+class Map2CalTask : public CalibrationTask
+{
+  public:
+    Map2CalTask();
+    Map2CalTask(std::string_view name, int iVerbose);
+    void SetPulserMode(bool pulser_mode = true) { is_pulse_mode_ = pulser_mode; }
+    void SetNhitmin(unsigned int size) { signal_min_size_ = size; }
+    void EnableWak(bool is_walk_enabled = true) { is_walk_enabled_ = is_walk_enabled; }
 
-      private:
-        bool is_pulse_mode_ = false;
-        bool is_walk_enabled_ = true;
-        float coarse_time_frequency_ = 0.; // MHz
-        unsigned int coarse_time_max_num_ = MAXCTValue;
-        double max_coarse_time_ = R3B::Neuland::MaxCalTime;
-        unsigned int total_pmt_nums_ = 0;
-        unsigned int signal_min_size_ = 1;
-        unsigned int plane_num_ = 0;
+  private:
+    bool is_pulse_mode_ = false;
+    bool is_walk_enabled_ = true;
+    float coarse_time_frequency_ = 0.; // MHz
+    unsigned int coarse_time_max_num_ = MAXCTValue;
+    double max_coarse_time_ = R3B::Neuland::MaxCalTime;
+    unsigned int total_pmt_nums_ = 0;
+    unsigned int signal_min_size_ = 1;
+    unsigned int plane_num_ = 0;
 
-        // IO data and paramters:
-        InputVectorConnector<PaddleTamexMappedData> mappedData_{ "NeulandMappedData" };
+    // IO data and paramters:
+    InputVectorConnector<PaddleTamexMappedData> mappedData_{ "NeulandMappedData" };
         InputMapConnector<unsigned int, PaddleTamexTrigMappedData> trigMappedData_{ "NeulandTrigMappedData" };
         OutputVectorConnector<BarCalData> calData_{ "NeulandCalData" };
 

@@ -109,7 +109,7 @@ class Build:
     def cmake_configure(self):
         if self.args.is_only_configure or self.args.is_all:
             cmake_args = ["--fresh"] if self.args.is_fresh_configure else []
-            cmake_args.append(f"-S {self.source_dir}")
+            cmake_args.append(f"-S={self.source_dir}")
             cmake_args.append(f"-B {self.args.build_dir}")
             cmake_args.append("-DUSE_DIFFERENT_COMPILER=TRUE")
             cmake_args.append(
