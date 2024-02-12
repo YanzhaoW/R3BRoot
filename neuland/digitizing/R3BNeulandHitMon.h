@@ -37,17 +37,7 @@ class TH1I;
 class R3BNeulandHitMon : public FairTask
 {
   public:
-    explicit R3BNeulandHitMon(std::string_view input = "NeulandHits",
-                              std::string_view output = "NeulandHitMon",
-                              const Option_t* option = "");
-
-    ~R3BNeulandHitMon() override = default;
-
-    // No copy and no move is allowed (Rule of three/five)
-    R3BNeulandHitMon(const R3BNeulandHitMon&) = delete;                    // copy constructor
-    R3BNeulandHitMon(R3BNeulandHitMon&&) = delete;                         // move constructor
-    auto operator=(const R3BNeulandHitMon&) -> R3BNeulandHitMon& = delete; // copy assignment
-    auto operator=(R3BNeulandHitMon&&) -> R3BNeulandHitMon& = delete;      // move assignment
+    explicit R3BNeulandHitMon(const Option_t* option = "");
 
   protected:
     auto Init() -> InitStatus override;

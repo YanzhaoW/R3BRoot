@@ -29,19 +29,15 @@
 #include <string_view>
 #include <utility>
 
-R3BNeulandDigitizer::R3BNeulandDigitizer(std::string_view input, std::string_view output)
-    : R3BNeulandDigitizer(Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<TacquilaChannel>()),
-                          input,
-                          output)
+R3BNeulandDigitizer::R3BNeulandDigitizer()
+    : R3BNeulandDigitizer(Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<TacquilaChannel>())
+
+      )
 {
 }
 
-R3BNeulandDigitizer::R3BNeulandDigitizer(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine,
-                                         std::string_view input,
-                                         std::string_view output)
+R3BNeulandDigitizer::R3BNeulandDigitizer(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine)
     : FairTask("R3BNeulandDigitizer")
-    , neuland_points_(input)
-    , neuland_hits_(output)
     , digitizing_engine_(std::move(engine))
 {
 }
@@ -98,7 +94,7 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
 
     std::map<UInt_t, Double_t> paddleEnergyDeposit;
     // Look at each Land Point, if it deposited energy in the scintillator, store it with reference to the bar
-    for (const auto& point : neuland_points_.get())
+    for (const auto& point : neuland_points_)
     {
         if (point.GetEnergyLoss() > 0.)
         {

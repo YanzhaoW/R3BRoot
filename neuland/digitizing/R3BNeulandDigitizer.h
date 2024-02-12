@@ -61,18 +61,8 @@ class R3BNeulandDigitizer : public FairTask
     template <typename Type>
     using UsePaddle = Digitizing::UsePaddle<Type>;
 
-    explicit R3BNeulandDigitizer(std::string_view input = "NeulandPoints", std::string_view output = "NeulandHits");
-    explicit R3BNeulandDigitizer(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine,
-                                 std::string_view input = "NeulandPoints",
-                                 std::string_view output = "NeulandHits");
-
-    ~R3BNeulandDigitizer() override = default;
-
-    // No copy and no move is allowed (Rule of three/five)
-    R3BNeulandDigitizer(const R3BNeulandDigitizer&) = delete;                    // copy constructor
-    R3BNeulandDigitizer(R3BNeulandDigitizer&&) = delete;                         // move constructor
-    auto operator=(const R3BNeulandDigitizer&) -> R3BNeulandDigitizer& = delete; // copy assignment
-    auto operator=(R3BNeulandDigitizer&&) -> R3BNeulandDigitizer& = delete;      // move assignment
+    explicit R3BNeulandDigitizer();
+    explicit R3BNeulandDigitizer(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine);
 
   protected:
     auto Init() -> InitStatus override;
