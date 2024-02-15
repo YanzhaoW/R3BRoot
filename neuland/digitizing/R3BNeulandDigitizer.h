@@ -61,7 +61,7 @@ class R3BNeulandDigitizer : public FairTask
     template <typename Type>
     using UsePaddle = Digitizing::UsePaddle<Type>;
 
-    explicit R3BNeulandDigitizer();
+    R3BNeulandDigitizer();
     explicit R3BNeulandDigitizer(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine);
 
   protected:

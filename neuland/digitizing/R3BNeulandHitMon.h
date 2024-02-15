@@ -49,9 +49,9 @@ class R3BNeulandHitMon : public FairTask
     void SetDistanceToTarget(double distance) { distance_to_target_ = distance; }
 
   private:
-    std::string output_;
+    std::string output_ {"NeulandHitMon"};
 
-    R3B::InputVectorConnector<R3BNeulandHit> neuland_hits_;
+    R3B::InputVectorConnector<R3BNeulandHit> neuland_hits_ {"NeulandHits"};
 
     double distance_to_target_ = 0.;
 

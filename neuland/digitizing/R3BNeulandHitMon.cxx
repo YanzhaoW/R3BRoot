@@ -28,8 +28,6 @@
 
 R3BNeulandHitMon::R3BNeulandHitMon(const Option_t* option)
     : FairTask("R3B NeuLAND NeulandHit Monitor")
-    , output_("NeulandHitMon")
-    , neuland_hits_("NeulandHits")
 {
     LOG(info) << "Using R3B NeuLAND NeulandHit Monitor";
 
