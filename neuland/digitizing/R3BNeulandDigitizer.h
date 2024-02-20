@@ -25,6 +25,7 @@
 #include "R3BNeulandHitPar.h"
 #include "R3BNeulandPoint.h"
 #include "TCAConnector.h"
+#include "R3BDataMonitor.h"
 #include <TClonesArray.h>
 #include <TH1.h>
 
@@ -84,9 +85,9 @@ class R3BNeulandDigitizer : public FairTask
 
     R3BNeulandGeoPar* neuland_geo_par_ = nullptr; // non-owning
 
-    TH1I* mult_one_ = nullptr;
-    TH1I* mult_two_ = nullptr;
-    TH1F* rl_time_to_trig_ = nullptr;
+    R3B::DataMonitor mult_one_;
+    R3B::DataMonitor mult_two_;
+    R3B::DataMonitor rl_time_to_trig_;
 
   public:
     template <typename... Args>
