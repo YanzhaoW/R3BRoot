@@ -15,6 +15,7 @@
 
 #include "FairTask.h"
 #include "Filterable.h"
+#include "R3BDataMonitor.h"
 #include "R3BDigitizingEngine.h"
 #include "R3BDigitizingPaddleNeuland.h"
 #include "R3BDigitizingTacQuila.h"
@@ -25,7 +26,6 @@
 #include "R3BNeulandHitPar.h"
 #include "R3BNeulandPoint.h"
 #include "TCAConnector.h"
-#include "R3BDataMonitor.h"
 #include <TClonesArray.h>
 #include <TH1.h>
 
@@ -67,7 +67,7 @@ class R3BNeulandDigitizer : public FairTask
 
   protected:
     auto Init() -> InitStatus override;
-    void Finish() override;
+    void Finish() override { data_monitor_.save(); }
     void SetParContainers() override;
 
   public:
@@ -76,8 +76,8 @@ class R3BNeulandDigitizer : public FairTask
     void AddFilter(const Filterable<R3BNeulandHit&>::Filter& filter) { neuland_hit_filters_.Add(filter); }
 
   private:
-    R3B::InputVectorConnector<R3BNeulandPoint> neuland_points_ {"NeulandPoints"};
-    R3B::OutputVectorConnector<R3BNeulandHit> neuland_hits_ {"NeulandHits"};
+    R3B::InputVectorConnector<R3BNeulandPoint> neuland_points_{ "NeulandPoints" };
+    R3B::OutputVectorConnector<R3BNeulandHit> neuland_hits_{ "NeulandHits" };
 
     std::unique_ptr<Digitizing::DigitizingEngineInterface> digitizing_engine_; // owning
 
@@ -85,9 +85,10 @@ class R3BNeulandDigitizer : public FairTask
 
     R3BNeulandGeoPar* neuland_geo_par_ = nullptr; // non-owning
 
-    R3B::DataMonitor mult_one_;
-    R3B::DataMonitor mult_two_;
-    R3B::DataMonitor rl_time_to_trig_;
+    R3B::DataMonitor data_monitor_;
+    TH1I* mult_one_ = nullptr;
+    TH1I* mult_two_ = nullptr;
+    TH1F* rl_time_to_trig_ = nullptr;
 
   public:
     template <typename... Args>

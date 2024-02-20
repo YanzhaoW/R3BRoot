@@ -50,24 +50,24 @@ auto R3BNeulandHitMon::Init() -> InitStatus
         const auto xbinN = 60;
         const auto ybinN = 50;
         const auto zbinN = 50;
-        
+
         // define additional histogram parameters
         const auto x_bounds_lower = 1400.;
         const auto x_bounds_upper = 1700.;
         const auto yz_bounds_lower = -125.;
         const auto yz_bounds_upper = 125.;
 
-        hist_3_ = R3B::root_owned<TH3D>("hHits",
-                                        "hHits",
-                                        xbinN,
-                                        x_bounds_lower,
-                                        x_bounds_upper,
-                                        ybinN,
-                                        yz_bounds_lower,
-                                        yz_bounds_upper,
-                                        zbinN,
-                                        yz_bounds_lower,
-                                        yz_bounds_upper);
+        hist_3_ = data_monitor_.add_hist<TH3D>("hHits",
+                                               "hHits",
+                                               xbinN,
+                                               x_bounds_lower,
+                                               x_bounds_upper,
+                                               ybinN,
+                                               yz_bounds_lower,
+                                               yz_bounds_upper,
+                                               zbinN,
+                                               yz_bounds_lower,
+                                               yz_bounds_upper);
         hist_3_->SetTitle("NeuLAND Hits");
         hist_3_->GetXaxis()->SetTitle("Z");
         hist_3_->GetYaxis()->SetTitle("X");
@@ -94,44 +94,47 @@ auto R3BNeulandHitMon::Init() -> InitStatus
     const auto energy_upper_foremost_vs_e_tot_a = 2000.;
     const auto energy_upper_foremost_vs_e_tot_b = 250.;
 
-    hist_time_ = R3B::root_owned<TH1D>("hTime", "Hit time", timeBinN, -1000., 1000.);
-    hist_time_adj_ = R3B::root_owned<TH1D>("hTimeAdj", "Hit Time adjusted for flight path", timeBinN, -1000., 1000.);
+    hist_time_ = data_monitor_.add_hist<TH1D>("hTime", "Hit time", timeBinN, -1000., 1000.);
+    hist_time_adj_ =
+        data_monitor_.add_hist<TH1D>("hTimeAdj", "Hit Time adjusted for flight path", timeBinN, -1000., 1000.);
 
-    hist_mult_ = R3B::root_owned<TH1I>("hMult", "Hit Multiplicity", maxHitNum, 0, maxHitNum);
+    hist_mult_ = data_monitor_.add_hist<TH1I>("hMult", "Hit Multiplicity", maxHitNum, 0, maxHitNum);
 
-    hist_depth_ = R3B::root_owned<TH1D>("hDepth", "Maxial penetration depth", zDepBinN, z_dep_lower, z_dep_upper);
-    hist_depth_vs_foremost_energy_ = R3B::root_owned<TH2D>(
+    hist_depth_ =
+        data_monitor_.add_hist<TH1D>("hDepth", "Maxial penetration depth", zDepBinN, z_dep_lower, z_dep_upper);
+    hist_depth_vs_foremost_energy_ = data_monitor_.add_hist<TH2D>(
         "hDepthVSFrontEnergy", "Depth vs Foremost Energy", zDepBinN, z_dep_lower, z_dep_upper, energyBinN, 0., 100.);
-    hist_depth_vs_sternmost_energy_ = R3B::root_owned<TH2D>("hDepthVSSternmostEnergy",
-                                                            "Depth vs Sternmost Energy",
-                                                            zDepBinN,
-                                                            z_dep_lower,
-                                                            z_dep_upper,
-                                                            energyBinN,
-                                                            0,
-                                                            100.);
-    hist_depth_vs_energy_tot_ = R3B::root_owned<TH2D>(
+    hist_depth_vs_sternmost_energy_ = data_monitor_.add_hist<TH2D>("hDepthVSSternmostEnergy",
+                                                                   "Depth vs Sternmost Energy",
+                                                                   zDepBinN,
+                                                                   z_dep_lower,
+                                                                   z_dep_upper,
+                                                                   energyBinN,
+                                                                   0,
+                                                                   100.);
+    hist_depth_vs_energy_tot_ = data_monitor_.add_hist<TH2D>(
         "hDepthVSEtot", "Depth vs Total Energy", zDepBinN, z_dep_lower, z_dep_upper, totenergyBinN, 0, 1000.);
-    hist_foremost_energy_ = R3B::root_owned<TH1D>("hForemostEnergy", "Foremost energy deposition", energyBinN, 0, 100.);
+    hist_foremost_energy_ =
+        data_monitor_.add_hist<TH1D>("hForemostEnergy", "Foremost energy deposition", energyBinN, 0, 100.);
     hist_sternmost_energy_ =
-        R3B::root_owned<TH1D>("hSternmostEnergy", "Sternmost energy deposition", energyBinN, 0, 100.);
-    hist_energy_tot_ = R3B::root_owned<TH1D>("hEtot", "Total Energy", totenergyBinN, 0, total_energy_upper);
-    hdeltaEE = R3B::root_owned<TH2D>("hdeltaEE",
-                                     "Energy in Foremost Plane vs Etot",
-                                     energyBinN,
-                                     0,
-                                     energy_upper_foremost_vs_e_tot_a,
-                                     energyBinN,
-                                     0,
-                                     energy_upper_foremost_vs_e_tot_b);
-    hist_pos_vs_energy_ = R3B::root_owned<TH2D>(
+        data_monitor_.add_hist<TH1D>("hSternmostEnergy", "Sternmost energy deposition", energyBinN, 0, 100.);
+    hist_energy_tot_ = data_monitor_.add_hist<TH1D>("hEtot", "Total Energy", totenergyBinN, 0, total_energy_upper);
+    hdeltaEE = data_monitor_.add_hist<TH2D>("hdeltaEE",
+                                            "Energy in Foremost Plane vs Etot",
+                                            energyBinN,
+                                            0,
+                                            energy_upper_foremost_vs_e_tot_a,
+                                            energyBinN,
+                                            0,
+                                            energy_upper_foremost_vs_e_tot_b);
+    hist_pos_vs_energy_ = data_monitor_.add_hist<TH2D>(
         "hPosVSEnergy", "Position vs Energy deposition", zDepBinN, z_dep_lower, z_dep_upper, totenergyBinN, 0, 1000.);
-    hist_beta_ = R3B::root_owned<TH1D>("hBeta", "Velocity", velocityBinN, 0., 1.);
-    hist_energy_ = R3B::root_owned<TH1D>("hE", "Hit Energy", energyBinN, 0., 100.);
-    hist_x_ = R3B::root_owned<TH1D>("hX", "Hit X", posXYBinN, pos_xy_lower, pos_xy_upper);
-    hist_y_ = R3B::root_owned<TH1D>("hY", "Hit Y", posXYBinN, pos_xy_lower, pos_xy_upper);
-    hT = R3B::root_owned<TH1D>("hT", "Hit Delta T", timeBinN, time_para, time_para);
-    hTNeigh = R3B::root_owned<TH1D>("hTNeigh", "Hit Neigh Delta T", timeBinN, time_para, time_para);
+    hist_beta_ = data_monitor_.add_hist<TH1D>("hBeta", "Velocity", velocityBinN, 0., 1.);
+    hist_energy_ = data_monitor_.add_hist<TH1D>("hE", "Hit Energy", energyBinN, 0., 100.);
+    hist_x_ = data_monitor_.add_hist<TH1D>("hX", "Hit X", posXYBinN, pos_xy_lower, pos_xy_upper);
+    hist_y_ = data_monitor_.add_hist<TH1D>("hY", "Hit Y", posXYBinN, pos_xy_lower, pos_xy_upper);
+    hT = data_monitor_.add_hist<TH1D>("hT", "Hit Delta T", timeBinN, time_para, time_para);
+    hTNeigh = data_monitor_.add_hist<TH1D>("hTNeigh", "Hit Neigh Delta T", timeBinN, time_para, time_para);
 
     return kSUCCESS;
 }
@@ -222,36 +225,6 @@ void R3BNeulandHitMon::Exec(Option_t* /*option*/)
     {
         hist_depth_vs_energy_tot_->Fill((*maxDepthHit).GetPosition().Z(), Etot);
     }
-}
-
-void R3BNeulandHitMon::Finish()
-{
-    TDirectory* tmp = gDirectory;
-    FairRootManager::Instance()->GetOutFile()->cd();
-
-    gDirectory->mkdir(output_.c_str());
-    gDirectory->cd(output_.c_str());
-
-    hist_depth_->Write();
-    hist_mult_->Write();
-    hist_time_->Write();
-    hist_time_adj_->Write();
-    hist_foremost_energy_->Write();
-    hist_sternmost_energy_->Write();
-    hist_depth_vs_foremost_energy_->Write();
-    hist_depth_vs_sternmost_energy_->Write();
-    hist_energy_tot_->Write();
-    hist_depth_vs_energy_tot_->Write();
-    hist_pos_vs_energy_->Write();
-    hdeltaEE->Write();
-    hist_beta_->Write();
-    hist_energy_->Write();
-    hist_x_->Write();
-    hist_y_->Write();
-    hT->Write();
-    hTNeigh->Write();
-
-    gDirectory = tmp;
 }
 
 ClassImp(R3BNeulandHitMon) // NOLINT

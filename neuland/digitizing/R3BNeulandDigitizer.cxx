@@ -16,13 +16,13 @@
 #include "FairRootManager.h"
 #include "FairRunAna.h"
 #include "FairRuntimeDb.h"
+#include "R3BDataMonitor.h"
 #include "TGeoManager.h"
 #include "TGeoNode.h"
 #include "TH1F.h"
 #include "TH2F.h"
 #include "TMath.h"
 #include "TString.h"
-#include "R3BDataMonitor.h"
 #include <R3BShared.h>
 #include <TFile.h>
 #include <iostream>
@@ -78,12 +78,13 @@ auto R3BNeulandDigitizer::Init() -> InitStatus
 
     // Initialize control histograms
     auto const PaddleMulSize = 3000;
-    mult_one_.add_hist<TH1I>("MultiplicityOne", "Paddle multiplicity: only one PMT per paddle", PaddleMulSize, 0, PaddleMulSize);
+    mult_one_ = data_monitor_.add_hist<TH1I>(
+        "MultiplicityOne", "Paddle multiplicity: only one PMT per paddle", PaddleMulSize, 0, PaddleMulSize);
 
-    mult_two_.add_hist<TH1I>(
+    mult_two_ = data_monitor_.add_hist<TH1I>(
         "MultiplicityTwo", "Paddle multiplicity: both PMTs of a paddle", PaddleMulSize, 0, PaddleMulSize);
     auto const timeBinSize = 200;
-    rl_time_to_trig_.add_hist<TH1F>("hRLTimeToTrig", "R/Ltime-triggerTime", timeBinSize, -100., 100.);
+    rl_time_to_trig_ = data_monitor_.add_hist<TH1F>("hRLTimeToTrig", "R/Ltime-triggerTime", timeBinSize, -100., 100.);
 
     return kSUCCESS;
 }
@@ -121,13 +122,13 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
     const auto paddles = digitizing_engine_->ExtractPaddles();
 
     // Fill control histograms
-    mult_one_.get("MultiplicityOne")->Fill(static_cast<int>(std::count_if(
+    mult_one_->Fill(static_cast<int>(std::count_if(
         paddles.begin(), paddles.end(), [](const auto& keyValue) { return keyValue.second->HasHalfFired(); })));
 
-    mult_two_.get("MultiplicityTwo")->Fill(static_cast<int>(std::count_if(
+    mult_two_->Fill(static_cast<int>(std::count_if(
         paddles.begin(), paddles.end(), [](const auto& keyValue) { return keyValue.second->HasFired(); })));
 
-    rl_time_to_trig_.get("hRLTimeToTrig")->Fill(triggerTime);
+    rl_time_to_trig_->Fill(triggerTime);
 
     // Create Hits
     for (const auto& [paddleID, paddle] : paddles)
@@ -165,20 +166,6 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
     }     // loop over paddles
 
     LOG(debug) << "R3BNeulandDigitizer: produced " << neuland_hits_.get().size() << " hits";
-}
-
-void R3BNeulandDigitizer::Finish()
-{
-    TDirectory* tmp = gDirectory;
-    FairRootManager::Instance()->GetOutFile()->cd();
-
-    gDirectory->mkdir("R3BNeulandDigitizer");
-    gDirectory->cd("R3BNeulandDigitizer");
-
-    mult_one_.save();
-    mult_two_.save();
-
-    gDirectory = tmp;
 }
 
 ClassImp(R3BNeulandDigitizer); // NOLINT

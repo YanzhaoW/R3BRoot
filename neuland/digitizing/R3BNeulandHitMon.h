@@ -24,6 +24,7 @@
  */
 
 #include "FairTask.h"
+#include "R3BDataMonitor.h"
 #include "R3BIOConnector.h"
 #include "R3BNeulandHit.h"
 #include "TCAConnector.h"
@@ -39,26 +40,26 @@ class R3BNeulandHitMon : public FairTask
   public:
     explicit R3BNeulandHitMon(const Option_t* option = "");
 
-  protected:
-    auto Init() -> InitStatus override;
-    void Finish() override;
-
-  public:
     void Exec(Option_t* /*option*/) override;
 
     void SetDistanceToTarget(double distance) { distance_to_target_ = distance; }
 
-  private:
-    std::string output_ {"NeulandHitMon"};
+  protected:
+    auto Init() -> InitStatus override;
+    void Finish() override { data_monitor_.save(); }
 
-    R3B::InputVectorConnector<R3BNeulandHit> neuland_hits_ {"NeulandHits"};
+  private:
+    std::string output_{ "NeulandHitMon" };
+
+    R3B::InputVectorConnector<R3BNeulandHit> neuland_hits_{ "NeulandHits" };
 
     double distance_to_target_ = 0.;
 
     bool is_3d_track_enabled_ = false;
 
-    TH3D* hist_3_ = nullptr;
+    R3B::DataMonitor data_monitor_;
 
+    TH3D* hist_3_ = nullptr;
     TH1D* hist_time_ = nullptr;
     TH1D* hist_time_adj_ = nullptr;
     TH1I* hist_mult_ = nullptr;
