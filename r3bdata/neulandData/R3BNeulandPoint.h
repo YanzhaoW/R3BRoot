@@ -26,6 +26,8 @@ class R3BNeulandPoint : public FairMCPoint
     R3BNeulandPoint()
         : FairMCPoint()
         , fLightYield(0)
+        , particle_id_(0)
+        , parent_particle_id_(0)
     {
     }
 
@@ -37,32 +39,44 @@ class R3BNeulandPoint : public FairMCPoint
                     const Double_t length,
                     const Double_t eLoss,
                     const UInt_t EventId,
-                    const Double_t lightYield)
+                    const Double_t lightYield,
+                    const int particle_id,
+                    const int parent_particle_id)
         : FairMCPoint(trackID, detID, pos, mom, tof, length, eLoss, EventId)
         , fLightYield(lightYield)
+        , particle_id_(particle_id)
+        , parent_particle_id_(parent_particle_id)
     {
     }
 
-    R3BNeulandPoint(const FairMCPoint& point, const Double_t lightYield)
+    R3BNeulandPoint(const FairMCPoint& point,
+                    const Double_t lightYield,
+                    const int particle_id,
+                    const int parent_particle_id)
         : FairMCPoint(point)
         , fLightYield(lightYield)
+        , particle_id_(particle_id)
+        , parent_particle_id_(parent_particle_id)
     {
     }
 
-    TVector3 GetMomentum() const;
-    TVector3 GetPosition() const;
-    Int_t GetPaddle() const { return GetDetectorID(); }
-    Double_t GetLightYield() const { return fLightYield; }
+    [[nodiscard]] auto GetMomentum() const -> TVector3;
+    [[nodiscard]] auto GetPosition() const -> TVector3;
+    [[nodiscard]] auto GetPaddle() const -> Int_t { return GetDetectorID(); }
+    [[nodiscard]] auto GetLightYield() const -> Double_t { return fLightYield; }
 
-    void Print(const Option_t*) const override;
+    ClassDefOverride(R3BNeulandPoint, 1)
+
+        void Print(const Option_t* /*opt*/) const override;
 
   protected:
     Double_t fLightYield;
 
-  public:
-    ClassDefOverride(R3BNeulandPoint, 1)
+  private:
+    int particle_id_;
+    int parent_particle_id_;
 };
 
-std::ostream& operator<<(std::ostream&, const R3BNeulandPoint&); // Support easy printing
+auto operator<<(std::ostream&, const R3BNeulandPoint&) -> std::ostream&; // Support easy printing
 
 #endif // R3BNEULANDPOINT_H

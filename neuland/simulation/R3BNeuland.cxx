@@ -95,6 +95,14 @@ auto R3BNeuland::ProcessHits(FairVolume* /*v*/) -> bool
         gMC->TrackPosition(pos_in_);
         gMC->TrackMomentum(mom_in_);
         gMC->CurrentVolOffID(1, paddle_id_);
+
+        particle_id_ = gMC->TrackPid();
+        trackid_pid_map_.emplace(gMC->GetStack()->GetCurrentTrackNumber(), gMC->TrackPid());
+        if (auto search = trackid_pid_map_.find(gMC->GetStack()->GetCurrentParentTrackNumber());
+            search != trackid_pid_map_.end())
+        {
+            partent_particle_id_ = search->first;
+        }
     }
 
     // Sum energy loss for all steps in the active volume
@@ -129,7 +137,9 @@ auto R3BNeuland::ProcessHits(FairVolume* /*v*/) -> bool
                                            length_,
                                            energy_loss_,
                                            gMC->CurrentEvent(),
-                                           light_yield_);
+                                           light_yield_,
+                                           particle_id_,
+                                           partent_particle_id_);
 
         // Increment number of LandPoints for this track
         auto* stack = dynamic_cast<R3BStack*>(gMC->GetStack());
@@ -160,6 +170,7 @@ void R3BNeuland::Reset()
 {
     neuland_points_.clear();
     ResetValues();
+    trackid_pid_map_.clear();
 }
 
 void R3BNeuland::ResetValues()

@@ -79,6 +79,7 @@ class R3BNeuland : public R3BDetector
   private:
     R3B::OutputVectorConnector<R3BNeulandPoint> neuland_points_{ "NeulandPoints" }; //!
     R3BNeulandGeoPar* neuland_geo_par_ = nullptr;                                     //!
+    std::map<int,int> trackid_pid_map_;
 
     /** Track information to be stored until the track leaves the active volume. */
     int track_id_ = 0;
@@ -92,6 +93,8 @@ class R3BNeuland : public R3BDetector
     double energy_loss_ = 0.;
     double light_yield_ = 0.;
     bool is_last_hit_done_ = false;
+    int particle_id_ = 0;
+    int partent_particle_id_ = 0;
 
     void ResetValues();
 
