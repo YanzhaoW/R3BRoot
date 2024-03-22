@@ -64,7 +64,7 @@ class R3BNeulandPoint : public FairMCPoint
     [[nodiscard]] auto GetPosition() const -> TVector3;
     [[nodiscard]] auto GetPaddle() const -> Int_t { return GetDetectorID(); }
     [[nodiscard]] auto GetLightYield() const -> Double_t { return fLightYield; }
-
+    [[nodiscard]] auto GetPID() const -> int { return particle_id_; }
     ClassDefOverride(R3BNeulandPoint, 1)
 
         void Print(const Option_t* /*opt*/) const override;

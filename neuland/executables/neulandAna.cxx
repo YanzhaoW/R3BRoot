@@ -16,6 +16,7 @@
 #include "TStopwatch.h"
 #include <TObjString.h>
 #include <boost/program_options.hpp>
+#include "NeulandPointFilter.h"
 
 namespace Digitizing = R3B::Digitizing;
 using NeulandPaddle = Digitizing::Neuland::NeulandPaddle;
@@ -54,6 +55,8 @@ auto main(int argc, const char** argv) -> int
     auto eventNum = programOptions.create_option<int>("eventNum,n", "set total event number", 0);
     auto hitLevelPar =
         programOptions.create_option<std::string>("hitLevelPar", "set the name of hit level parameter if needed.", "");
+    auto pidFilteringMode =
+        programOptions.create_option<std::string>("pid-filter", "set the desired pid filter(none/protons-only/custom)", "none");
 
     if (!programOptions.verify(argc, argv))
     {
@@ -118,6 +121,10 @@ auto main(int argc, const char** argv) -> int
         fileio2->open(paraFileName2->value().c_str());
         run->GetRuntimeDb()->setSecondInput(fileio2.release());
     }
+    
+    auto pidFilter = std::make_unique<NeulandPointFilter>();
+    pidFilter->SetFilter(pidFilteringMode.value());
+    run->AddTask(pidFilter.release());
 
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
     digiNeuland->SetEngine((neulandEngines.at({ paddleName->value(), channelName->value() }))());
