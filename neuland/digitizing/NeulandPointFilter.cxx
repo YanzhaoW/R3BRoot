@@ -2,30 +2,48 @@
 #include <iostream>
 #include <utility>
 
-void NeulandPointFilter::AddInclusionPDG(int inclusion_pdg)
-{
-    included_pdgs_hash_.emplace(inclusion_pdg, inclusion_pdg);
-}
-void NeulandPointFilter::AddExclusionPDG(int exclusion_pdg)
-{
-    excluded_pdgs_hash_.emplace(exclusion_pdg, exclusion_pdg);
-}
-void NeulandPointFilter::ClearInclusionPDGs() { included_pdgs_hash_.clear(); }
-void NeulandPointFilter::ClearExclusionPDGs() { excluded_pdgs_hash_.clear(); }
+constexpr auto proton_pid = 2212;
 
-void NeulandPointFilter::SetFilter(std::string filtering_mode) { filtering_mode_ = std::move(filtering_mode); }
-
-void NeulandPointFilter::ApplyFilter()
+void NeulandPointFilter::add_filtered_pid(int filtered_pid, std::unordered_map<int, int>& filtered_pids_hash)
 {
-    for (const auto& neuland_point : neuland_points_.get())
+    filtered_pids_hash.emplace(filtered_pid, filtered_pid);
+}
+void NeulandPointFilter::clear_filtered_pids_hash(std::unordered_map<int, int>& filtered_pids_hash)
+{
+    filtered_pids_hash.clear();
+}
+void NeulandPointFilter::SetFilter(FilteringMode filtering_mode) { filtering_mode_ = filtering_mode; }
+
+void NeulandPointFilter::apply_filter(const R3B::InputVectorConnector<R3BNeulandPoint>& neuland_points,
+                                      R3B::OutputVectorConnector<R3BNeulandPoint>& filtered_neuland_points,
+                                      FilteringMethod filtering_method,
+                                      std::unordered_map<int, int>& filtered_pids_hash)
+{
+    switch (filtering_method)
     {
-        if ((included_pdgs_hash_.find(neuland_point.GetPID()) != included_pdgs_hash_.end()) &&
-            (excluded_pdgs_hash_.find(neuland_point.GetPID()) == excluded_pdgs_hash_.end()))
-        {
-            filtered_neuland_points_.get().emplace_back(neuland_point);
-        }
+        case FilteringMethod::include:
+            for (const auto& neuland_point : neuland_points.get())
+            {
+                if (filtered_pids_hash.find(neuland_point.GetPID()) != filtered_pids_hash.end())
+                {
+                    filtered_neuland_points.get().emplace_back(neuland_point);
+                }
+            }
+            break;
+        case FilteringMethod::exclude:
+            for (const auto& neuland_point : neuland_points.get())
+            {
+                if (filtered_pids_hash.find(neuland_point.GetPID()) == filtered_pids_hash.end())
+                {
+                    filtered_neuland_points.get().emplace_back(neuland_point);
+                }
+            }
+            break;
+        default:
+            std::cout << "Unexpected FilteringMethod\n";
     }
 }
+
 auto NeulandPointFilter::Init() -> InitStatus
 {
     neuland_points_.init();
@@ -34,40 +52,28 @@ auto NeulandPointFilter::Init() -> InitStatus
     return kSUCCESS;
 }
 
-void NeulandPointFilter::ProtonOnlyFilter()
-{
-    filtered_neuland_points_.clear();
-    // Reset ex- and inclusion lists
-    ClearInclusionPDGs();
-    ClearExclusionPDGs();
-    // Setup desired filters
-    const auto proton_pdg = 2212;
-    AddInclusionPDG(proton_pdg);
-    // Apply filters
-    ApplyFilter();
-}
-
-void NeulandPointFilter::CustomFilter()
-{
-    filtered_neuland_points_.clear();
-    // Reset ex- and inclusion lists
-    ClearInclusionPDGs();
-    ClearExclusionPDGs();
-    // Setup desired filters - currently filtering for anything that isnt a proton
-    const auto proton_pdg = 2212;
-    AddExclusionPDG(proton_pdg);
-    // Apply filters
-    ApplyFilter();
-}
-
 void NeulandPointFilter::Exec(Option_t* /*option*/)
 {
-    if (filtering_mode_ == "protons-only")
+    filtered_neuland_points_.clear();
+    switch (filtering_mode_)
     {
-        ProtonOnlyFilter();
-    }
-    if (filtering_mode_ == "custom")
-    {
-        CustomFilter();
+        case FilteringMode::none:
+            for (const auto& neuland_point : neuland_points_)
+            {
+                filtered_neuland_points_.get().emplace_back(neuland_point);
+            }
+            break;
+        case FilteringMode::all_but_protons:
+            clear_filtered_pids_hash(filtered_pids_hash_);
+            add_filtered_pid(proton_pid, filtered_pids_hash_);
+            apply_filter(neuland_points_, filtered_neuland_points_, FilteringMethod::include, filtered_pids_hash_);
+            break;
+        case FilteringMode::custom:
+            clear_filtered_pids_hash(filtered_pids_hash_);
+       //     add_filtered_pid(proton_pid, filtered_pids_hash_);
+            apply_filter(neuland_points_, filtered_neuland_points_, FilteringMethod::include, filtered_pids_hash_);
+            break;
+        default:
+            std::cout << "Unexpected FilteringMode\n";
     }
 }

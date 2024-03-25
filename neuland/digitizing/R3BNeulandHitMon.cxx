@@ -79,7 +79,7 @@ auto R3BNeulandHitMon::Init() -> InitStatus
     const auto maxHitNum = 200;
     const auto timeBinN = 30000;
     const auto zDepBinN = 60;
-    const auto energyBinN = 100;
+    const auto energyBinN = 500;
     const auto totenergyBinN = 1000;
     const auto posXYBinN = 300;
     const auto velocityBinN = 200;

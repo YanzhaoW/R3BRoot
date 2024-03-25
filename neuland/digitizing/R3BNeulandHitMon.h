@@ -46,7 +46,7 @@ class R3BNeulandHitMon : public FairTask
 
   protected:
     auto Init() -> InitStatus override;
-    void Finish() override { data_monitor_.save(); }
+    void Finish() override { data_monitor_.save_to_sink(); }
 
   private:
     std::string output_{ "NeulandHitMon" };

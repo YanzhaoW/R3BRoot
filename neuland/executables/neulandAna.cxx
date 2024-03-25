@@ -56,7 +56,7 @@ auto main(int argc, const char** argv) -> int
     auto hitLevelPar =
         programOptions.create_option<std::string>("hitLevelPar", "set the name of hit level parameter if needed.", "");
     auto pidFilteringMode =
-        programOptions.create_option<std::string>("pid-filter", "set the desired pid filter(none/protons-only/custom)", "none");
+        programOptions.create_option<std::string>("pid-filter", "set the desired pid filter(none/all-but-protons/custom)", "none");
 
     if (!programOptions.verify(argc, argv))
     {
@@ -123,7 +123,7 @@ auto main(int argc, const char** argv) -> int
     }
     
     auto pidFilter = std::make_unique<NeulandPointFilter>();
-    pidFilter->SetFilter(pidFilteringMode.value());
+    pidFilter->SetFilter(StringToFilteringMode(pidFilteringMode.value()));
     run->AddTask(pidFilter.release());
 
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();

@@ -67,7 +67,7 @@ class R3BNeulandDigitizer : public FairTask
 
   protected:
     auto Init() -> InitStatus override;
-    void Finish() override { data_monitor_.save(); }
+    void Finish() override { data_monitor_.save_to_sink(); }
     void SetParContainers() override;
 
   public:
@@ -76,7 +76,7 @@ class R3BNeulandDigitizer : public FairTask
     void AddFilter(const Filterable<R3BNeulandHit&>::Filter& filter) { neuland_hit_filters_.Add(filter); }
 
   private:
-    R3B::InputVectorConnector<R3BNeulandPoint> neuland_points_{ "NeulandPoints" };
+    R3B::InputVectorConnector<R3BNeulandPoint> neuland_points_{ "FilteredNeulandPoints" };
     R3B::OutputVectorConnector<R3BNeulandHit> neuland_hits_{ "NeulandHits" };
 
     std::unique_ptr<Digitizing::DigitizingEngineInterface> digitizing_engine_; // owning
