@@ -2,6 +2,27 @@
 #include "FairTask.h"
 #include "R3BIOConnector.h"
 #include "R3BNeulandPoint.h"
+#include <bitset>
+
+enum class BitsetParticle : uint32_t
+{
+    proton = 0x0001,
+    neutron = 0x0002,
+    electron = 0x0004,
+    positron = 0x0008,
+    alpha = 0x0010,
+    gamma = 0x0020
+};
+
+constexpr auto ParticleBitsetSize = 32U;
+
+constexpr auto ParticleToBitset(BitsetParticle particle);
+auto BitsetToParticle(std::bitset<ParticleBitsetSize> bits) -> BitsetParticle;
+auto CheckCriteria(BitsetParticle particle, BitsetParticle criteria) -> bool;
+
+auto operator|(BitsetParticle left, BitsetParticle right) -> BitsetParticle;
+auto operator&(BitsetParticle left, BitsetParticle right) -> BitsetParticle;
+auto operator~(BitsetParticle particle) -> BitsetParticle;
 
 enum class FilteringMode
 {
@@ -45,16 +66,11 @@ class NeulandPointFilter : public FairTask
     auto Init() -> InitStatus override;
     void Exec(Option_t* /*option*/) override;
 
-    static void add_filtered_pid(int filtered_pid, std::unordered_map<int, int>& filtered_pids_hash);
-
-    static void clear_filtered_pids_hash(std::unordered_map<int, int>& filtered_pids_hash);
+    static auto check_pid_for_criteria(int pid, BitsetParticle criteria) -> bool;
 
     static void apply_filter(const R3B::InputVectorConnector<R3BNeulandPoint>& neuland_points,
                              R3B::OutputVectorConnector<R3BNeulandPoint>& filtered_neuland_points,
-                             FilteringMethod filtering_method,
-                             std::unordered_map<int, int>& filtered_pids_hash);
-
-    std::unordered_map<int, int> filtered_pids_hash_;
+                             BitsetParticle AllowedParticles);
 
     FilteringMode filtering_mode_ = FilteringMode::none;
 
