@@ -2,67 +2,58 @@
 #include <iostream>
 #include <utility>
 
-using ParticleUType = std::underlying_type<BitsetParticle>::type;
+using ParticleUType = std::underlying_type<BitSetParticle>::type;
 
-constexpr auto ParticleToBitset(BitsetParticle particle)
+constexpr auto ParticleToBitSet(BitSetParticle particle)
 {
     return std::bitset<ParticleBitsetSize>{ static_cast<ParticleUType>(particle) };
 }
 
-auto BitsetToParticle(std::bitset<ParticleBitsetSize> bits) -> BitsetParticle
+auto BitSetToParticle(std::bitset<ParticleBitsetSize> bits) -> BitSetParticle
 {
-    return static_cast<BitsetParticle>(static_cast<uint32_t>(bits.to_ulong()));
+    return static_cast<BitSetParticle>(static_cast<uint32_t>(bits.to_ulong()));
 }
 
-auto CheckCriteria(BitsetParticle particle, BitsetParticle criteria) -> bool
+auto CheckCriteria(BitSetParticle particle, BitSetParticle criteria) -> bool
 {
-    return (ParticleToBitset(particle) & ParticleToBitset(criteria)) == ParticleToBitset(particle);
+    return (ParticleToBitSet(particle) & ParticleToBitSet(criteria)) == ParticleToBitSet(particle);
 }
 
-auto operator|(BitsetParticle left, BitsetParticle right) -> BitsetParticle
+auto operator|(BitSetParticle left, BitSetParticle right) -> BitSetParticle
 {
-    auto left_bitset = ParticleToBitset(left);
-    auto right_bitset = ParticleToBitset(right);
-    return BitsetToParticle(left_bitset | right_bitset);
+    auto left_bitset = ParticleToBitSet(left);
+    auto right_bitset = ParticleToBitSet(right);
+    return BitSetToParticle(left_bitset | right_bitset);
 }
 
-auto operator&(BitsetParticle left, BitsetParticle right) -> BitsetParticle
+auto operator&(BitSetParticle left, BitSetParticle right) -> BitSetParticle
 {
-    auto left_bitset = ParticleToBitset(left);
-    auto right_bitset = ParticleToBitset(right);
-    return BitsetToParticle(left_bitset & right_bitset);
+    auto left_bitset = ParticleToBitSet(left);
+    auto right_bitset = ParticleToBitSet(right);
+    return BitSetToParticle(left_bitset & right_bitset);
 }
 
-auto operator~(BitsetParticle particle) -> BitsetParticle { return BitsetToParticle(~ParticleToBitset(particle)); }
-
-constexpr auto proton_pid = 2212;
-constexpr auto neutron_pid = 2112;
-constexpr auto electron_pid = 11;
-constexpr auto positron_pid = -11;
-constexpr auto alpha_pid = 1000040020;
-constexpr auto gamma_pid = 22;
-
-auto NeulandPointFilter::check_pid_for_criteria(int pid, BitsetParticle criteria) -> bool
-{
-    return ((CheckCriteria(BitsetParticle::proton, criteria) && pid == proton_pid) ||
-            (CheckCriteria(BitsetParticle::neutron, criteria) && pid == neutron_pid) ||
-            (CheckCriteria(BitsetParticle::electron, criteria) && pid == electron_pid) ||
-            (CheckCriteria(BitsetParticle::positron, criteria) && pid == positron_pid) ||
-            (CheckCriteria(BitsetParticle::alpha, criteria) && pid == alpha_pid) ||
-            (CheckCriteria(BitsetParticle::gamma, criteria) && pid == gamma_pid));
-}
-
-void NeulandPointFilter::SetFilter(FilteringMode filtering_mode) { filtering_mode_ = filtering_mode; }
+auto operator~(BitSetParticle particle) -> BitSetParticle { return BitSetToParticle(~ParticleToBitSet(particle)); }
 
 void NeulandPointFilter::apply_filter(const R3B::InputVectorConnector<R3BNeulandPoint>& neuland_points,
                                       R3B::OutputVectorConnector<R3BNeulandPoint>& filtered_neuland_points,
-                                      BitsetParticle AllowedParticles)
+                                      BitSetParticle FilteredParticles)
 {
     for (const auto& neuland_point : neuland_points)
     {
-        if (check_pid_for_criteria(neuland_point.GetPID(), AllowedParticles))
+        if (PidToBitSetParticle.find(neuland_point.GetPID()) == PidToBitSetParticle.end())
         {
-            filtered_neuland_points.get().emplace_back(neuland_point);
+            if (CheckCriteria(BitSetParticle::other, FilteredParticles))
+            {
+                filtered_neuland_points.get().emplace_back(neuland_point);
+            }
+        }
+        else
+        {
+            if (CheckCriteria(PidToBitSetParticle.at(neuland_point.GetPID()), FilteredParticles))
+            {
+                filtered_neuland_points.get().emplace_back(neuland_point);
+            }
         }
     }
 }
@@ -78,21 +69,5 @@ auto NeulandPointFilter::Init() -> InitStatus
 void NeulandPointFilter::Exec(Option_t* /*option*/)
 {
     filtered_neuland_points_.clear();
-    switch (filtering_mode_)
-    {
-        case FilteringMode::none:
-            for (const auto& neuland_point : neuland_points_)
-            {
-                filtered_neuland_points_.get().emplace_back(neuland_point);
-            }
-            break;
-        case FilteringMode::all_but_protons:
-            apply_filter(neuland_points_, filtered_neuland_points_, BitsetParticle::proton);
-            break;
-        case FilteringMode::custom:
-            apply_filter(neuland_points_, filtered_neuland_points_, ~BitsetParticle::proton & ~BitsetParticle::electron);
-            break;
-        default:
-            std::cout << "Unexpected FilteringMode\n";
-    }
+    apply_filter(neuland_points_, filtered_neuland_points_, ~BitSetParticle::none);
 }

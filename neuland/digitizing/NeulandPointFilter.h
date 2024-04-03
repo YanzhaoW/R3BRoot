@@ -4,75 +4,54 @@
 #include "R3BNeulandPoint.h"
 #include <bitset>
 
-enum class BitsetParticle : uint32_t
+enum class BitSetParticle : uint32_t
 {
+    none = 0x0000,
     proton = 0x0001,
     neutron = 0x0002,
     electron = 0x0004,
     positron = 0x0008,
     alpha = 0x0010,
-    gamma = 0x0020
+    gamma = 0x0020,
+    other = 0x0040
+};
+
+const std::unordered_map<int,BitSetParticle> PidToBitSetParticle = {
+    {2212,BitSetParticle::proton},
+    {2112, BitSetParticle::neutron},
+    {11, BitSetParticle::electron},
+    {-11, BitSetParticle::positron},
+    {1000040020, BitSetParticle::alpha},
+    {22, BitSetParticle::gamma},
+    {0, BitSetParticle::none}
 };
 
 constexpr auto ParticleBitsetSize = 32U;
 
-constexpr auto ParticleToBitset(BitsetParticle particle);
-auto BitsetToParticle(std::bitset<ParticleBitsetSize> bits) -> BitsetParticle;
-auto CheckCriteria(BitsetParticle particle, BitsetParticle criteria) -> bool;
+constexpr auto ParticleToBitSet(BitSetParticle particle);
+auto BitSetToParticle(std::bitset<ParticleBitsetSize> bits) -> BitSetParticle;
+auto CheckCriteria(BitSetParticle particle, BitSetParticle criteria) -> bool;
 
-auto operator|(BitsetParticle left, BitsetParticle right) -> BitsetParticle;
-auto operator&(BitsetParticle left, BitsetParticle right) -> BitsetParticle;
-auto operator~(BitsetParticle particle) -> BitsetParticle;
+auto operator|(BitSetParticle left, BitSetParticle right) -> BitSetParticle;
+auto operator&(BitSetParticle left, BitSetParticle right) -> BitSetParticle;
+auto operator~(BitSetParticle particle) -> BitSetParticle;
 
-enum class FilteringMode
-{
-    none,
-    all_but_protons,
-    custom
-};
-enum class FilteringMethod
-{
-    include,
-    exclude
-};
-
-inline auto StringToFilteringMode(const std::string& input_string) -> FilteringMode
-{
-
-    if (input_string == "none")
-    {
-        return FilteringMode::none;
-    }
-    if (input_string == "all-but-protons")
-    {
-        return FilteringMode::all_but_protons;
-    }
-    if (input_string == "custom")
-    {
-        return FilteringMode::custom;
-    }
-
-    throw R3B::logic_error("invalid pid-filter string");
-}
 
 class NeulandPointFilter : public FairTask
 {
   public:
     NeulandPointFilter() = default;
 
-    void SetFilter(FilteringMode filtering_mode);
-
   private:
     auto Init() -> InitStatus override;
     void Exec(Option_t* /*option*/) override;
 
-    static auto check_pid_for_criteria(int pid, BitsetParticle criteria) -> bool;
+    static auto check_pid_for_criteria(int pid, BitSetParticle criteria) -> bool;
 
     static void apply_filter(const R3B::InputVectorConnector<R3BNeulandPoint>& neuland_points,
                              R3B::OutputVectorConnector<R3BNeulandPoint>& filtered_neuland_points,
-                             BitsetParticle AllowedParticles);
+                             BitSetParticle FilteredParticles);
 
-    FilteringMode filtering_mode_ = FilteringMode::none;
 
     R3B::InputVectorConnector<R3BNeulandPoint> neuland_points_{ "NeulandPoints" };
     R3B::OutputVectorConnector<R3BNeulandPoint> filtered_neuland_points_{ "FilteredNeulandPoints" };
