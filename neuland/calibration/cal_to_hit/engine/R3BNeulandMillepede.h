@@ -44,7 +44,7 @@ namespace R3B::Neuland::Calibration
         // float minimum_pos_z_ = 0;
         // float smallest_time_sum_ = 0.;
         std::optional<float> average_t_sum_;
-        float init_effective_c_ = -DEFAULT_EFFECTIVE_C;
+        float init_effective_c_ = DEFAULT_EFFECTIVE_C;
         MilleDataPoint input_data_buffer_;
         std::string input_data_filename_ = "neuland_cosmic_mille.bin";
         std::string pede_steer_filename_ = "neuland_steer.txt";
@@ -69,7 +69,11 @@ namespace R3B::Neuland::Calibration
         auto SignalFilter(const std::vector<BarCalData>& signals) -> bool override;
         void EndOfTask() override;
         void HistInit(DataMonitor& histograms) override;
-        void SetMinStat(int min) override { minimum_hit_ = min; }
+        void SetMinStat(int min) override
+        {
+            minimum_hit_ = min;
+            R3BLOG(info, fmt::format("Minimum number of hits is set to {}", minimum_hit_));
+        }
         void SetErrorScale(float scale) override { error_scale_factor_ = scale; }
 
         void buffer_clear();

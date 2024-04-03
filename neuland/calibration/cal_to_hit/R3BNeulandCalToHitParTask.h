@@ -40,7 +40,6 @@ namespace R3B::Neuland
         auto GetCal2HitPar() -> auto* { return hit_par_; }
 
       private:
-        int min_stat_ = 1;
         InputVectorConnector<BarCalData> cal_data_{ "NeulandCalData" };
 
         CalibrationBasePar* base_par_ = InputPar<CalibrationBasePar>("NeulandCalibrationBasePar");

@@ -37,7 +37,7 @@
 namespace fs = std::filesystem;
 constexpr int DEFAULT_EVENT_NUM = 10;
 constexpr int DEFAULT_RUN_ID = 999;
-constexpr int DEFAULT_MIN_STAT = 4;
+constexpr int DEFAULT_MIN_STAT = 20;
 
 using namespace std::string_literals;
 auto main(int argc, const char** argv) -> int
@@ -124,7 +124,7 @@ auto main(int argc, const char** argv) -> int
 
         run->Init();
 
-        const auto error_scales = std::array{ 1000.F, 1000.F, 1000.F, 1000.F };
+        const auto error_scales = std::array{ 10.F};
         for (const auto error_scale : error_scales)
         {
             cal2hitParTaskPtr->SetErrorScale(error_scale);

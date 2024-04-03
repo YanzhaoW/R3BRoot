@@ -47,7 +47,6 @@ namespace R3B::Neuland
         }
         engine_->SetTask(this);
         engine_->SetModuleSize(plane_num * BarsPerPlane);
-        engine_->SetMinStat(min_stat_);
         engine_->Init();
     }
 
@@ -76,5 +75,9 @@ namespace R3B::Neuland
         engine_->EndOfTask();
     }
 
-    auto Cal2HitParTask::CheckConditions() const -> bool { return engine_->SignalFilter(cal_data_.get()); }
+    auto Cal2HitParTask::CheckConditions() const -> bool
+    {
+        auto res = engine_->SignalFilter(cal_data_.get());
+        return res;
+    }
 } // namespace R3B::Neuland

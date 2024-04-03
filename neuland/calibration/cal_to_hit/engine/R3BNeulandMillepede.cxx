@@ -77,6 +77,12 @@ namespace R3B::Neuland::Calibration
             case 2:
                 res.second = GlobalLabel::effective_c;
                 break;
+            // case 0:
+            //     res.second = GlobalLabel::offset_effective_c;
+            //     break;
+            // case 1:
+            //     res.second = GlobalLabel::effective_c;
+            //     break;
             default:
                 throw R3B::logic_error(fmt::format("An error occured with unrecognized global par id: {}", par_num));
         }
@@ -95,6 +101,10 @@ namespace R3B::Neuland::Calibration
                 return module_num + num_of_module;
             case GlobalLabel::effective_c:
                 return module_num + 2 * num_of_module;
+            // case GlobalLabel::offset_effective_c:
+            //     return module_num;
+            // case GlobalLabel::effective_c:
+            //     return module_num + num_of_module;
             default:
                 throw std::runtime_error("An error occured with unrecognized global tag");
         }
@@ -221,6 +231,8 @@ namespace R3B::Neuland::Calibration
         const auto pos_z = PlaneID2ZPos<float>(plane_id);
         const auto is_horizontal = IsPlaneIDHorizontal(plane_id);
         const auto pos_bar_vert_disp = GetBarVerticalDisplacement(module_num);
+        // const auto local_derivs = is_horizontal ? std::array{ 0.F, pos_z / SCALE_FACTOR, 0.F, 1.F }
+        //                                         : std::array{ pos_z / SCALE_FACTOR, 0.F, 1.F, 0.F };
         const auto local_derivs = is_horizontal ? std::array{ 0.F, pos_z / SCALE_FACTOR, 0.F, 0.F, 1.F, 0.F }
                                                 : std::array{ pos_z / SCALE_FACTOR, 0.F, 0.F, 1.F, 0.F, 0.F };
 
@@ -246,18 +258,16 @@ namespace R3B::Neuland::Calibration
                             (left_signal.leading_time - left_signal.trigger_time);
 
         input_data_buffer_.measurement = 0.F;
-        // input_data_buffer_.sigma = static_cast<float>(t_diff.error / 2.);
-        // input_data_buffer_.sigma = static_cast<float>(DEFAULT_MEAS_ERROR * init_effective_c_ / 2);
-        // input_data_buffer_.sigma = static_cast<float>(DEFAULT_MEAS_ERROR / 2.F);
         input_data_buffer_.sigma =
             static_cast<float>(t_diff.error / SCALE_FACTOR / 2. * std::abs(init_effective_c) * error_scale_factor_);
+        // const auto local_derivs = is_horizontal ? std::array{ pos_z / SCALE_FACTOR, 0.F, 1.F, 0.F }
+        //                                         : std::array{ 0.F, pos_z / SCALE_FACTOR, 0.F, 1.F };
         const auto local_derivs = is_horizontal ? std::array{ pos_z / SCALE_FACTOR, 0.F, 0.F, 1.F, 0.F, 0.F }
                                                 : std::array{ 0.F, pos_z / SCALE_FACTOR, 0.F, 0.F, 1.F, 0.F };
         std::copy(local_derivs.begin(), local_derivs.end(), std::back_inserter(input_data_buffer_.locals));
-        input_data_buffer_.globals.emplace_back(get_global_label_id(module_num, GlobalLabel::offset_effective_c),
-                                                -0.5F);
+        input_data_buffer_.globals.emplace_back(get_global_label_id(module_num, GlobalLabel::offset_effective_c), 0.5F);
         input_data_buffer_.globals.emplace_back(get_global_label_id(module_num, GlobalLabel::effective_c),
-                                                static_cast<float>(-t_diff.value / SCALE_FACTOR / 2.));
+                                                static_cast<float>(t_diff.value / SCALE_FACTOR / 2.));
         write_to_buffer();
         R3BLOG(
             debug,
@@ -369,6 +379,8 @@ namespace R3B::Neuland::Calibration
         steer_writer.set_parameter_file(parameter_filename_);
         steer_writer.set_data_filepath(input_data_filename_);
         steer_writer.add_method(SteerWriter::Method::inversion, std::make_pair(3.F, 0.001F));
+        steer_writer.add_other_options(std::vector<std::string>{ "hugecut", "50000" });
+        steer_writer.add_other_options(std::vector<std::string>{ "outlierdownweighting", "4" });
 
         const auto module_size = GetModuleSize();
         for (int module_num{ 1 }; module_num <= module_size; ++module_num)
