@@ -15,6 +15,7 @@
 
 #include "FairTask.h"
 #include "Filterable.h"
+#include "NeulandPointFilter.h"
 #include "R3BDataMonitor.h"
 #include "R3BDigitizingEngine.h"
 #include "R3BDigitizingPaddleNeuland.h"
@@ -76,7 +77,7 @@ class R3BNeulandDigitizer : public FairTask
     void AddFilter(const Filterable<R3BNeulandHit&>::Filter& filter) { neuland_hit_filters_.Add(filter); }
 
   private:
-    R3B::InputVectorConnector<R3BNeulandPoint> neuland_points_{ "FilteredNeulandPoints" };
+    R3B::InputVectorConnector<R3BNeulandPoint> neuland_points_{ "NeulandPoints" };
     R3B::OutputVectorConnector<R3BNeulandHit> neuland_hits_{ "NeulandHits" };
 
     std::unique_ptr<Digitizing::DigitizingEngineInterface> digitizing_engine_; // owning
@@ -84,6 +85,7 @@ class R3BNeulandDigitizer : public FairTask
     Filterable<R3BNeulandHit&> neuland_hit_filters_;
 
     R3BNeulandGeoPar* neuland_geo_par_ = nullptr; // non-owning
+    NeulandPointFilter neuland_point_filter_;
 
     R3B::DataMonitor data_monitor_;
     TH1I* mult_one_ = nullptr;

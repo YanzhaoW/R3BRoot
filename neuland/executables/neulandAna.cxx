@@ -3,6 +3,7 @@
 #include "FairRootFileSink.h"
 #include "FairRunAna.h"
 #include "FairRuntimeDb.h"
+#include "NeulandPointFilter.h"
 #include "R3BDigitizingChannelMock.h"
 #include "R3BDigitizingPaddleMock.h"
 #include "R3BDigitizingPaddleNeuland.h"
@@ -16,7 +17,6 @@
 #include "TStopwatch.h"
 #include <TObjString.h>
 #include <boost/program_options.hpp>
-#include "NeulandPointFilter.h"
 
 namespace Digitizing = R3B::Digitizing;
 using NeulandPaddle = Digitizing::Neuland::NeulandPaddle;
@@ -119,10 +119,6 @@ auto main(int argc, const char** argv) -> int
         fileio2->open(paraFileName2->value().c_str());
         run->GetRuntimeDb()->setSecondInput(fileio2.release());
     }
-    
-    auto pidFilter = std::make_unique<NeulandPointFilter>();
-    run->AddTask(pidFilter.release());
-
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
     digiNeuland->SetEngine((neulandEngines.at({ paddleName->value(), channelName->value() }))());
     run->AddTask(digiNeuland.release());

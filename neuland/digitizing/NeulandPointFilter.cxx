@@ -1,73 +1,66 @@
 #include "NeulandPointFilter.h"
 #include <iostream>
 #include <utility>
-
-using ParticleUType = std::underlying_type<BitSetParticle>::type;
-
-constexpr auto ParticleToBitSet(BitSetParticle particle)
+namespace R3B::Neuland
 {
-    return std::bitset<ParticleBitsetSize>{ static_cast<ParticleUType>(particle) };
-}
+    using ParticleUType = std::underlying_type<BitSetParticle>::type;
 
-auto BitSetToParticle(std::bitset<ParticleBitsetSize> bits) -> BitSetParticle
-{
-    return static_cast<BitSetParticle>(static_cast<uint32_t>(bits.to_ulong()));
-}
-
-auto CheckCriteria(BitSetParticle particle, BitSetParticle criteria) -> bool
-{
-    return (ParticleToBitSet(particle) & ParticleToBitSet(criteria)) == ParticleToBitSet(particle);
-}
-
-auto operator|(BitSetParticle left, BitSetParticle right) -> BitSetParticle
-{
-    auto left_bitset = ParticleToBitSet(left);
-    auto right_bitset = ParticleToBitSet(right);
-    return BitSetToParticle(left_bitset | right_bitset);
-}
-
-auto operator&(BitSetParticle left, BitSetParticle right) -> BitSetParticle
-{
-    auto left_bitset = ParticleToBitSet(left);
-    auto right_bitset = ParticleToBitSet(right);
-    return BitSetToParticle(left_bitset & right_bitset);
-}
-
-auto operator~(BitSetParticle particle) -> BitSetParticle { return BitSetToParticle(~ParticleToBitSet(particle)); }
-
-void NeulandPointFilter::apply_filter(const R3B::InputVectorConnector<R3BNeulandPoint>& neuland_points,
-                                      R3B::OutputVectorConnector<R3BNeulandPoint>& filtered_neuland_points,
-                                      BitSetParticle FilteredParticles)
-{
-    for (const auto& neuland_point : neuland_points)
+    constexpr auto ParticleToBitSet(BitSetParticle particle)
     {
-        if (PidToBitSetParticle.find(neuland_point.GetPID()) == PidToBitSetParticle.end())
-        {
-            if (CheckCriteria(BitSetParticle::other, FilteredParticles))
-            {
-                filtered_neuland_points.get().emplace_back(neuland_point);
-            }
-        }
-        else
-        {
-            if (CheckCriteria(PidToBitSetParticle.at(neuland_point.GetPID()), FilteredParticles))
-            {
-                filtered_neuland_points.get().emplace_back(neuland_point);
-            }
-        }
+        return std::bitset<ParticleBitsetSize>{ static_cast<ParticleUType>(particle) };
     }
+
+    auto BitSetToParticle(std::bitset<ParticleBitsetSize> bits) -> BitSetParticle
+    {
+        return static_cast<BitSetParticle>(static_cast<uint32_t>(bits.to_ulong()));
+    }
+
+    auto CheckCriteria(BitSetParticle particle, BitSetParticle criteria) -> bool
+    {
+        return (ParticleToBitSet(particle) & ParticleToBitSet(criteria)) == ParticleToBitSet(particle);
+    }
+
+    auto operator|(BitSetParticle left, BitSetParticle right) -> BitSetParticle
+    {
+        auto left_bitset = ParticleToBitSet(left);
+        auto right_bitset = ParticleToBitSet(right);
+        return BitSetToParticle(left_bitset | right_bitset);
+    }
+
+    auto operator&(BitSetParticle left, BitSetParticle right) -> BitSetParticle
+    {
+        auto left_bitset = ParticleToBitSet(left);
+        auto right_bitset = ParticleToBitSet(right);
+        return BitSetToParticle(left_bitset & right_bitset);
+    }
+
+    auto operator~(BitSetParticle particle) -> BitSetParticle { return BitSetToParticle(~ParticleToBitSet(particle)); }
+
+    auto PidToBitSetParticle(int pid) -> BitSetParticle
+    {
+        auto pid_to_bitset_hash_iterator = PidToBitSetParticleHash.find(pid);
+
+        if (pid_to_bitset_hash_iterator == PidToBitSetParticleHash.end())
+        {
+            return BitSetParticle::other;
+        }
+
+        return pid_to_bitset_hash_iterator->second;
+    }
+} // namespace R3B::Neuland
+
+void NeulandPointFilter::SetFilter(R3B::Neuland::BitSetParticle filtered_particles)
+{
+    filtered_particles_ = filtered_particles;
 }
 
-auto NeulandPointFilter::Init() -> InitStatus
+auto NeulandPointFilter::apply_neuland_point_filter(R3B::Neuland::BitSetParticle filtered_particles,
+                                                    const R3BNeulandPoint& neuland_point) -> bool
 {
-    neuland_points_.init();
-    filtered_neuland_points_.init();
-
-    return kSUCCESS;
+    return R3B::Neuland::CheckCriteria(R3B::Neuland::PidToBitSetParticle(neuland_point.GetPID()), filtered_particles);
 }
 
-void NeulandPointFilter::Exec(Option_t* /*option*/)
+auto NeulandPointFilter::FilterNeulandPoint(const R3BNeulandPoint& neuland_point) -> bool
 {
-    filtered_neuland_points_.clear();
-    apply_filter(neuland_points_, filtered_neuland_points_, ~BitSetParticle::none);
+    return apply_neuland_point_filter(filtered_particles_, neuland_point);
 }

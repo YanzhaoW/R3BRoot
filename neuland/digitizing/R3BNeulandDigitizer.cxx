@@ -16,6 +16,7 @@
 #include "FairRootManager.h"
 #include "FairRunAna.h"
 #include "FairRuntimeDb.h"
+#include "NeulandPointFilter.h"
 #include "R3BDataMonitor.h"
 #include "TGeoManager.h"
 #include "TGeoNode.h"
@@ -75,7 +76,7 @@ auto R3BNeulandDigitizer::Init() -> InitStatus
 {
     neuland_points_.init();
     neuland_hits_.init();
-
+    neuland_point_filter_.SetFilter(R3B::Neuland::BitSetParticle::none);
     // Initialize control histograms
     auto const PaddleMulSize = 3000;
     mult_one_ = data_monitor_.add_hist<TH1I>(
@@ -98,6 +99,11 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
     // Look at each Land Point, if it deposited energy in the scintillator, store it with reference to the bar
     for (const auto& point : neuland_points_)
     {
+        if (not(neuland_point_filter_.GetFilter() == R3B::Neuland::BitSetParticle::none) and
+            neuland_point_filter_.FilterNeulandPoint(point))
+        {
+            continue;
+        }
         if (point.GetEnergyLoss() > 0.)
         {
             const Int_t paddleID = point.GetPaddle();
