@@ -121,6 +121,7 @@ auto main(int argc, const char** argv) -> int
     }
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
     digiNeuland->SetEngine((neulandEngines.at({ paddleName->value(), channelName->value() }))());
+    digiNeuland->SetNeulandPointFilter(R3B::Neuland::BitSetParticle::none);
     run->AddTask(digiNeuland.release());
     auto hitmon = std::make_unique<R3BNeulandHitMon>();
     run->AddTask(hitmon.release());

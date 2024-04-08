@@ -42,11 +42,8 @@ class NeulandPointFilter
     NeulandPointFilter() = default;
     void SetFilter(R3B::Neuland::BitSetParticle filtered_particles);
     [[nodiscard]] auto GetFilter() const -> R3B::Neuland::BitSetParticle { return filtered_particles_; }
-    auto FilterNeulandPoint(const R3BNeulandPoint& neuland_point) -> bool;
+    auto ShouldNeulandPointBeFiltered(const R3BNeulandPoint& neuland_point) -> bool;
 
   private:
-    static auto apply_neuland_point_filter(R3B::Neuland::BitSetParticle filtered_particles,
-                                           const R3BNeulandPoint& neuland_point) -> bool;
-
     R3B::Neuland::BitSetParticle filtered_particles_ = R3B::Neuland::BitSetParticle::none;
 };

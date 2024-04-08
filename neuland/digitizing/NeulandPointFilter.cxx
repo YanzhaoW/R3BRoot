@@ -54,13 +54,7 @@ void NeulandPointFilter::SetFilter(R3B::Neuland::BitSetParticle filtered_particl
     filtered_particles_ = filtered_particles;
 }
 
-auto NeulandPointFilter::apply_neuland_point_filter(R3B::Neuland::BitSetParticle filtered_particles,
-                                                    const R3BNeulandPoint& neuland_point) -> bool
+auto NeulandPointFilter::ShouldNeulandPointBeFiltered(const R3BNeulandPoint& neuland_point) -> bool
 {
-    return R3B::Neuland::CheckCriteria(R3B::Neuland::PidToBitSetParticle(neuland_point.GetPID()), filtered_particles);
-}
-
-auto NeulandPointFilter::FilterNeulandPoint(const R3BNeulandPoint& neuland_point) -> bool
-{
-    return apply_neuland_point_filter(filtered_particles_, neuland_point);
+    return R3B::Neuland::CheckCriteria(R3B::Neuland::PidToBitSetParticle(neuland_point.GetPID()), filtered_particles_);
 }

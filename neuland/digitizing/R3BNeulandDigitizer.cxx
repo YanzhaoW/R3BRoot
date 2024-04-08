@@ -72,11 +72,15 @@ void R3BNeulandDigitizer::SetParContainers()
     digitizing_engine_->Init();
 }
 
+void R3BNeulandDigitizer::SetNeulandPointFilter(R3B::Neuland::BitSetParticle particle)
+{
+    neuland_point_filter_.SetFilter(particle);
+}
+
 auto R3BNeulandDigitizer::Init() -> InitStatus
 {
     neuland_points_.init();
     neuland_hits_.init();
-    neuland_point_filter_.SetFilter(R3B::Neuland::BitSetParticle::none);
     // Initialize control histograms
     auto const PaddleMulSize = 3000;
     mult_one_ = data_monitor_.add_hist<TH1I>(
@@ -100,7 +104,7 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
     for (const auto& point : neuland_points_)
     {
         if (not(neuland_point_filter_.GetFilter() == R3B::Neuland::BitSetParticle::none) and
-            neuland_point_filter_.FilterNeulandPoint(point))
+            neuland_point_filter_.ShouldNeulandPointBeFiltered(point))
         {
             continue;
         }
