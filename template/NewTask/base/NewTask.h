@@ -15,12 +15,14 @@
 
 // NOTE: comments below are only meant for eduational purpose. DO NOT include them in your code!
 
+#include "DetectorData.h"
 #include <FairTask.h>
 #include <R3BIOConnector.h>
 #include <R3BNeulandCalData.h>
 #include <R3BNeulandHit.h>
 #include <string>
 
+class R3BEventHeader;
 // namespace here is optional.
 namespace R3B
 {
@@ -46,26 +48,40 @@ namespace R3B
         void SetOnline(bool is_online) { is_online_ = is_online; }
 
       private:
-        // NOTE: all member variables should be default initiliazed
+        // NOTE: all member variables should be default initiliazed right here
 
         // Store data for online
         // Naming convenction of a boolean variable should be started with is_ or has_
         bool is_online_ = false;
 
-        // Input data from previous already existing data level
-        InputConnector<std::vector<R3BNeulandCalData>> input_data_{ "NeulandCalData" };
+        // -----------------Input data from previous already existing data level---------------
+        // Case 1: Input data from std::vector container
+        R3B::InputVectorConnector<DetectorCalData> input_data_vector_{ "DetectorCalData" };
         // or
-        // R3B::InputVectorConnector<R3BNeulandCalData> input_data_ { "NeulandCalData" };
+        // InputConnector<std::vector<R3BNeulandCalData>> input_data_{ "DetectorHitData" };
+        //
+        // Case 2: Input data from TClonesArray container
+        TClonesArray* input_data_TCA_ = nullptr;
+        //
+        // Case 3: Input a TObject
+        R3BEventHeader* eventHeader_ = nullptr;
 
-        // Output array to  new data level
-        OutputConnector<std::vector<R3BNeulandHit>> output_data_{ "NeulandHit" };
+        // -----------------Output array to new data level-----------------
+        // Case 1: Ouput data container in std::vector (RECOMMENDED)
+        R3B::OutputVectorConnector<DetectorHitData> output_data_vector_{ "DetectorHitData" };
         // or
-        // R3B::OutputVectorConnector<R3BNeulandHit> output_data_{ "NeulandHit" };
+        // OutputConnector<std::vector<R3BNeulandHit>> output_data_{ "DetectorHitData" };
+        //
+        // Case 2: Output data container in TClonesArray (NOT RECOMMENDED)
+        TClonesArray* output_data_TCA_ = nullptr;
+        //
+        // Case 3: Output a TObject
+        DetectorData* output_data_ = nullptr;
 
         // virtual functions should be private
 
         // Initiliazation of task at the beginning of a run
-        InitStatus Init() override;
+        auto Init() -> InitStatus override;
 
         // Executed for each event
         void Exec(Option_t* opt) override;
