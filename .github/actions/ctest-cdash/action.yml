@@ -27,6 +27,10 @@ runs:
     - name: running ctest
       run: |
         source $GITHUB_WORKSPACE/util/generate_geo_test.sh
+        cat $GITHUB_WORKSPACE/build/califa/test/testCalifaSimulation.sh
+        echo $PATH
+        echo $LD_LIBRARY_PATH
+        root-config --libdir --cflags --ldflags
         ctest -S cmake/CI_CD/CDash.cmake -DBUILD_J=${NUM_THREADS}\
               -DTEST_MODEL=${TEST_MODEL}\
               -DTEST_NAME=${{ env.TEST_NAME }}\
