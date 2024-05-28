@@ -293,6 +293,4 @@ add_library_with_dictionary(
     ${DIRS}
     DEPENDENCIES
     R3BData
-    Ucesb
-    PRIVATE_DEPENDENCIES
-    MbsAPI)
+    Ucesb)

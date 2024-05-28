@@ -45,35 +45,35 @@ if(NOT DEFINED ENV{SIMPATH})
             "You did not define the environment variable SIMPATH which is nedded to find the external packages. Please set this variable and execute cmake again."
     )
 endif(NOT DEFINED ENV{SIMPATH})
-set(SIMPATH $ENV{SIMPATH})
-
-if(SIMPATH)
-    set(CMAKE_PREFIX_PATH ${SIMPATH} ${CMAKE_PREFIX_PATH})
-endif()
-
-# fairsoft lib path needed to be added for root dictionary detection:
-set(LD_LIBRARY_PATH ${SIMPATH}/lib ${LD_LIBRARY_PATH})
-set(GRAPHVIZ_EXTERNAL_LIBS FALSE)
 
 if(NOT DEFINED ENV{FAIRROOTPATH})
     message(
         FATAL_ERROR
             "You did not define the environment variable FAIRROOTPATH which is needed to find FairRoot. Please set this variable and execute cmake again."
     )
-endif(NOT DEFINED ENV{FAIRROOTPATH})
+endif()
+
+set(SIMPATH $ENV{SIMPATH})
 set(FAIRROOTPATH $ENV{FAIRROOTPATH})
+
+include(cmake/utils/create_library_with_dictionary.cmake)
+include(cmake/scripts/set_ld_library_dir.cmake)
+set(GRAPHVIZ_EXTERNAL_LIBS FALSE)
 
 string(REGEX MATCHALL "[^:]+" PATH $ENV{PATH})
 
-set(CMAKE_MODULE_PATH "${FAIRROOTPATH}/share/fairbase/cmake/modules" ${CMAKE_MODULE_PATH})
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/scripts" ${CMAKE_MODULE_PATH})
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/utils" ${CMAKE_MODULE_PATH})
+list(APPEND CMAKE_PREFIX_PATH ${SIMPATH})
+list(APPEND CMAKE_PREFIX_PATH ${FAIRROOTPATH})
+
+list(APPEND CMAKE_MODULE_PATH "${FAIRROOTPATH}/share/fairbase/cmake/modules")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/scripts")
 
 # For CMakeLists that still use the old way
 set(ROOT_FOUND_VERSION 600000)
 set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/lib")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
+set(FairRoot_ROOT "${FAIRROOTPATH}")
 
 set(CheckSrcDir "${FAIRROOTPATH}/share/fairbase/cmake/checks")
 
@@ -84,7 +84,6 @@ option(WITH_UCESB "Build UCESB" OFF)
 option(WITH_EPICS "Build EPICS" OFF)
 option(WITH_ACTAR "Build ACTAR" OFF)
 option(WITH_SOFIA "Build SOFIA" OFF)
-option(WITH_NeuLAND_DNN "Build NeuLAND DNN" OFF)
 option(WITH_GTPC "Build GTPC" OFF)
 option(WITH_FRS "Build FRS" OFF)
 option(WITH_ASYEOS "Build ASYEOS" OFF)
@@ -95,11 +94,10 @@ if(NOT FairCMakeModules_FOUND)
     message(FATAL_ERROR "Could not find FairCMakeModules! ")
 endif()
 
-include(create_library_with_dictionary)
 include(FairFindPackage2)
 include(FairFormattedOutput)
 
-find_package2(PUBLIC FairRoot REQUIRED)
+find_package2(PUBLIC FairRoot CONFIG REQUIRED)
 
 # FairRoot_VERSION is eventually set by find_package, for now let's set it explicitly
 execute_process(
@@ -122,16 +120,26 @@ set(R3BROOTPATH ${CMAKE_INSTALL_PREFIX})
 # Load some basic macros which are needed later on
 include(FairMacros)
 
-list(APPEND required_root_components RIO)
+set(required_root_components
+    RIO
+    Geom
+    Physics
+    Matrix
+    Hist
+    Graf
+    Gpad
+    Net
+    Imt
+    Core
+    MathCore
+    RHTTP
+    Spectrum)
 list(APPEND optional_root_components opengl)
 list(APPEND optional_root_components gdml vmc)
 
-# TODO: ROOT package should be found with CONFIG mode
 find_package2(
     PUBLIC
     ROOT
-    # VERSION
-    # 6.16.00
     CONFIG
     REQUIRED
     COMPONENTS

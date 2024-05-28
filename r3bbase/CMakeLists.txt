@@ -43,29 +43,7 @@ set(HEADERS
     R3BTsplinePar.h
     R3BWhiterabbitPropagator.h)
 
-set(DEPENDENCIES
-    GeoBase
-    ParBase
-    Base
-    Gen
-    Online
-    FairTools
-    ROOT::Geom
-    ROOT::Physics
-    ROOT::Matrix
-    ROOT::Hist
-    ROOT::Graf
-    ROOT::Gpad
-    ROOT::Net
-    ROOT::Imt
-    VMCLibrary
-    ROOT::Core
-    ROOT::MathCore
-    ROOT::RIO
-    ROOT::RHTTP
-    ROOT::Spectrum
-    FairLogger::FairLogger
-    fmt::fmt)
+set(DEPENDENCIES FairRoot::Generators FairRoot::Online)
 
 add_library_with_dictionary(
     LIBNAME
@@ -81,8 +59,11 @@ add_library_with_dictionary(
     DEPENDENCIES
     ${DEPENDENCIES})
 
-target_link_directories(R3BBase PUBLIC ${FAIRROOT_LIBRARY_DIR})
-
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
+    message(STATUS "Linking -lstdc++fs due to the old version of gcc")
     target_link_libraries(R3BBase PRIVATE -lstdc++fs)
+endif()
+
+if("${FairRoot_VERSION}" VERSION_LESS 19.0.0)
+    target_link_directories(R3BBase PUBLIC ${ROOT_LIBRARY_DIR})
 endif()

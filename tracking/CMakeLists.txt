@@ -53,4 +53,4 @@ add_library_with_dictionary(
     DEPENDENCIES
     R3BData
     Field
-    TrkBase)
+    FairRoot::TrackBase)
