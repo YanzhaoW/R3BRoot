@@ -57,7 +57,10 @@ set(SIMPATH $ENV{SIMPATH})
 set(FAIRROOTPATH $ENV{FAIRROOTPATH})
 
 include(cmake/utils/create_library_with_dictionary.cmake)
+include(GNUInstallDirs)
+
 include(cmake/scripts/set_ld_library_dir.cmake)
+
 set(GRAPHVIZ_EXTERNAL_LIBS FALSE)
 
 string(REGEX MATCHALL "[^:]+" PATH $ENV{PATH})
@@ -789,6 +792,12 @@ if(PROJECT_PACKAGE_DEPENDENCIES)
         unset(version_req_str)
     endforeach()
 endif()
+
+install(
+    EXPORT R3BRoot
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/r3b
+    NAMESPACE R3B::
+    FILE R3BRootConfig.cmake)
 
 # Summary frameworks ###########################################################
 message(STATUS "  ")

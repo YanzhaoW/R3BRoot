@@ -67,3 +67,4 @@ endif()
 if("${FairRoot_VERSION}" VERSION_LESS 19.0.0)
     target_link_directories(R3BBase PUBLIC ${ROOT_LIBRARY_DIR})
 endif()
+

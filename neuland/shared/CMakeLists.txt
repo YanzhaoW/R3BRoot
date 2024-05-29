@@ -11,8 +11,13 @@
 # or submit itself to any jurisdiction.                                      #
 ##############################################################################
 
-set(SRCS ElasticScattering.cxx IsElastic.cxx R3BNeulandGeoPar.cxx R3BNeulandContFact.cxx
-         R3BProgramOptions.cxx R3BNeulandVisualizer.cxx)
+set(SRCS
+    ElasticScattering.cxx
+    IsElastic.cxx
+    R3BNeulandGeoPar.cxx
+    R3BNeulandContFact.cxx
+    R3BProgramOptions.cxx
+    R3BNeulandVisualizer.cxx)
 
 set(HEADERS
     ClusteringEngine.h
@@ -32,8 +37,17 @@ set(HEADERS
 # ${HEADERS} ${PROTO_HDRS}) Include directory such that protoc generated headers are found
 # include_directories(${CMAKE_CURRENT_BINARY_DIR}) ${PROTOBUF_LIBRARY}
 
-add_library(R3BNeulandShared SHARED ${SRCS})
-target_include_directories(R3BNeulandShared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(R3BNeulandShared PUBLIC R3BData Boost::program_options)
-root_generate_dictionary(R3BNeulandShared_dict ${HEADERS} MODULE R3BNeulandShared LINKDEF
-                         NeulandSharedLinkDef.h)
+add_library_with_dictionary(
+    LIBNAME
+    R3BNeulandShared
+    LINKDEF
+    NeulandSharedLinkDef.h
+    HEADERS
+    ${HEADERS}
+    SRCS
+    ${SRCS}
+    INCLUDEDIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDENCIES
+    R3BData
+    Boost::program_options)

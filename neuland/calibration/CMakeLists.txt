@@ -59,8 +59,17 @@ set(HEADERS
     R3BNeulandProvideTStart.h
     R3BNeulandMappingPar.h)
 
-add_library(R3BNeulandCalibration SHARED ${SRCS})
-target_include_directories(R3BNeulandCalibration PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(R3BNeulandCalibration PUBLIC R3BTCal R3BNeulandShared)
-root_generate_dictionary(R3BNeulandCalibration_dict ${HEADERS} MODULE R3BNeulandCalibration LINKDEF
-                         NeulandCalibrationLinkDef.h)
+add_library_with_dictionary(
+    LIBNAME
+    R3BNeulandCalibration
+    LINKDEF
+    NeulandCalibrationLinkDef.h
+    HEADERS
+    ${HEADERS}
+    SRCS
+    ${SRCS}
+    INCLUDEDIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDENCIES
+    R3BTCal
+    R3BNeulandShared)

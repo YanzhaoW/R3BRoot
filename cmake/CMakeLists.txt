@@ -11,8 +11,8 @@
 # or submit itself to any jurisdiction.                                      #
 ##############################################################################
 
-install(DIRECTORY
-  modules
-  scripts
-  DESTINATION ${PROJECT_INSTALL_DATADIR}/cmake
-)
+# install(DIRECTORY
+#   modules
+#   scripts
+#   DESTINATION ${PROJECT_INSTALL_DATADIR}/cmake
+# )
