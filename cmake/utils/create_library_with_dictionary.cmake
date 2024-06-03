@@ -32,7 +32,9 @@ function(add_library_with_dictionary)
 
     add_library(${ARGS_LIBNAME} SHARED)
 
-    add_library(R3B::${ARGS_LIBNAME} ALIAS ${ARGS_LIBNAME})
+    string(REGEX REPLACE "^R3B" "" stripped_libname ${ARGS_LIBNAME})
+    set_target_properties(${ARGS_LIBNAME} PROPERTIES OUTPUT_NAME ${ARGS_LIBNAME}
+                                                     EXPORT_NAME ${stripped_libname})
 
     target_sources(
         ${ARGS_LIBNAME}

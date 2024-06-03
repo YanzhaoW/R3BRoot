@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+list(APPEND CMAKE_MODULE_PATH "@PACKAGE_CMakeModulesDir@")
+list(APPEND CMAKE_PREFIX_PATH "@CMAKE_PREFIX_PATH@")
+include(@PACKAGE_CMakeModulesDir@/R3BRootTargets.cmake)
+
+find_dependency(FairRoot CONFIG)
+find_dependency(ROOT CONFIG COMPONENTS ${required_root_components})
+find_dependency(FairLogger)
+find_dependency(Boost COMPONENTS ${boost_dependencies})
+find_dependency(Geant4)
+find_dependency(Geant3)
+find_dependency(Geant4)
+find_dependency(Geant4VMC)
+find_dependency(fmt)
+
