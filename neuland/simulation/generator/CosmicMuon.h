@@ -28,7 +28,7 @@
 
 namespace R3B::Neuland
 {
-    struct trig4D
+    struct AngleInfo
     {
         double sin_phi;
         double sin_theta;
@@ -41,9 +41,9 @@ namespace R3B::Neuland
     {
       public:
         TrackGenerator(AngleDist angle_dist, EnergyDist energy_dist, PointDist point_dist)
-            : angle_dist_{angle_dist}
-            , energy_dist_{energy_dist}
-            , point_dist_{point_dist}
+            : angle_dist_{ angle_dist }
+            , energy_dist_{ energy_dist }
+            , point_dist_{ point_dist }
         {
         }
 
@@ -54,9 +54,6 @@ namespace R3B::Neuland
         static constexpr auto CLight = ::Neuland::CLight;
         double detector_size_{ 50.0 };
 
-        ROOT::Math::Cartesian3D<double> position_{};
-        ROOT::Math::PxPyPzE4D<double> momentum_energy_{};
-
         AngleDist angle_dist_{};
         EnergyDist energy_dist_{};
         PointDist point_dist_{};
@@ -66,15 +63,17 @@ namespace R3B::Neuland
         auto rd_num_gen_angles(AngleDist angle_dist_) -> ROOT::Math::Polar3D<double>;
         auto rd_num_gen_energy() -> double;
         auto calculate_abs_momentum(double kinetic_energy) -> double { return kinetic_energy / CLight; };
-        auto calculate_momentum_energy(double kinetic_energy, trig4D& trig) -> ROOT::Math::PxPyPzE4D<double>;
+        auto calculate_momentum_energy(double kinetic_energy, AngleInfo& angle_info) -> ROOT::Math::PxPyPzE4D<double>;
 
         auto calculate_external_position_momentum(PointDist point_dist_, AngleDist angle_dist_, EnergyDist energy_dist_)
             -> std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>;
 
-        Bool_t ReadEvent(FairPrimaryGenerator* prim_gen) override
+        auto ReadEvent(FairPrimaryGenerator* prim_gen) -> Bool_t override
         {
-            std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>> position_momentum =
-                calculate_external_position_momentum(point_dist_, angle_dist_, energy_dist_);
+
+            auto position_momentum = std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>{
+                calculate_external_position_momentum(point_dist_, angle_dist_, energy_dist_)
+            };
             prim_gen->AddTrack(13,
                                position_momentum.first.Px(),
                                position_momentum.first.Py(),
@@ -88,50 +87,50 @@ namespace R3B::Neuland
     };
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
-    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::rd_num_gen_angles(AngleDist angle_dist_)
+    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::rd_num_gen_angles(AngleDist angle_dist)
         -> ROOT::Math::Polar3D<double>
     {
-        ROOT::Math::Polar3D<double> angles{};
+        auto angles = ROOT::Math::Polar3D<double>{};
         angles.SetPhi(rd_engine_->Uniform(0., M_PI));
-        angles.SetTheta(angle_dist_(rd_engine_));
+        angles.SetTheta(angle_dist(rd_engine_));
         return angles;
     }
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
     auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_momentum_energy(double kinetic_energy,
-                                                                                     trig4D& trig)
+                                                                                     AngleInfo& angle_info)
         -> ROOT::Math::PxPyPzE4D<double>
     {
-        ROOT::Math::PxPyPzE4D<double> momentum_energy{ 0, 0, 0, kinetic_energy };
-        double abs_momentum = calculate_abs_momentum(kinetic_energy);
-        momentum_energy.SetPx(abs_momentum * trig.sin_theta * trig.cos_phi);
-        momentum_energy.SetPy(abs_momentum * trig.sin_theta * trig.sin_phi);
-        momentum_energy.SetPz(abs_momentum * trig.cos_theta);
+        auto momentum_energy = ROOT::Math::PxPyPzE4D<double>{ 0, 0, 0, kinetic_energy };
+        auto abs_momentum = double{ calculate_abs_momentum(kinetic_energy) };
+        momentum_energy.SetPx(abs_momentum * angle_info.sin_theta * angle_info.cos_phi);
+        momentum_energy.SetPy(abs_momentum * angle_info.sin_theta * angle_info.sin_phi);
+        momentum_energy.SetPz(abs_momentum * angle_info.cos_theta);
         return momentum_energy;
     }
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
-    std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>
-        TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_external_position_momentum(PointDist point_dist_,
-                                                                                               AngleDist angle_dist_,
-                                                                                               EnergyDist energy_dist_)
+    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_external_position_momentum(PointDist point_dist,
+                                                                                                AngleDist angle_dist,
+                                                                                                EnergyDist energy_dist)
+        -> std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>
     {
-        auto point = point_dist_(rd_engine_);
-        auto angles = rd_num_gen_angles(angle_dist_);
-        auto energy = energy_dist_(rd_engine_);
+        auto const point = point_dist(rd_engine_);
+        auto const angles = rd_num_gen_angles(angle_dist);
+        auto const energy = energy_dist(rd_engine_);
 
-        trig4D trig{};
-        trig.sin_phi = std::sin(angles.phi());
-        trig.cos_phi = std::cos(angles.phi());
-        trig.sin_theta = std::sin(angles.theta());
-        trig.cos_theta = std::cos(angles.theta());
+        auto angle_info = AngleInfo{};
+        angle_info.sin_phi = std::sin(angles.phi());
+        angle_info.cos_phi = std::cos(angles.phi());
+        angle_info.sin_theta = std::sin(angles.theta());
+        angle_info.cos_theta = std::cos(angles.theta());
 
         std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>> position_momentum{};
 
-        position_momentum.second.SetX(point.x() - trig.sin_theta * trig.cos_phi * detector_size_);
-        position_momentum.second.SetY(point.y() - trig.sin_theta * trig.sin_phi * detector_size_);
-        position_momentum.second.SetZ(point.z() - trig.cos_theta * detector_size_);
-        position_momentum.first = calculate_momentum_energy(energy, trig);
+        position_momentum.second.SetX(point.x() - angle_info.sin_theta * angle_info.cos_phi * detector_size_);
+        position_momentum.second.SetY(point.y() - angle_info.sin_theta * angle_info.sin_phi * detector_size_);
+        position_momentum.second.SetZ(point.z() - angle_info.cos_theta * detector_size_);
+        position_momentum.first = calculate_momentum_energy(energy, angle_info);
 
         return position_momentum;
     }
