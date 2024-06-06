@@ -12,10 +12,10 @@
 ##############################################################################
 
 set(SRCS R3BNeuland.cxx R3BNeulandMCMon.cxx R3BNeulandPrimaryClusterFinder.cxx
-         R3BNeulandPrimaryInteractionFinder.cxx generator.cxx)
+         R3BNeulandPrimaryInteractionFinder.cxx)
 
 set(HEADERS R3BNeuland.h R3BNeulandMCMon.h R3BNeulandPrimaryClusterFinder.h
-            R3BNeulandPrimaryInteractionFinder.h generatorOptimized.h)
+    R3BNeulandPrimaryInteractionFinder.h CosmicMuon.h)
 
 
 add_library(R3BNeulandSimulation SHARED ${SRCS})
