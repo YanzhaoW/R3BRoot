@@ -1,4 +1,18 @@
+/******************************************************************************
+ *   Copyright (C) 2019 GSI Helmholtzzentrum für Schwerionenforschung GmbH    *
+ *   Copyright (C) 2019-2024 Members of R3B Collaboration                     *
+ *                                                                            *
+ *             This software is distributed under the terms of the            *
+ *                 GNU General Public Licence (GPL) version 3,                *
+ *                    copied verbatim in the file "LICENSE".                  *
+ *                                                                            *
+ * In applying this license GSI does not waive the privileges and immunities  *
+ * granted to it by virtue of its status as an Intergovernmental Organization *
+ * or submit itself to any jurisdiction.                                      *
+ ******************************************************************************/
+
 #pragma once
+#include "FairPrimaryGenerator.h"
 #include "RtypesCore.h"
 #include "TRandom.h"
 #include <FairGenerator.h>
@@ -10,94 +24,115 @@
 #include <cmath>
 #include <fmt/format.h>
 #include <memory>
-#include "FairPrimaryGenerator.h"
-template <typename AngleDist, typename EnergyDist, typename PointDist>
-class TrackGenerator : FairGenerator
+#include <utility>
+
+namespace R3B::Neuland
 {
-  public:
-    TrackGenerator(AngleDist angle_dist, EnergyDist energy_dist, PointDist point_dist)
-        : angle_dist_(angle_dist)
-        , energy_dist_(energy_dist)
-        , point_dist_(point_dist)
+    struct trig4D
     {
+        double sin_phi;
+        double sin_theta;
+        double cos_phi;
+        double cos_theta;
+    };
+
+    template <typename AngleDist, typename EnergyDist, typename PointDist>
+    class TrackGenerator : FairGenerator
+    {
+      public:
+        TrackGenerator(AngleDist angle_dist, EnergyDist energy_dist, PointDist point_dist)
+            : angle_dist_{angle_dist}
+            , energy_dist_{energy_dist}
+            , point_dist_{point_dist}
+        {
+        }
+
+        void set_detector_size(double detector_size) { detector_size_ = detector_size; }
+        void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
+
+      private:
+        static constexpr auto CLight = ::Neuland::CLight;
+        double detector_size_{ 50.0 };
+
+        ROOT::Math::Cartesian3D<double> position_{};
+        ROOT::Math::PxPyPzE4D<double> momentum_energy_{};
+
+        AngleDist angle_dist_{};
+        EnergyDist energy_dist_{};
+        PointDist point_dist_{};
+        TRandom* rd_engine_{ gRandom };
+
+        auto rd_num_gen_point() -> ROOT::Math::Cartesian3D<double>;
+        auto rd_num_gen_angles(AngleDist angle_dist_) -> ROOT::Math::Polar3D<double>;
+        auto rd_num_gen_energy() -> double;
+        auto calculate_abs_momentum(double kinetic_energy) -> double { return kinetic_energy / CLight; };
+        auto calculate_momentum_energy(double kinetic_energy, trig4D& trig) -> ROOT::Math::PxPyPzE4D<double>;
+
+        auto calculate_external_position_momentum(PointDist point_dist_, AngleDist angle_dist_, EnergyDist energy_dist_)
+            -> std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>;
+
+        Bool_t ReadEvent(FairPrimaryGenerator* prim_gen) override
+        {
+            std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>> position_momentum =
+                calculate_external_position_momentum(point_dist_, angle_dist_, energy_dist_);
+            prim_gen->AddTrack(13,
+                               position_momentum.first.Px(),
+                               position_momentum.first.Py(),
+                               position_momentum.first.Pz(),
+                               position_momentum.second.X(),
+                               position_momentum.second.Y(),
+                               position_momentum.second.Z());
+
+            return true;
+        };
+    };
+
+    template <typename AngleDist, typename EnergyDist, typename PointDist>
+    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::rd_num_gen_angles(AngleDist angle_dist_)
+        -> ROOT::Math::Polar3D<double>
+    {
+        ROOT::Math::Polar3D<double> angles{};
+        angles.SetPhi(rd_engine_->Uniform(0., M_PI));
+        angles.SetTheta(angle_dist_(rd_engine_));
+        return angles;
     }
 
-    void set_detector_size(double detector_size) { detector_size_ = detector_size; }
-    void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
-
-  private:
-    double detector_size_{ 50.0 };
-
-    ROOT::Math::Cartesian3D<double> position_{};
-    ROOT::Math::PxPyPzE4D<double> momentum_energy_{};
-
-    AngleDist angle_dist_;
-    EnergyDist energy_dist_;
-    PointDist point_dist_;
-    /* TRandom3 rd_engine_; */
-    TRandom* rd_engine_{ gRandom };
-
-    auto rd_num_gen_point() -> ROOT::Math::Cartesian3D<double>;
-    auto rd_num_gen_angles() -> ROOT::Math::Polar3D<double>;
-    auto rd_num_gen_energy() -> double;
-    auto calculate_abs_momentum(double kinetic_energy) -> double;
-    auto calculate_momentum_energy(double kinetic_energy,
-                                   double sin_theta,
-                                   double sin_phi,
-                                   double cos_theta,
-                                   double cos_phi) -> void;
-
-    void calculate_external_position();
-
-    Bool_t ReadEvent(FairPrimaryGenerator* prim_gen) override
+    template <typename AngleDist, typename EnergyDist, typename PointDist>
+    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_momentum_energy(double kinetic_energy,
+                                                                                     trig4D& trig)
+        -> ROOT::Math::PxPyPzE4D<double>
     {
-        calculate_external_position();
-        prim_gen->AddTrack(13,momentum_energy_.Px(),momentum_energy_.Py(),momentum_energy_.Pz(), position_.X(),  position_.Y(), position_.Z());
+        ROOT::Math::PxPyPzE4D<double> momentum_energy{ 0, 0, 0, kinetic_energy };
+        double abs_momentum = calculate_abs_momentum(kinetic_energy);
+        momentum_energy.SetPx(abs_momentum * trig.sin_theta * trig.cos_phi);
+        momentum_energy.SetPy(abs_momentum * trig.sin_theta * trig.sin_phi);
+        momentum_energy.SetPz(abs_momentum * trig.cos_theta);
+        return momentum_energy;
+    }
 
-        return true;
-    };
-};
+    template <typename AngleDist, typename EnergyDist, typename PointDist>
+    std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>
+        TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_external_position_momentum(PointDist point_dist_,
+                                                                                               AngleDist angle_dist_,
+                                                                                               EnergyDist energy_dist_)
+    {
+        auto point = point_dist_(rd_engine_);
+        auto angles = rd_num_gen_angles(angle_dist_);
+        auto energy = energy_dist_(rd_engine_);
 
-template <typename AngleDist, typename EnergyDist, typename PointDist>
-auto TrackGenerator<AngleDist, EnergyDist, PointDist>::rd_num_gen_angles() -> ROOT::Math::Polar3D<double>
-{
-    ROOT::Math::Polar3D<double> angles{};
-    angles.SetPhi(rd_engine_->Uniform(0., M_PI));
-    angles.SetTheta(angle_dist_(rd_engine_));
-    return angles;
-}
-template <typename AngleDist, typename EnergyDist, typename PointDist>
-auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_abs_momentum(double kinetic_energy) -> double
-{
-    return kinetic_energy / Neuland::CLight;
-}
-template <typename AngleDist, typename EnergyDist, typename PointDist>
-auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_momentum_energy(double kinetic_energy,
-                                                                                 double sin_theta,
-                                                                                 double sin_phi,
-                                                                                 double cos_theta,
-                                                                                 double cos_phi) -> void
-{
-    ROOT::Math::PxPyPzE4D<double> momentum_energy{ 0, 0, 0, kinetic_energy };
-    double abs_momentum = calculate_abs_momentum(kinetic_energy);
-    momentum_energy_.SetPx(abs_momentum * sin_theta * cos_phi);
-    momentum_energy_.SetPy(abs_momentum * sin_theta * sin_phi);
-    momentum_energy_.SetPz(abs_momentum * cos_theta);
-}
+        trig4D trig{};
+        trig.sin_phi = std::sin(angles.phi());
+        trig.cos_phi = std::cos(angles.phi());
+        trig.sin_theta = std::sin(angles.theta());
+        trig.cos_theta = std::cos(angles.theta());
 
-template <typename AngleDist, typename EnergyDist, typename PointDist>
-void TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_external_position()
-{
-    auto point = point_dist_(rd_engine_);
-    auto angles = rd_num_gen_angles();
-    auto energy = energy_dist_(rd_engine_);
-    auto sin_phi = std::sin(angles.phi());
-    auto cos_phi = std::cos(angles.phi());
-    auto sin_theta = std::sin(angles.theta());
-    auto cos_theta = std::cos(angles.theta());
-    calculate_momentum_energy(energy, sin_theta, sin_phi, cos_theta, cos_phi);
+        std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>> position_momentum{};
 
-    position_.SetX(point.x() - sin_theta * cos_phi * detector_size_);
-    position_.SetY(point.y() - sin_theta * sin_phi * detector_size_);
-    position_.SetZ(point.z() - cos_theta * detector_size_);
-}
+        position_momentum.second.SetX(point.x() - trig.sin_theta * trig.cos_phi * detector_size_);
+        position_momentum.second.SetY(point.y() - trig.sin_theta * trig.sin_phi * detector_size_);
+        position_momentum.second.SetZ(point.z() - trig.cos_theta * detector_size_);
+        position_momentum.first = calculate_momentum_energy(energy, trig);
+
+        return position_momentum;
+    }
+} // namespace R3B::Neuland
