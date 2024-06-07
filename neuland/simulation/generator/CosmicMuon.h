@@ -28,6 +28,7 @@
 
 namespace R3B::Neuland
 {
+
     struct AngleInfo
     {
         double sin_phi;
@@ -51,6 +52,9 @@ namespace R3B::Neuland
         void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
 
       private:
+        using MomentumPosition = std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>;
+        using Momentum = ROOT::Math::PxPyPzE4D<double>;
+        using AngleRadius = ROOT::Math::Polar3D<double>;
         static constexpr auto CLight = ::Neuland::CLight;
         double detector_size_{ 50.0 };
 
@@ -59,21 +63,18 @@ namespace R3B::Neuland
         PointDist point_dist_{};
         TRandom* rd_engine_{ gRandom };
 
-        auto rd_num_gen_point() -> ROOT::Math::Cartesian3D<double>;
-        auto rd_num_gen_angles(AngleDist angle_dist_) -> ROOT::Math::Polar3D<double>;
-        auto rd_num_gen_energy() -> double;
+        auto rd_num_gen_angles(AngleDist angle_dist_) -> AngleRadius;
         auto calculate_abs_momentum(double kinetic_energy) -> double { return kinetic_energy / CLight; };
-        auto calculate_momentum_energy(double kinetic_energy, AngleInfo& angle_info) -> ROOT::Math::PxPyPzE4D<double>;
+        auto calculate_momentum_energy(double kinetic_energy, AngleInfo& angle_info) -> Momentum;
 
         auto calculate_external_position_momentum(PointDist point_dist_, AngleDist angle_dist_, EnergyDist energy_dist_)
-            -> std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>;
+            -> MomentumPosition;
 
         auto ReadEvent(FairPrimaryGenerator* prim_gen) -> Bool_t override
         {
 
-            auto position_momentum = std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>{
-                calculate_external_position_momentum(point_dist_, angle_dist_, energy_dist_)
-            };
+            auto position_momentum =
+                MomentumPosition{ calculate_external_position_momentum(point_dist_, angle_dist_, energy_dist_) };
             prim_gen->AddTrack(13,
                                position_momentum.first.Px(),
                                position_momentum.first.Py(),
@@ -87,10 +88,9 @@ namespace R3B::Neuland
     };
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
-    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::rd_num_gen_angles(AngleDist angle_dist)
-        -> ROOT::Math::Polar3D<double>
+    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::rd_num_gen_angles(AngleDist angle_dist) -> AngleRadius
     {
-        auto angles = ROOT::Math::Polar3D<double>{};
+        auto angles = AngleRadius{};
         angles.SetPhi(rd_engine_->Uniform(0., M_PI));
         angles.SetTheta(angle_dist(rd_engine_));
         return angles;
@@ -98,10 +98,9 @@ namespace R3B::Neuland
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
     auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_momentum_energy(double kinetic_energy,
-                                                                                     AngleInfo& angle_info)
-        -> ROOT::Math::PxPyPzE4D<double>
+                                                                                     AngleInfo& angle_info) -> Momentum
     {
-        auto momentum_energy = ROOT::Math::PxPyPzE4D<double>{ 0, 0, 0, kinetic_energy };
+        auto momentum_energy = Momentum{ 0, 0, 0, kinetic_energy };
         auto abs_momentum = double{ calculate_abs_momentum(kinetic_energy) };
         momentum_energy.SetPx(abs_momentum * angle_info.sin_theta * angle_info.cos_phi);
         momentum_energy.SetPy(abs_momentum * angle_info.sin_theta * angle_info.sin_phi);
@@ -113,7 +112,7 @@ namespace R3B::Neuland
     auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_external_position_momentum(PointDist point_dist,
                                                                                                 AngleDist angle_dist,
                                                                                                 EnergyDist energy_dist)
-        -> std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>
+        -> MomentumPosition
     {
         auto const point = point_dist(rd_engine_);
         auto const angles = rd_num_gen_angles(angle_dist);
@@ -125,7 +124,7 @@ namespace R3B::Neuland
         angle_info.sin_theta = std::sin(angles.theta());
         angle_info.cos_theta = std::cos(angles.theta());
 
-        std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>> position_momentum{};
+        auto position_momentum = MomentumPosition{};
 
         position_momentum.second.SetX(point.x() - angle_info.sin_theta * angle_info.cos_phi * detector_size_);
         position_momentum.second.SetY(point.y() - angle_info.sin_theta * angle_info.sin_phi * detector_size_);
