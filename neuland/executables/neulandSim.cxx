@@ -6,6 +6,8 @@
 #include "R3BCave.h"
 #include "R3BNeuland.h"
 #include "TStopwatch.h"
+#include <CosmicMuon.h>
+#include <CosmicMuonDistributions.h>
 #include <G4RunManager.hh>
 #include <G4UserEventAction.hh>
 #include <R3BFieldConst.h>
@@ -15,8 +17,6 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <string>
-#include <CosmicMuon.h>
-#include <CosmicMuonDistributions.h>
 
 constexpr int DEFAULT_RUNID = 999;
 
@@ -80,9 +80,14 @@ int main(int argc, const char** argv)
     auto primGen = std::make_unique<FairPrimaryGenerator>();
     primGen->AddGenerator(boxGen.release());
     run->SetGenerator(primGen.release());
-//Paula primary partical gen Test
+    // Paula primary partical gen Test
 
-    auto cosmicMuon= std::make_unique<R3B::Neuland::TrackGenerator>(angle_dist, energy_dist, point_dist);
+    auto angle_dist = AngleDist{};
+    auto energy_dist = EnergyDist{};
+    auto point_dist = PointDist{};
+
+    auto cosmicMuon = std::make_unique<R3B::Neuland::TrackGenerator>(angle_dist, energy_dist, point_dist);
+
 
     // Geometry: Cave
     auto cave = std::make_unique<R3BCave>("CAVE");

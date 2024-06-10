@@ -49,8 +49,14 @@ namespace R3B::Neuland
         }
 
         void set_detector_size(double detector_size) { detector_size_ = detector_size; }
-        void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
-        void set_PID(int PID) {PID_ =PID;};
+        void set_rd_engine(TRandom* user_rd_engine)
+        {
+            angle_dist_.rd_engine_ = user_rd_engine;
+            energy_dist_.rd_engine_ = user_rd_engine;
+            point_dist_.rd_engine_ = user_rd_engine;
+            rd_engine_ = user_rd_engine;
+        }
+        void set_PID(int PID) { PID_ = PID; };
 
       private:
         using MomentumPosition = std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>;
@@ -58,7 +64,7 @@ namespace R3B::Neuland
         using AngleRadius = ROOT::Math::Polar3D<double>;
         static constexpr auto CLight = ::Neuland::CLight;
         double detector_size_{ 50.0 };
-        int PID_{13};
+        int PID_{ 13 };
 
         AngleDist angle_dist_{};
         EnergyDist energy_dist_{};
@@ -94,7 +100,8 @@ namespace R3B::Neuland
     {
         auto angles = AngleRadius{};
         angles.SetPhi(rd_engine_->Uniform(0., M_PI));
-        angles.SetTheta(angle_dist(rd_engine_));
+        // angles.SetTheta(angle_dist(rd_engine_));
+        angles.SetTheta(angle_dist.rd_angle());
         return angles;
     }
 
@@ -116,9 +123,12 @@ namespace R3B::Neuland
                                                                                                 EnergyDist energy_dist)
         -> MomentumPosition
     {
-        auto const point = point_dist(rd_engine_);
+        // auto const point = point_dist(rd_engine_);
+        // auto const angles = rd_num_gen_angles(angle_dist);
+        // auto const energy = energy_dist(rd_engine_);
+        auto const point = point_dist.rd_position();
         auto const angles = rd_num_gen_angles(angle_dist);
-        auto const energy = energy_dist(rd_engine_);
+        auto const energy = energy_dist.rd_position();
 
         auto angle_info = AngleInfo{};
         angle_info.sin_phi = std::sin(angles.phi());
@@ -128,9 +138,9 @@ namespace R3B::Neuland
 
         auto position_momentum = MomentumPosition{};
 
-        position_momentum.second.SetX(point.x() - angle_info.sin_theta * angle_info.cos_phi * detector_size_);
-        position_momentum.second.SetY(point.y() - angle_info.sin_theta * angle_info.sin_phi * detector_size_);
-        position_momentum.second.SetZ(point.z() - angle_info.cos_theta * detector_size_);
+        position_momentum.second.SetX(point.fX() - angle_info.sin_theta * angle_info.cos_phi * detector_size_);
+        position_momentum.second.SetY(point.fY() - angle_info.sin_theta * angle_info.sin_phi * detector_size_);
+        position_momentum.second.SetZ(point.fZ() - angle_info.cos_theta * detector_size_);
         position_momentum.first = calculate_momentum_energy(energy, angle_info);
 
         return position_momentum;
