@@ -15,6 +15,8 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <string>
+#include <CosmicMuon.h>
+#include <CosmicMuonDistributions.h>
 
 constexpr int DEFAULT_RUNID = 999;
 
@@ -78,6 +80,9 @@ int main(int argc, const char** argv)
     auto primGen = std::make_unique<FairPrimaryGenerator>();
     primGen->AddGenerator(boxGen.release());
     run->SetGenerator(primGen.release());
+//Paula primary partical gen Test
+
+    auto cosmicMuon= std::make_unique<R3B::Neuland::TrackGenerator>(angle_dist, energy_dist, point_dist);
 
     // Geometry: Cave
     auto cave = std::make_unique<R3BCave>("CAVE");

@@ -50,6 +50,7 @@ namespace R3B::Neuland
 
         void set_detector_size(double detector_size) { detector_size_ = detector_size; }
         void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
+        void set_PID(int PID) {PID_ =PID;};
 
       private:
         using MomentumPosition = std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>;
@@ -57,6 +58,7 @@ namespace R3B::Neuland
         using AngleRadius = ROOT::Math::Polar3D<double>;
         static constexpr auto CLight = ::Neuland::CLight;
         double detector_size_{ 50.0 };
+        int PID_{13};
 
         AngleDist angle_dist_{};
         EnergyDist energy_dist_{};
@@ -75,7 +77,7 @@ namespace R3B::Neuland
 
             auto position_momentum =
                 MomentumPosition{ calculate_external_position_momentum(point_dist_, angle_dist_, energy_dist_) };
-            prim_gen->AddTrack(13,
+            prim_gen->AddTrack(PID_,
                                position_momentum.first.Px(),
                                position_momentum.first.Py(),
                                position_momentum.first.Pz(),

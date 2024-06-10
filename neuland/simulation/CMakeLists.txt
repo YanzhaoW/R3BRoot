@@ -15,7 +15,7 @@ set(SRCS R3BNeuland.cxx R3BNeulandMCMon.cxx R3BNeulandPrimaryClusterFinder.cxx
          R3BNeulandPrimaryInteractionFinder.cxx)
 
 set(HEADERS R3BNeuland.h R3BNeulandMCMon.h R3BNeulandPrimaryClusterFinder.h
-    R3BNeulandPrimaryInteractionFinder.h generator/CosmicMuon.h)
+    R3BNeulandPrimaryInteractionFinder.h generator/CosmicMuon.h generator/CosmicMuonDistribution.h)
 
 
 add_library(R3BNeulandSimulation SHARED ${SRCS})
