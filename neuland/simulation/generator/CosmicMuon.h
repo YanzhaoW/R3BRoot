@@ -49,13 +49,7 @@ namespace R3B::Neuland
         }
 
         void set_detector_size(const double& detector_size) { detector_size_ = detector_size; }
-        void set_rd_engine(TRandom* user_rd_engine)
-        {
-            angle_dist_.rd_engine_ = user_rd_engine;
-            energy_dist_.rd_engine_ = user_rd_engine;
-            point_dist_.rd_engine_ = user_rd_engine;
-            rd_engine_ = user_rd_engine;
-        }
+        void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
         void set_PID(const int& PID) { PID_ = PID; };
 
       private:
@@ -102,7 +96,7 @@ namespace R3B::Neuland
         auto angles = AngleRadius{};
         angles.SetPhi(rd_engine_->Uniform(0., M_PI));
         // angles.SetTheta(angle_dist(rd_engine_));
-        angles.SetTheta(angle_dist.rd_angle());
+        angles.SetTheta(angle_dist(rd_engine_));
         return angles;
     }
 
@@ -128,21 +122,21 @@ namespace R3B::Neuland
         // auto const point = point_dist(rd_engine_);
         // auto const angles = rd_num_gen_angles(angle_dist);
         // auto const energy = energy_dist(rd_engine_);
-        auto const point = point_dist.rd_position();
+        auto const point = point_dist(rd_engine_);
         auto const angles = rd_num_gen_angles(angle_dist);
-        auto const energy = energy_dist.rd_position();
+        auto const energy = energy_dist(rd_engine_);
 
         auto angle_info = AngleInfo{};
-        angle_info.sin_phi = std::sin(angles.phi());
-        angle_info.cos_phi = std::cos(angles.phi());
-        angle_info.sin_theta = std::sin(angles.theta());
-        angle_info.cos_theta = std::cos(angles.theta());
+        angle_info.sin_phi = std::sin(angles.Phi());
+        angle_info.cos_phi = std::cos(angles.Phi());
+        angle_info.sin_theta = std::sin(angles.Theta());
+        angle_info.cos_theta = std::cos(angles.Theta());
 
         auto position_momentum = MomentumPosition{};
 
-        position_momentum.second.SetX(point.fX() - angle_info.sin_theta * angle_info.cos_phi * detector_size_);
-        position_momentum.second.SetY(point.fY() - angle_info.sin_theta * angle_info.sin_phi * detector_size_);
-        position_momentum.second.SetZ(point.fZ() - angle_info.cos_theta * detector_size_);
+        position_momentum.second.SetX(point.X() - angle_info.sin_theta * angle_info.cos_phi * detector_size_);
+        position_momentum.second.SetY(point.Y() - angle_info.sin_theta * angle_info.sin_phi * detector_size_);
+        position_momentum.second.SetZ(point.Z() - angle_info.cos_theta * detector_size_);
         position_momentum.first = calculate_momentum_energy(energy, angle_info);
 
         return position_momentum;

@@ -8,11 +8,7 @@ namespace R3B::Neuland
     {
 
       public:
-        void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
-
-      private:
-        TRandom* rd_engine_{ gRandom };
-        auto rd_energy() -> double
+        auto operator()(TRandom* rd_engine_) const -> double
         {
             auto mean = double{ 10000. };
             auto sigma = double{ 10. };
@@ -25,11 +21,7 @@ namespace R3B::Neuland
     {
 
       public:
-        void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
-
-      private:
-        TRandom* rd_engine_{ gRandom };
-        auto rd_angle() -> double
+        auto operator()(TRandom* rd_engine_) const -> double
         {
             double angle = asin(sqrt(rd_engine_->Uniform()));
             return angle;
@@ -40,11 +32,7 @@ namespace R3B::Neuland
     {
 
       public:
-        void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
-
-      private:
-        TRandom* rd_engine_{ gRandom };
-        auto rd_position() -> ROOT::Math::Cartesian3D<double>
+        auto operator()(TRandom* rd_engine_) const -> ROOT::Math::Cartesian3D<double>
         {
             auto xmin = double{ 0. };
             auto xmax = double{ 10. };
