@@ -85,9 +85,9 @@ int main(int argc, const char** argv)
 
     auto angle_dist = R3B::Neuland::AngleDist{};
     auto energy_dist = R3B::Neuland::EnergyDist{};
-    auto point_dist = R3B::Neuland::PointDist{};
+    auto position_dist = R3B::Neuland::PositionDist{};
 
-    auto CosmicMuonGenerator = R3B::Neuland::CreateTrackGenerator(angle_dist, energy_dist, point_dist);
+    auto CosmicMuonGenerator = R3B::Neuland::CreateTrackGenerator(angle_dist, energy_dist, position_dist);
     auto primGen = std::make_unique<FairPrimaryGenerator>();
     primGen->AddGenerator(CosmicMuonGenerator.release());
     run->SetGenerator(primGen.release());

@@ -6,45 +6,57 @@ namespace R3B::Neuland
 {
     class EnergyDist
     {
-
       public:
+        void set_mean_sigma(double mean, double sigma)
+        {
+            mean_ = mean;
+            sigma_ = sigma;
+        }
+
         auto operator()(TRandom* rd_engine_) const -> double
         {
-            auto mean = double{ 10000. };
-            auto sigma = double{ 10. };
-            double energy = rd_engine_->Gaus(mean, sigma);
+            auto energy = rd_engine_->Gaus(mean_, sigma_);
             return energy;
         };
+
+      private:
+        double mean_{ 10000. };
+        double sigma_{ 10. };
     };
 
     class AngleDist
     {
-
       public:
         auto operator()(TRandom* rd_engine_) const -> double
         {
-            double angle = asin(sqrt(rd_engine_->Uniform()));
+            auto angle = asin(sqrt(rd_engine_->Uniform()));
             return angle;
         };
     };
 
-    class PointDist
+    class PositionDist
     {
-
       public:
+        void set_box_size(double xmin, double xmax, double ymin, double ymax, double zmin, double zmax)
+        {
+            xmin_ = xmin, xmax_ = xmax, ymin_ = ymin, ymax_ = ymax, zmin_ = zmin, zmax_ = zmax;
+        }
+
         auto operator()(TRandom* rd_engine_) const -> ROOT::Math::Cartesian3D<double>
         {
-            auto xmin = double{ 0. };
-            auto xmax = double{ 10. };
-            auto ymin = double{ 0. };
-            auto ymax = double{ 10. };
-            auto zmin = double{ 0. };
-            auto zmax = double{ 10. };
-            auto box_points = ROOT::Math::Cartesian3D<double>{};
-            box_points.SetX(rd_engine_->Uniform(xmin, xmax));
-            box_points.SetY(rd_engine_->Uniform(ymin, ymax));
-            box_points.SetZ(rd_engine_->Uniform(zmin, zmax));
-            return box_points;
+            auto box_positions = ROOT::Math::Cartesian3D<double>{};
+            box_positions.SetX(rd_engine_->Uniform(xmin_, xmax_));
+            box_positions.SetY(rd_engine_->Uniform(ymin_, ymax_));
+            box_positions.SetZ(rd_engine_->Uniform(zmin_, zmax_));
+            return box_positions;
         }
+
+      private:
+        double xmin_ = { 0. };
+        double xmax_ = { 10. };
+        double ymin_ = { 0. };
+        double ymax_ = { 10. };
+        double zmin_ = { 0. };
+        double zmax_ = { 10. };
     };
 } // namespace R3B::Neuland
