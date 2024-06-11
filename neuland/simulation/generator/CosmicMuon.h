@@ -21,7 +21,6 @@
 #include <Math/GenVector/PxPyPzE4D.h>
 #include <R3BNeulandCommon.h>
 #include <TRandom3.h>
-#include <algorithm>
 #include <cmath>
 #include <fmt/format.h>
 #include <memory>

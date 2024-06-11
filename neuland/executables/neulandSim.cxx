@@ -1,3 +1,5 @@
+#include "CosmicMuon.h"
+#include "CosmicMuonDistributions.h"
 #include "FairBoxGenerator.h"
 #include "FairParRootFileIo.h"
 #include "FairPrimaryGenerator.h"
@@ -6,8 +8,6 @@
 #include "R3BCave.h"
 #include "R3BNeuland.h"
 #include "TStopwatch.h"
-#include <CosmicMuon.h>
-#include <CosmicMuonDistributions.h>
 #include <G4RunManager.hh>
 #include <G4UserEventAction.hh>
 #include <R3BFieldConst.h>
