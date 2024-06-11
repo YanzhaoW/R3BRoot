@@ -39,17 +39,17 @@ namespace R3B::Neuland
     };
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
-    class TrackGenerator : FairGenerator
+    class TrackGenerator : public FairGenerator
     {
       public:
-        TrackGenerator(AngleDist angle_dist, EnergyDist energy_dist, PointDist point_dist)
+        TrackGenerator(const AngleDist& angle_dist, const EnergyDist& energy_dist, const PointDist& point_dist)
             : angle_dist_{ angle_dist }
             , energy_dist_{ energy_dist }
             , point_dist_{ point_dist }
         {
         }
 
-        void set_detector_size(double detector_size) { detector_size_ = detector_size; }
+        void set_detector_size(const double& detector_size) { detector_size_ = detector_size; }
         void set_rd_engine(TRandom* user_rd_engine)
         {
             angle_dist_.rd_engine_ = user_rd_engine;
@@ -57,7 +57,7 @@ namespace R3B::Neuland
             point_dist_.rd_engine_ = user_rd_engine;
             rd_engine_ = user_rd_engine;
         }
-        void set_PID(int PID) { PID_ = PID; };
+        void set_PID(const int& PID) { PID_ = PID; };
 
       private:
         using MomentumPosition = std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>;
@@ -72,18 +72,19 @@ namespace R3B::Neuland
         PointDist point_dist_{};
         TRandom* rd_engine_{ gRandom };
 
-        auto rd_num_gen_angles(AngleDist angle_dist_) -> AngleRadius;
-        auto calculate_abs_momentum(double kinetic_energy) -> double { return kinetic_energy / CLight; };
-        auto calculate_momentum_energy(double kinetic_energy, AngleInfo& angle_info) -> Momentum;
+        auto rd_num_gen_angles(const AngleDist& angle_dist) -> AngleRadius;
+        auto calculate_abs_momentum(const double& kinetic_energy) -> double { return kinetic_energy / CLight; };
+        auto calculate_momentum_energy(const double& kinetic_energy, const AngleInfo& angle_info) -> Momentum;
 
-        auto calculate_external_position_momentum(PointDist point_dist_, AngleDist angle_dist_, EnergyDist energy_dist_)
-            -> MomentumPosition;
+        auto calculate_external_position_momentum(const AngleDist& angle_dist,
+                                                  const EnergyDist& energy_dist,
+                                                  const PointDist& point_dist) -> MomentumPosition;
 
         auto ReadEvent(FairPrimaryGenerator* prim_gen) -> Bool_t override
         {
 
             auto position_momentum =
-                MomentumPosition{ calculate_external_position_momentum(point_dist_, angle_dist_, energy_dist_) };
+                MomentumPosition{ calculate_external_position_momentum(angle_dist_, energy_dist_, point_dist_) };
             prim_gen->AddTrack(PID_,
                                position_momentum.first.Px(),
                                position_momentum.first.Py(),
@@ -97,7 +98,7 @@ namespace R3B::Neuland
     };
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
-    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::rd_num_gen_angles(AngleDist angle_dist) -> AngleRadius
+    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::rd_num_gen_angles(const AngleDist& angle_dist) -> AngleRadius
     {
         auto angles = AngleRadius{};
         angles.SetPhi(rd_engine_->Uniform(0., M_PI));
@@ -107,8 +108,9 @@ namespace R3B::Neuland
     }
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
-    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_momentum_energy(double kinetic_energy,
-                                                                                     AngleInfo& angle_info) -> Momentum
+    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_momentum_energy(const double& kinetic_energy,
+                                                                                     const AngleInfo& angle_info)
+        -> Momentum
     {
         auto momentum_energy = Momentum{ 0, 0, 0, kinetic_energy };
         auto abs_momentum = double{ calculate_abs_momentum(kinetic_energy) };
@@ -119,10 +121,10 @@ namespace R3B::Neuland
     }
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
-    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_external_position_momentum(PointDist point_dist,
-                                                                                                AngleDist angle_dist,
-                                                                                                EnergyDist energy_dist)
-        -> MomentumPosition
+    auto TrackGenerator<AngleDist, EnergyDist, PointDist>::calculate_external_position_momentum(
+        const AngleDist& angle_dist,
+        const EnergyDist& energy_dist,
+        const PointDist& point_dist) -> MomentumPosition
     {
         // auto const point = point_dist(rd_engine_);
         // auto const angles = rd_num_gen_angles(angle_dist);
@@ -148,7 +150,7 @@ namespace R3B::Neuland
     }
 
     template <typename AngleDist, typename EnergyDist, typename PointDist>
-    auto CreateTrackGenerator(AngleDist angle_dist, EnergyDist energy_dist, PointDist point_dist)
+    auto CreateTrackGenerator(const AngleDist& angle_dist, const EnergyDist& energy_dist, const PointDist& point_dist)
     {
         return std::make_unique<TrackGenerator<AngleDist, EnergyDist, PointDist>>(angle_dist, energy_dist, point_dist);
     }

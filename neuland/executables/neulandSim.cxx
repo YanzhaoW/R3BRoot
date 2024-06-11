@@ -90,6 +90,7 @@ int main(int argc, const char** argv)
     auto CosmicMuonGenerator = R3B::Neuland::CreateTrackGenerator(angle_dist, energy_dist, point_dist);
     auto primGen = std::make_unique<FairPrimaryGenerator>();
     primGen->AddGenerator(CosmicMuonGenerator.release());
+    run->SetGenerator(primGen.release());
 
     // Geometry: Cave
     auto cave = std::make_unique<R3BCave>("CAVE");
