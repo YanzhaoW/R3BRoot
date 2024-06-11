@@ -21,6 +21,7 @@
 #include <Math/GenVector/PxPyPzE4D.h>
 #include <R3BNeulandCommon.h>
 #include <TRandom3.h>
+#include <algorithm>
 #include <cmath>
 #include <fmt/format.h>
 #include <memory>
@@ -145,4 +146,11 @@ namespace R3B::Neuland
 
         return position_momentum;
     }
+
+    template <typename AngleDist, typename EnergyDist, typename PointDist>
+    auto CreateTrackGenerator(AngleDist angle_dist, EnergyDist energy_dist, PointDist point_dist)
+    {
+        return std::make_unique<TrackGenerator<AngleDist, EnergyDist, PointDist>>(angle_dist, energy_dist, point_dist);
+    }
+
 } // namespace R3B::Neuland

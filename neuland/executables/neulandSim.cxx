@@ -72,22 +72,24 @@ int main(int argc, const char** argv)
     run->SetField(fairField.release());
 
     // Primary particle generator
-    auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi->value());
-    boxGen->SetXYZ(0, 0, 0.);
-    boxGen->SetThetaRange(0., 3.);
-    boxGen->SetPhiRange(0., 360.);
-    boxGen->SetEkinRange(pEnergy->value(), pEnergy->value());
-    auto primGen = std::make_unique<FairPrimaryGenerator>();
-    primGen->AddGenerator(boxGen.release());
-    run->SetGenerator(primGen.release());
+    // auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi->value());
+    // boxGen->SetXYZ(0, 0, 0.);
+    // boxGen->SetThetaRange(0., 3.);
+    // boxGen->SetPhiRange(0., 360.);
+    // boxGen->SetEkinRange(pEnergy->value(), pEnergy->value());
+    // auto primGen = std::make_unique<FairPrimaryGenerator>();
+    // primGen->AddGenerator(boxGen.release());
+    // run->SetGenerator(primGen.release());
+
     // Paula primary partical gen Test
 
-    auto angle_dist = AngleDist{};
-    auto energy_dist = EnergyDist{};
-    auto point_dist = PointDist{};
+    auto angle_dist = R3B::Neuland::AngleDist{};
+    auto energy_dist = R3B::Neuland::EnergyDist{};
+    auto point_dist = R3B::Neuland::PointDist{};
 
-    auto cosmicMuon = std::make_unique<R3B::Neuland::TrackGenerator>(angle_dist, energy_dist, point_dist);
-
+    auto CosmicMuonGenerator = R3B::Neuland::CreateTrackGenerator(angle_dist, energy_dist, point_dist);
+    auto primGen = std::make_unique<FairPrimaryGenerator>();
+    primGen->AddGenerator(CosmicMuonGenerator.release());
 
     // Geometry: Cave
     auto cave = std::make_unique<R3BCave>("CAVE");
