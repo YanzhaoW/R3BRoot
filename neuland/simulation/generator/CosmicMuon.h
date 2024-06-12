@@ -95,7 +95,7 @@ namespace R3B::Neuland
         -> AngleRadius
     {
         auto angles = AngleRadius{};
-        angles.SetPhi(rd_engine_->Uniform(0., M_PI));
+        angles.SetPhi(rd_engine_->Uniform(0., 2 * M_PI));
         angles.SetTheta(angle_dist(rd_engine_));
         return angles;
     }
@@ -134,9 +134,9 @@ namespace R3B::Neuland
 
         auto position_momentum = MomentumPosition{};
 
-        position_momentum.second.SetX(position.X() - angle_info.sin_theta * angle_info.cos_phi * detector_size_);
-        position_momentum.second.SetY(position.Y() - angle_info.sin_theta * angle_info.sin_phi * detector_size_);
-        position_momentum.second.SetZ(position.Z() - angle_info.cos_theta * detector_size_);
+        position_momentum.second.SetX(position.X() + angle_info.sin_theta * angle_info.cos_phi * detector_size_);
+        position_momentum.second.SetY(position.Y() + angle_info.sin_theta * angle_info.sin_phi * detector_size_);
+        position_momentum.second.SetZ(position.Z() + angle_info.cos_theta * detector_size_);
         position_momentum.first = calculate_momentum_energy(energy, angle_info);
 
         return position_momentum;

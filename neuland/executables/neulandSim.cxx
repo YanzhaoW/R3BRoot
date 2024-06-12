@@ -82,10 +82,19 @@ int main(int argc, const char** argv)
     // run->SetGenerator(primGen.release());
 
     // Paula primary partical gen Test
+    auto detector_box_size = ::R3B::Neuland::DetectorBoxSize{};
+    detector_box_size.xmin = -::Neuland::BarLength / 2;
+    detector_box_size.xmax = ::Neuland::BarLength / 2;
+    detector_box_size.ymin = -::Neuland::BarLength / 2;
+    detector_box_size.ymax = ::Neuland::BarLength / 2;
+    detector_box_size.zmin = 1650.;
+    detector_box_size.zmax = 1650. + ::Neuland::BarSize_Z * ::Neuland::MaxNumberOfPlanes;
 
     auto angle_dist = R3B::Neuland::AngleDist{};
     auto energy_dist = R3B::Neuland::EnergyDist{};
     auto position_dist = R3B::Neuland::PositionDist{};
+
+    position_dist.set_box_size(detector_box_size);
 
     auto CosmicMuonGenerator = R3B::Neuland::CreateTrackGenerator(angle_dist, energy_dist, position_dist);
     auto primGen = std::make_unique<FairPrimaryGenerator>();
