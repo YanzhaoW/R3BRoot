@@ -107,9 +107,14 @@ namespace R3B::Neuland
     {
         auto momentum_energy = Momentum{ 0, 0, 0, kinetic_energy };
         auto abs_momentum = double{ calculate_abs_momentum(kinetic_energy) };
+        // before coord trans
+        //  momentum_energy.SetPx(abs_momentum * angle_info.sin_theta * angle_info.cos_phi);
+        //  momentum_energy.SetPy(abs_momentum * angle_info.sin_theta * angle_info.sin_phi);
+        //  momentum_energy.SetPz(abs_momentum * angle_info.cos_theta);
+
         momentum_energy.SetPx(abs_momentum * angle_info.sin_theta * angle_info.cos_phi);
-        momentum_energy.SetPy(abs_momentum * angle_info.sin_theta * angle_info.sin_phi);
-        momentum_energy.SetPz(abs_momentum * angle_info.cos_theta);
+        momentum_energy.SetPy(abs_momentum * angle_info.cos_theta);
+        momentum_energy.SetPz(-abs_momentum * angle_info.sin_theta * angle_info.sin_phi);
         return momentum_energy;
     }
 
@@ -134,9 +139,14 @@ namespace R3B::Neuland
 
         auto position_momentum = MomentumPosition{};
 
+        // before coord trans
+        //  position_momentum.second.SetX(position.X() + angle_info.sin_theta * angle_info.cos_phi * detector_size_);
+        //  position_momentum.second.SetY(position.Y() + angle_info.sin_theta * angle_info.sin_phi * detector_size_);
+        //  position_momentum.second.SetZ(position.Z() + angle_info.cos_theta * detector_size_);
+
         position_momentum.second.SetX(position.X() + angle_info.sin_theta * angle_info.cos_phi * detector_size_);
-        position_momentum.second.SetY(position.Y() + angle_info.sin_theta * angle_info.sin_phi * detector_size_);
-        position_momentum.second.SetZ(position.Z() + angle_info.cos_theta * detector_size_);
+        position_momentum.second.SetY(position.Y() + angle_info.cos_theta * detector_size_);
+        position_momentum.second.SetZ(position.Z() - angle_info.sin_theta * angle_info.sin_phi * detector_size_);
         position_momentum.first = calculate_momentum_energy(energy, angle_info);
 
         return position_momentum;
