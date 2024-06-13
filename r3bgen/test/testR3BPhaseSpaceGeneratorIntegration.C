@@ -54,7 +54,7 @@ void testR3BPhaseSpaceGeneratorIntegration()
     // Primaries
     auto primGen = new FairPrimaryGenerator();
     auto gen = new R3BPhaseSpaceGenerator();
-    gen->Beam.SetEnergyDistribution(R3BDistribution1D::Delta(600));
+    gen->GetBeam().SetEnergyDistribution(R3BDistribution1D::Delta(600));
     gen->SetErelDistribution(R3BDistribution1D::Delta(100));
     gen->AddParticle(5, 17);
     gen->AddNeutron();

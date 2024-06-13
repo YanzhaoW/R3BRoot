@@ -9,6 +9,7 @@
 #include <G4RunManager.hh>
 #include <G4UserEventAction.hh>
 #include <R3BFieldConst.h>
+#include <R3BPhaseSpaceGenerator.h>
 #include <R3BProgramOptions.h>
 #include <TG4EventAction.h>
 #include <boost/exception/diagnostic_information.hpp>
@@ -70,13 +71,29 @@ int main(int argc, const char** argv)
     run->SetField(fairField.release());
 
     // Primary particle generator
-    auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi->value());
-    boxGen->SetXYZ(0, 0, 0.);
-    boxGen->SetThetaRange(0., 3.);
-    boxGen->SetPhiRange(0., 360.);
-    boxGen->SetEkinRange(pEnergy->value(), pEnergy->value());
+    auto gen = std::make_unique<R3BPhaseSpaceGenerator>();
+
+    constexpr auto beam_energy = 883.;      // MeV
+    constexpr auto rel_energy_max = 10000.; // keV
+    constexpr auto Sn_atomic_number = 50;
+    constexpr auto Sn_mass = 123;
+    constexpr auto neutron_pdg = 2112;
+    gen->GetBeam().SetEnergyDistribution(R3BDistribution1D::Delta(beam_energy));
+    gen->SetErelDistribution(R3BDistribution1D::Flat(0., rel_energy_max));
+    gen->AddParticle(Sn_atomic_number, Sn_mass);
+    gen->AddParticle(neutron_pdg);
+    gen->EnableWhitelist();
+    gen->EnableWrite();
+    gen->AddParticleToWhitelist(neutron_pdg);
     auto primGen = std::make_unique<FairPrimaryGenerator>();
-    primGen->AddGenerator(boxGen.release());
+    primGen->AddGenerator(gen.release());
+
+    // auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi->value());
+    // boxGen->SetXYZ(0, 0, 0.);
+    // boxGen->SetThetaRange(0., 3.);
+    // boxGen->SetPhiRange(0., 360.);
+    // boxGen->SetEkinRange(pEnergy->value(), pEnergy->value());
+    // primGen->AddGenerator(boxGen.release());
     run->SetGenerator(primGen.release());
 
     // Geometry: Cave

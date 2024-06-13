@@ -11,52 +11,75 @@
  * or submit itself to any jurisdiction.                                      *
  ******************************************************************************/
 
-#ifndef R3BROOT_R3BPHASESPACEGENERATOR_H
-#define R3BROOT_R3BPHASESPACEGENERATOR_H
+#pragma once
 
 // Wrapper for TGenPhaseSpace
 
+#include "FairGenerator.h"
 #include "R3BBeamProperties.h"
 #include "R3BDistribution.h"
-#include "R3BDistribution1D.h"
 #include "R3BParticleSelector.h"
-
-#include "FairGenerator.h"
-#include "FairIon.h"
-
 #include "TGenPhaseSpace.h"
 #include "TRandom3.h"
+#include <Math/GenVector/LorentzVector.h>
+#include <Math/GenVector/PxPyPzM4D.h>
+#include <Math/Vector4Dfwd.h>
+#include <R3BIOConnector.h>
 
-#include <string>
+#include <set>
 #include <vector>
+
+struct R3BPhaseSpaceGenParticleInfo
+{
+    R3BPhaseSpaceGenParticleInfo() = default;
+    int pdg_code = 0;
+    double mass = 0.;                   // GeV
+    double kinetic_energy = 0.;         // GeV. Defintion: E-m
+    ROOT::Math::PxPyPzMVector momentum; // GeV
+    ROOT::Math::XYZTVector position;    // cm
+
+    ClassDefNV(R3BPhaseSpaceGenParticleInfo, 1);
+};
 
 class R3BPhaseSpaceGenerator : public FairGenerator, public R3BParticleSelector
 {
   public:
-    R3BPhaseSpaceGenerator(unsigned int seed = 0U);
+    explicit R3BPhaseSpaceGenerator(unsigned int seed = 0U);
+
+    // Modifiers:
+    void SetParticleWhitelist(const std::set<int>& whitelist) { particle_whitelist_ = whitelist; }
+    void AddParticleToWhitelist(int pdg_code) { particle_whitelist_.emplace(pdg_code); }
+    void EnableWhitelist(bool is_enabled = true) { is_whitelist_enabled_ = is_enabled; }
+    void EnableWrite(bool is_enabled = true);
 
     // realtive energy distribution in keV
-    R3BDistribution<1>& GetErelDistribution() { return fErel_keV; }
-    void SetErelDistribution(R3BDistribution<1> ErelDistribution) { fErel_keV = ErelDistribution; }
+    void SetErelDistribution(const R3BDistribution<1>& ErelDistribution) { fErel_keV = ErelDistribution; }
 
-    bool Init() override;
-    bool ReadEvent(FairPrimaryGenerator* primGen) override;
+    // Getters:
+    [[nodiscard]] auto GetBeam() const -> const R3BBeamProperties& { return beam_properties_; }
+    [[nodiscard]] auto GetErelDistribution() const -> const R3BDistribution<1>& { return fErel_keV; }
 
-    R3BBeamProperties Beam;
-
-  protected:
-    void addParticle(const int pdgCode, const double mass) override;
+    auto GetBeam() -> R3BBeamProperties& { return beam_properties_; }
 
   private:
+    bool is_whitelist_enabled_ = false;
+    bool is_written_enabled_ = false;
+    double total_mass_ = 0.;
     R3BDistribution<1> fErel_keV; //!
+    TRandom3 rnd_gen_;
+    TGenPhaseSpace phase_space_gen_;
+    R3BBeamProperties beam_properties_;
+    std::vector<int> pdg_codes_;
+    std::vector<double> masses;
+    std::set<int> particle_whitelist_;
 
-    double fTotMass;
-    TRandom3 fRngGen;
-    TGenPhaseSpace fPhaseSpace;
-    std::vector<int> fPDGCodes;
-    std::vector<double> fMasses;
+    R3B::OutputVectorConnector<R3BPhaseSpaceGenParticleInfo> particle_output_{
+        "PhaseGenParticle"
+    }; //! This won't be stored
+
+    void addParticle(int pdgCode, double mass) override;
+    auto Init() -> bool override;
+    auto ReadEvent(FairPrimaryGenerator* primGen) -> bool override;
 
     ClassDefOverride(R3BPhaseSpaceGenerator, 3);
 };
-
-#endif // R3BROOT_R3BPHASESPACEGENERATOR_H

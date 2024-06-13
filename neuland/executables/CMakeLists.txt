@@ -1,5 +1,5 @@
 add_executable(neulandSim neulandSim.cxx)
-target_link_libraries(neulandSim PRIVATE R3BNeulandSimulation ${Geant4_LIBRARIES}
+target_link_libraries(neulandSim PRIVATE R3BNeulandSimulation R3BGen ${Geant4_LIBRARIES}
                                          ${Geant4VMC_LIBRARIES})
 
 add_executable(neulandAna neulandAna.cxx)

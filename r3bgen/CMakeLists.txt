@@ -92,6 +92,8 @@ add_library_with_dictionary(
     R3BData
     PRIVATE_DEPENDENCIES
     Geant4::G4materials
+    Boost::iostreams
+    Boost::filesystem
 )
 
 add_subdirectory(test)

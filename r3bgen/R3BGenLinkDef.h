@@ -42,5 +42,7 @@
 #pragma link C++ class  R3BParticleSelector+;
 #pragma link C++ class  R3BBeamProperties+;
 #pragma link C++ class  R3BINCLRootGenerator+;
+#pragma link C++ class  R3BPhaseSpaceGenParticleInfo+;
+#pragma link C++ class  vector<R3BPhaseSpaceGenParticleInfo>+;
 
 #endif
