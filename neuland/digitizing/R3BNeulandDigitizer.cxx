@@ -76,6 +76,11 @@ void R3BNeulandDigitizer::SetNeulandPointFilter(R3B::Neuland::BitSetParticle par
 {
     neuland_point_filter_.SetFilter(particle);
 }
+void R3BNeulandDigitizer::SetNeulandPointFilter(R3B::Neuland::BitSetParticle particle,
+                                                double minimum_allowed_energy_gev)
+{
+    neuland_point_filter_.SetFilter(particle, minimum_allowed_energy_gev);
+}
 
 auto R3BNeulandDigitizer::Init() -> InitStatus
 {
@@ -103,7 +108,8 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
     // Look at each Land Point, if it deposited energy in the scintillator, store it with reference to the bar
     for (const auto& point : neuland_points_)
     {
-        if (not(neuland_point_filter_.GetFilter() == R3B::Neuland::BitSetParticle::none) and
+        if (((neuland_point_filter_.GetFilter() != R3B::Neuland::BitSetParticle::none) or
+             (neuland_point_filter_.GetMinimumAllowedEnergy() != 0)) and
             neuland_point_filter_.ShouldNeulandPointBeFiltered(point))
         {
             continue;

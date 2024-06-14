@@ -38,6 +38,11 @@ namespace R3B::Neuland
 
     auto PidToBitSetParticle(int pid) -> BitSetParticle
     {
+        // mesons have three digit pdgs
+        if (pid > 99 and pid < 1000) //NOLINT
+        {
+            return BitSetParticle::meson;
+        }
         auto pid_to_bitset_hash_iterator = PidToBitSetParticleHash.find(pid);
 
         if (pid_to_bitset_hash_iterator == PidToBitSetParticleHash.end())
@@ -53,8 +58,15 @@ void NeulandPointFilter::SetFilter(R3B::Neuland::BitSetParticle filtered_particl
 {
     filtered_particles_ = filtered_particles;
 }
+void NeulandPointFilter::SetFilter(R3B::Neuland::BitSetParticle filtered_particles, double minimum_allowed_energy)
+{
+    filtered_particles_ = filtered_particles;
+    minimum_allowed_energy_ = minimum_allowed_energy;
+}
 
 auto NeulandPointFilter::ShouldNeulandPointBeFiltered(const R3BNeulandPoint& neuland_point) -> bool
 {
-    return R3B::Neuland::CheckCriteria(R3B::Neuland::PidToBitSetParticle(neuland_point.GetPID()), filtered_particles_);
+    return (
+        R3B::Neuland::CheckCriteria(R3B::Neuland::PidToBitSetParticle(neuland_point.GetPID()), filtered_particles_) or
+        (neuland_point.GetEnergyLoss() < minimum_allowed_energy_));
 }

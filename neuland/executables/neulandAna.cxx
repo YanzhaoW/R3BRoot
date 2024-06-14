@@ -120,8 +120,9 @@ auto main(int argc, const char** argv) -> int
         run->GetRuntimeDb()->setSecondInput(fileio2.release());
     }
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
+    double const minimum_filter_energy_gev = 0.000;
     digiNeuland->SetEngine((neulandEngines.at({ paddleName->value(), channelName->value() }))());
-    digiNeuland->SetNeulandPointFilter(R3B::Neuland::BitSetParticle::none);
+    digiNeuland->SetNeulandPointFilter(R3B::Neuland::BitSetParticle::proton,minimum_filter_energy_gev);
     run->AddTask(digiNeuland.release());
     auto hitmon = std::make_unique<R3BNeulandHitMon>();
     run->AddTask(hitmon.release());

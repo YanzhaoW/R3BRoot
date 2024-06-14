@@ -76,6 +76,7 @@ class R3BNeulandDigitizer : public FairTask
     void SetEngine(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine);
     void AddFilter(const Filterable<R3BNeulandHit&>::Filter& filter) { neuland_hit_filters_.Add(filter); }
     void SetNeulandPointFilter(R3B::Neuland::BitSetParticle particle);
+    void SetNeulandPointFilter(R3B::Neuland::BitSetParticle particle, double minimum_allowed_energy_gev);
 
   private:
     R3B::InputVectorConnector<R3BNeulandPoint> neuland_points_{ "NeulandPoints" };

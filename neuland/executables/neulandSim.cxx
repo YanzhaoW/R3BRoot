@@ -75,15 +75,17 @@ auto main(int argc, const char** argv) -> int
     run->SetField(fairField.release());
 
     // Box particle generator
-    // auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi());
+    // auto boxGen = std::make_unique<FairBoxGenerator>(neutron_PID, multi());
     // boxGen->SetXYZ(0, 0, 0.);
-    // boxGen->SetThetaRange(0., 3.);
-    // boxGen->SetPhiRange(0., 360.);
+    // boxGen->SetThetaRange(0., 3.); //NOLINT
+    // boxGen->SetPhiRange(0., 360.); //NOLINT
     // boxGen->SetEkinRange(pEnergy(), pEnergy());
+
 
     // Phasespace particle generator
     auto phasespaceGen = std::make_unique<R3BPhaseSpaceGenerator>();
     phasespaceGen->Beam.SetEnergyDistribution(R3BDistribution1D::Delta(BeamEnergyAtTarget));
+    phasespaceGen->SetErelDistribution(R3BDistribution1D::Flat(0.,10000.)); //NOLINT
     phasespaceGen->AddParticle(Sn_p, Sn_z);
     phasespaceGen->AddParticle(neutron_PID);
 

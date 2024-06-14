@@ -15,6 +15,7 @@ namespace R3B::Neuland
         positron = 0x0008,
         alpha = 0x0010,
         gamma = 0x0020,
+        meson = 0x0040,
         other = 0x40000000
     };
 
@@ -41,9 +42,13 @@ class NeulandPointFilter
   public:
     NeulandPointFilter() = default;
     void SetFilter(R3B::Neuland::BitSetParticle filtered_particles);
+    void SetFilter(R3B::Neuland::BitSetParticle filtered_particles, double minimum_allowed_energy);
     [[nodiscard]] auto GetFilter() const -> R3B::Neuland::BitSetParticle { return filtered_particles_; }
+    [[nodiscard]] auto GetMinimumAllowedEnergy() const -> double { return minimum_allowed_energy_; }
     auto ShouldNeulandPointBeFiltered(const R3BNeulandPoint& neuland_point) -> bool;
 
   private:
     R3B::Neuland::BitSetParticle filtered_particles_ = R3B::Neuland::BitSetParticle::none;
+    // energy in GeV
+    double minimum_allowed_energy_ = 0;
 };
