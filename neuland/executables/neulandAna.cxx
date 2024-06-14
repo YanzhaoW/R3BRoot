@@ -1,21 +1,9 @@
-/******************************************************************************
- *   Copyright (C) 2019 GSI Helmholtzzentrum für Schwerionenforschung GmbH    *
- *   Copyright (C) 2019-2023 Members of R3B Collaboration                     *
- *                                                                            *
- *             This software is distributed under the terms of the            *
- *                 GNU General Public Licence (GPL) version 3,                *
- *                    copied verbatim in the file "LICENSE".                  *
- *                                                                            *
- * In applying this license GSI does not waive the privileges and immunities  *
- * granted to it by virtue of its status as an Intergovernmental Organization *
- * or submit itself to any jurisdiction.                                      *
- ******************************************************************************/
-
 #include "FairFileSource.h"
 #include "FairParRootFileIo.h"
 #include "FairRootFileSink.h"
 #include "FairRunAna.h"
 #include "FairRuntimeDb.h"
+#include "NeulandPointFilter.h"
 #include "R3BDigitizingChannelMock.h"
 #include "R3BDigitizingPaddleMock.h"
 #include "R3BDigitizingPaddleNeuland.h"
@@ -73,7 +61,7 @@ auto main(int argc, const char** argv) -> int
         return EXIT_FAILURE;
     }
 
-    if (help())
+    if (help->value())
     {
         std::cout << programOptions.get_desc_ref() << std::endl;
         return 0;
@@ -81,10 +69,10 @@ auto main(int argc, const char** argv) -> int
 
     auto const channelInit = [&]()
     {
-        if (not hitLevelPar().empty())
+        if (not hitLevelPar->value().empty())
         {
-            FairRuntimeDb::instance()->getContainer(hitLevelPar().c_str());
-            Digitizing::Neuland::Tamex::Channel::GetHitPar(hitLevelPar());
+            FairRuntimeDb::instance()->getContainer(hitLevelPar->value().c_str());
+            Digitizing::Neuland::Tamex::Channel::GetHitPar(hitLevelPar->value());
         }
     };
 
@@ -113,33 +101,34 @@ auto main(int argc, const char** argv) -> int
           []() { return Digitizing::CreateEngine(UsePaddle<MockPaddle>(), UseChannel<MockChannel>()); } }
     };
 
-    FairLogger::GetLogger()->SetLogScreenLevel(logLevel().c_str());
+    FairLogger::GetLogger()->SetLogScreenLevel(logLevel->value().c_str());
 
     auto run = std::make_unique<FairRunAna>();
-    auto filesource = std::make_unique<R3BFileSource2>(simuFileName().c_str());
-    auto filesink = std::make_unique<FairRootFileSink>(digiFileName().c_str());
+    auto filesource = std::make_unique<R3BFileSource2>(simuFileName->value().c_str());
+    auto filesink = std::make_unique<FairRootFileSink>(digiFileName->value().c_str());
     run->SetSource(filesource.release());
     run->SetSink(filesink.release());
 
     auto fileio = std::make_unique<FairParRootFileIo>();
-    fileio->open(paraFileName().c_str());
+    fileio->open(paraFileName->value().c_str());
     run->GetRuntimeDb()->setFirstInput(fileio.release());
 
-    if (const auto& filename = paraFileName2(); not filename.empty())
+    if (const auto& filename = paraFileName2->value(); not filename.empty())
     {
         auto fileio2 = std::make_unique<FairParRootFileIo>();
-        fileio2->open(paraFileName2().c_str());
+        fileio2->open(paraFileName2->value().c_str());
         run->GetRuntimeDb()->setSecondInput(fileio2.release());
     }
-
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
-    digiNeuland->SetEngine((neulandEngines.at({ paddleName(), channelName() }))());
+    double const minimum_filter_energy_gev = 0.000;
+    digiNeuland->SetEngine((neulandEngines.at({ paddleName->value(), channelName->value() }))());
+    digiNeuland->SetNeulandPointFilter(R3B::Neuland::BitSetParticle::proton,minimum_filter_energy_gev);
     run->AddTask(digiNeuland.release());
     auto hitmon = std::make_unique<R3BNeulandHitMon>();
     run->AddTask(hitmon.release());
 
     run->Init();
-    run->Run(0, eventNum());
+    run->Run(0, eventNum->value());
 
     timer.Stop();
     auto* sink = run->GetSink();

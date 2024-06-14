@@ -13,7 +13,7 @@
 
 project(TestNeulandDigitizing)
 
-file(GLOB TestFiles testNeulandDigitizingTamex.cxx testNeulandDigitizingPaddle.cxx)
+file(GLOB TestFiles testNeulandDigitizingTamex.cxx testNeulandDigitizingPaddle.cxx testNeulandPointFilter.cxx)
 
 set(TEST_SRC_FILES
     ${TEST_SRC_FILES} ${TestFiles}

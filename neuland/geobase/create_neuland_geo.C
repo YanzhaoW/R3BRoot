@@ -17,7 +17,7 @@
 #include <iomanip>
 #include <iostream>
 
-void create_neuland_geo(const Int_t nPlanes = 26, const TString geoTag = "v3")
+void create_neuland_geo(const Int_t nPlanes = 2, const TString geoTag = "v3")
 {
     new FairGeoLoader("TGeo", "FairGeoLoader");
     gGeoManager->SetName("NEULANDgeom");

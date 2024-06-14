@@ -5,6 +5,7 @@
 #include "FairRunSim.h"
 #include "R3BCave.h"
 #include "R3BNeuland.h"
+#include "R3BPhaseSpaceGenerator.h"
 #include "R3BShared.h"
 #include "TStopwatch.h"
 #include <FairConstField.h>
@@ -19,10 +20,13 @@
 
 constexpr int DEFAULT_RUNID = 999;
 
-int main(int argc, const char** argv)
+auto main(int argc, const char** argv) -> int
 {
     auto timer = TStopwatch{};
-    auto const PID = 2112;
+    auto const neutron_PID = 2112;
+    auto const Sn_p = int{ 50 };
+    auto const Sn_z = int{ 123 };
+    auto const BeamEnergyAtTarget = 883.;
     auto const defaultEventNum = 10;
     timer.Start();
 
@@ -70,14 +74,24 @@ int main(int argc, const char** argv)
     auto fairField = std::make_unique<FairConstField>();
     run->SetField(fairField.release());
 
+    // Box particle generator
+    // auto boxGen = std::make_unique<FairBoxGenerator>(neutron_PID, multi());
+    // boxGen->SetXYZ(0, 0, 0.);
+    // boxGen->SetThetaRange(0., 3.); //NOLINT
+    // boxGen->SetPhiRange(0., 360.); //NOLINT
+    // boxGen->SetEkinRange(pEnergy(), pEnergy());
+
+
+    // Phasespace particle generator
+    auto phasespaceGen = std::make_unique<R3BPhaseSpaceGenerator>();
+    phasespaceGen->Beam.SetEnergyDistribution(R3BDistribution1D::Delta(BeamEnergyAtTarget));
+    phasespaceGen->SetErelDistribution(R3BDistribution1D::Flat(0.,10000.)); //NOLINT
+    phasespaceGen->AddParticle(Sn_p, Sn_z);
+    phasespaceGen->AddParticle(neutron_PID);
+
     // Primary particle generator
-    auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi());
-    boxGen->SetXYZ(0, 0, 0.);
-    boxGen->SetThetaRange(0., 3.);
-    boxGen->SetPhiRange(0., 360.);
-    boxGen->SetEkinRange(pEnergy(), pEnergy());
     auto primGen = std::make_unique<FairPrimaryGenerator>();
-    primGen->AddGenerator(boxGen.release());
+    primGen->AddGenerator(phasespaceGen.release());
     run->SetGenerator(primGen.release());
 
     // Geometry: Cave

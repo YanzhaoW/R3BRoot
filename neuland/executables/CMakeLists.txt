@@ -9,7 +9,8 @@ target_link_libraries(
             ExTestDetector
             R3BPassive
             ${Geant4_LIBRARIES}
-            geant4vmc)
+            geant4vmc
+            R3BGen)
 
 add_executable(neulandAna neulandAna.cxx)
 target_link_libraries(neulandAna PRIVATE R3BData R3BNeulandDigitizing)
