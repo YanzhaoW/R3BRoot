@@ -52,12 +52,6 @@ namespace R3B::Neuland
         void set_rd_engine(TRandom* user_rd_engine) { rd_engine_ = user_rd_engine; }
         void set_PID(int PID) { PID_ = PID; };
 
-        ROOT::Math::Cartesian3D<double> position_{};      // delete after debugging
-        double energy_{};                                 // delete after debugging
-        double theta_{};                                  // delete after debugging
-        double phi_{};                                    // delete after debugging
-        ROOT::Math::PxPyPzE4D<double> momentum_energy_{}; // delete after debugging
-        ROOT::Math::Cartesian3D<double> external_pos_{};  // delete after debugging
       private:
         using MomentumPosition = std::pair<ROOT::Math::PxPyPzE4D<double>, ROOT::Math::Cartesian3D<double>>;
         using Momentum = ROOT::Math::PxPyPzE4D<double>;
@@ -91,19 +85,6 @@ namespace R3B::Neuland
                                position_momentum.second.X(),
                                position_momentum.second.Y(),
                                position_momentum.second.Z());
-            fmt::print("Zpos: {}\n", position_.Z());
-            fmt::print("Xpos: {}\n", position_.X());
-            fmt::print("Ypos: {}\n", position_.Y());
-            fmt::print("Zext: {}\n", external_pos_.Z());
-            fmt::print("Xext: {}\n", external_pos_.X());
-            fmt::print("Yext: {}\n", external_pos_.Y());
-            fmt::print("Energy: {}\n", energy_);
-            fmt::print("Theta: {}\n", theta_);
-            fmt::print("Phi: {}\n", phi_);
-            fmt::print("momZ: {}\n", momentum_energy_.Pz());
-            fmt::print("momX: {}\n", momentum_energy_.Px());
-            fmt::print("momY: {}\n", momentum_energy_.Py());
-
             return true;
         };
     };
@@ -114,11 +95,7 @@ namespace R3B::Neuland
     {
         auto angles = AngleRadius{};
         angles.SetPhi(rd_engine_->Uniform(0., 2 * M_PI));
-        // angles.SetPhi(0.);//delete after debugging
         angles.SetTheta(angle_dist(rd_engine_));
-
-        phi_ = angles.Phi();
-        theta_ = angles.Theta();
 
         return angles;
     }
@@ -133,7 +110,6 @@ namespace R3B::Neuland
         momentum_energy.SetPx(abs_momentum * angle_info.sin_theta * angle_info.cos_phi);
         momentum_energy.SetPy(abs_momentum * angle_info.cos_theta);
         momentum_energy.SetPz(abs_momentum * angle_info.sin_theta * angle_info.sin_phi);
-        momentum_energy_ = momentum_energy; // delete after debugging
         return momentum_energy;
     }
 
@@ -144,10 +120,8 @@ namespace R3B::Neuland
         const PositionDist& position_dist) -> MomentumPosition
     {
         auto const position = position_dist(rd_engine_);
-        position_ = position; // delete after debugging
         auto const angles = rd_num_gen_angles(angle_dist);
         auto const energy = energy_dist(rd_engine_);
-        energy_ = energy; // delete after debugging
 
         auto angle_info = AngleInfo{};
         angle_info.sin_phi = std::sin(angles.Phi());
@@ -162,7 +136,6 @@ namespace R3B::Neuland
         position_momentum.second.SetZ(position.Z() - angle_info.sin_theta * angle_info.sin_phi * detector_size_);
         position_momentum.first = calculate_momentum_energy(energy, angle_info);
 
-        external_pos_ = position_momentum.second; // delete after debugging
 
         return position_momentum;
     }
