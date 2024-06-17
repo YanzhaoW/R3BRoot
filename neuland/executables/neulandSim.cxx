@@ -91,18 +91,15 @@ int main(int argc, const char** argv)
     detector_box_size.ymin = -::Neuland::BarLength / 2;
     detector_box_size.ymax = ::Neuland::BarLength / 2;
     detector_box_size.zmin = 1650.;
-    detector_box_size.zmax = 1650. +(::Neuland::BarSize_Z * nDP);
-
-    // detector_box_size.xmin = 1.;
-    // detector_box_size.xmax = 1.;
-    // detector_box_size.ymin = 1.;
-    // detector_box_size.ymax = 1.;
-    // detector_box_size.zmin = 1650. + 50.;
-    // detector_box_size.zmax = 1650. + 50.;
+    detector_box_size.zmax = 1650. + (::Neuland::BarSize_Z * nDP);
 
     auto angle_dist = R3B::Neuland::AngleDist{};
     auto energy_dist = R3B::Neuland::EnergyDist{};
     auto position_dist = R3B::Neuland::PositionDist{};
+
+    auto const mean = 3000.;
+    auto const sigma = 400.;
+    energy_dist.set_mean_sigma(mean, sigma);
 
     position_dist.set_box_size(detector_box_size);
 
@@ -122,7 +119,7 @@ int main(int argc, const char** argv)
     run->AddModule(cave.release());
 
     // Geometry: Neuland
-   // auto const nDP = 13;
+    // auto const nDP = 13;
     auto const neulandGeoTrans = TGeoTranslation{ 0., 0., 1650. };
     auto neuland = std::make_unique<R3BNeuland>(nDP, neulandGeoTrans);
     run->AddModule(neuland.release());

@@ -17,39 +17,45 @@ namespace R3B::Neuland
         auto operator()(TRandom* rd_engine_) const -> double
         {
             auto energy = rd_engine_->Gaus(mean_, sigma_);
-            // auto energy = 1000.;
             return energy;
         };
 
       private:
         double mean_{ 3000. };
-        double sigma_{ 10. };
+        double sigma_{ 200. };
     };
 
-    // class AngleDist
-    // {
-    //   public:
-    //     auto operator()(TRandom* rd_engine_) const -> double
-    //     {
-    //         // auto angle = asin(sqrt((M_PI / 2) * rd_engine_->Uniform()));
-    //         //  auto angle = rd_engine_->Gaus(0., 1.);
-    //         auto angle = 0.; // delete after debugging
-    //         return angle;
-    //     };
-    // };
     class AngleDist
     {
       public:
         double operator()(TRandom* rd_engine_) const
         {
-            double angle;
-            do
-            {
-                // Gauß-Verteilung mit Mittelwert 0 und kleiner Standardabweichung
-                angle = rd_engine_->Gaus(0, 0.1);
-            } while (angle < -M_PI_2 || angle > M_PI_2); // Bereich auf 0 bis pi/2 beschränken
+            const auto n_steps = int{ 10000 };
+            const auto step_size = 0.1;
 
-            return angle;
+            auto target_distribution = [](double x) -> double { return std::pow(std::cos(x), 2.); };
+
+            double current_angle = 0.0;
+            double new_angle;
+
+            for (int i = 0; i < n_steps; ++i)
+            {
+                new_angle = rd_engine_->Gaus(current_angle, step_size);
+
+                if (new_angle < -M_PI_2 || new_angle > M_PI_2)
+                {
+                    continue;
+                }
+
+                double acceptance_ratio = target_distribution(new_angle) / target_distribution(current_angle);
+
+                if (rd_engine_->Uniform(0.0, 1.0) < acceptance_ratio)
+                {
+                    current_angle = new_angle;
+                }
+            }
+
+            return current_angle;
         }
     };
 

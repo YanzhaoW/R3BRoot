@@ -130,11 +130,6 @@ namespace R3B::Neuland
     {
         auto momentum_energy = Momentum{ 0, 0, 0, kinetic_energy };
         auto abs_momentum = double{ calculate_abs_momentum(kinetic_energy) };
-        // before coord trans
-        //  momentum_energy.SetPx(abs_momentum * angle_info.sin_theta * angle_info.cos_phi);
-        //  momentum_energy.SetPy(abs_momentum * angle_info.sin_theta * angle_info.sin_phi);
-        //  momentum_energy.SetPz(abs_momentum * angle_info.cos_theta);
-
         momentum_energy.SetPx(abs_momentum * angle_info.sin_theta * angle_info.cos_phi);
         momentum_energy.SetPy(abs_momentum * angle_info.cos_theta);
         momentum_energy.SetPz(abs_momentum * angle_info.sin_theta * angle_info.sin_phi);
@@ -148,10 +143,6 @@ namespace R3B::Neuland
         const EnergyDist& energy_dist,
         const PositionDist& position_dist) -> MomentumPosition
     {
-        // auto const Position = position_dist(rd_engine_);
-        // auto const angles = rd_num_gen_angles(angle_dist);
-        // auto const energy = energy_dist(rd_engine_);
-
         auto const position = position_dist(rd_engine_);
         position_ = position; // delete after debugging
         auto const angles = rd_num_gen_angles(angle_dist);
@@ -165,11 +156,6 @@ namespace R3B::Neuland
         angle_info.cos_theta = std::cos(angles.Theta());
 
         auto position_momentum = MomentumPosition{};
-
-        // before coord trans
-        //  position_momentum.second.SetX(position.X() + angle_info.sin_theta * angle_info.cos_phi * detector_size_);
-        //  position_momentum.second.SetY(position.Y() + angle_info.sin_theta * angle_info.sin_phi * detector_size_);
-        //  position_momentum.second.SetZ(position.Z() + angle_info.cos_theta * detector_size_);
 
         position_momentum.second.SetX(position.X() - angle_info.sin_theta * angle_info.cos_phi * detector_size_);
         position_momentum.second.SetY(position.Y() - angle_info.cos_theta * detector_size_);
