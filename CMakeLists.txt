@@ -580,13 +580,13 @@ if(NOT MODULE)
     if(WITH_GTPC)
         add_subdirectory(glad-tpc)
     endif(WITH_GTPC)
+    if(WITH_EPICS)
+        add_subdirectory(epics)
+    endif(WITH_EPICS)
 
     #================================================================================
     # TODO: Since other dependencies still use the old cmake configurations, include(ROOTMacros) has to be used. Please change them using CMake targets ASAP.
     include(ROOTMacros)
-    if(WITH_EPICS)
-        add_subdirectory(epics)
-    endif(WITH_EPICS)
     if(Atima_FOUND)
         add_subdirectory(atima)
     endif(Atima_FOUND)

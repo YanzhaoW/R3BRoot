@@ -18,4 +18,4 @@ add_library(R3BNeulandPreexp SHARED ${SRCS})
 target_include_directories(R3BNeulandPreexp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(R3BNeulandPreexp PUBLIC R3BData R3BChannelAccess)
 root_generate_dictionary(R3BNeulandPreexp_dict ${HEADERS} MODULE R3BNeulandPreexp LINKDEF
-                         R3BNeulandPreexpLinkDef.h)
+                         NeulandPreexpLinkDef.h)
