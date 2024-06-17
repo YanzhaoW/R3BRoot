@@ -17,23 +17,40 @@ namespace R3B::Neuland
         auto operator()(TRandom* rd_engine_) const -> double
         {
             auto energy = rd_engine_->Gaus(mean_, sigma_);
+            // auto energy = 1000.;
             return energy;
         };
 
       private:
-        double mean_{ 10000. };
+        double mean_{ 3000. };
         double sigma_{ 10. };
     };
 
+    // class AngleDist
+    // {
+    //   public:
+    //     auto operator()(TRandom* rd_engine_) const -> double
+    //     {
+    //         // auto angle = asin(sqrt((M_PI / 2) * rd_engine_->Uniform()));
+    //         //  auto angle = rd_engine_->Gaus(0., 1.);
+    //         auto angle = 0.; // delete after debugging
+    //         return angle;
+    //     };
+    // };
     class AngleDist
     {
       public:
-        auto operator()(TRandom* rd_engine_) const -> double
+        double operator()(TRandom* rd_engine_) const
         {
-            /*   auto angle = asin(sqrt((M_PI / 2) * rd_engine_->Uniform())); */
-            auto angle = rd_engine_->Gaus(0., 1.);
+            double angle;
+            do
+            {
+                // Gauß-Verteilung mit Mittelwert 0 und kleiner Standardabweichung
+                angle = rd_engine_->Gaus(0, 0.1);
+            } while (angle < -M_PI_2 || angle > M_PI_2); // Bereich auf 0 bis pi/2 beschränken
+
             return angle;
-        };
+        }
     };
 
     struct DetectorBoxSize
