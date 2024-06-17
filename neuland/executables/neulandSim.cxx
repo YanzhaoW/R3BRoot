@@ -1,3 +1,5 @@
+#include "CosmicMuon.h"
+#include "CosmicMuonDistributions.h"
 #include "FairBoxGenerator.h"
 #include "FairParRootFileIo.h"
 #include "FairPrimaryGenerator.h"
@@ -11,8 +13,10 @@
 #include <R3BFieldConst.h>
 #include <R3BProgramOptions.h>
 #include <TG4EventAction.h>
+#include <TRandom2.h>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options.hpp>
+#include <ctime>
 #include <iostream>
 #include <string>
 
@@ -70,13 +74,43 @@ int main(int argc, const char** argv)
     run->SetField(fairField.release());
 
     // Primary particle generator
-    auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi->value());
-    boxGen->SetXYZ(0, 0, 0.);
-    boxGen->SetThetaRange(0., 3.);
-    boxGen->SetPhiRange(0., 360.);
-    boxGen->SetEkinRange(pEnergy->value(), pEnergy->value());
+    // auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi->value());
+    // boxGen->SetXYZ(0, 0, 0.);
+    // boxGen->SetThetaRange(0., 3.);
+    // boxGen->SetPhiRange(0., 360.);
+    // boxGen->SetEkinRange(pEnergy->value(), pEnergy->value());
+    // auto primGen = std::make_unique<FairPrimaryGenerator>();
+    // primGen->AddGenerator(boxGen.release());
+    // run->SetGenerator(primGen.release());
+
+    // Paula primary partical gen Test
+    auto detector_box_size = ::R3B::Neuland::DetectorBoxSize{};
+    auto const nDP = 13;
+    detector_box_size.xmin = -::Neuland::BarLength / 2;
+    detector_box_size.xmax = ::Neuland::BarLength / 2;
+    detector_box_size.ymin = -::Neuland::BarLength / 2;
+    detector_box_size.ymax = ::Neuland::BarLength / 2;
+    detector_box_size.zmin = 1650.;
+    detector_box_size.zmax = 1650. + (::Neuland::BarSize_Z * nDP);
+
+    auto angle_dist = R3B::Neuland::AngleDist{};
+    auto energy_dist = R3B::Neuland::EnergyDist{};
+    auto position_dist = R3B::Neuland::PositionDist{};
+
+    auto const mean = 3000.;
+    auto const sigma = 400.;
+    energy_dist.set_mean_sigma(mean, sigma);
+
+    position_dist.set_box_size(detector_box_size);
+
+    auto CosmicMuonGenerator = R3B::Neuland::CreateTrackGenerator(angle_dist, energy_dist, position_dist);
+
+    UInt_t seed = static_cast<UInt_t>(time(0));
+    TRandom2 random_gen(seed);
+    CosmicMuonGenerator->set_rd_engine(&random_gen);
+
     auto primGen = std::make_unique<FairPrimaryGenerator>();
-    primGen->AddGenerator(boxGen.release());
+    primGen->AddGenerator(CosmicMuonGenerator.release());
     run->SetGenerator(primGen.release());
 
     // Geometry: Cave
@@ -85,7 +119,7 @@ int main(int argc, const char** argv)
     run->AddModule(cave.release());
 
     // Geometry: Neuland
-    auto const nDP = 13;
+    // auto const nDP = 13;
     auto const neulandGeoTrans = TGeoTranslation{ 0., 0., 1650. };
     auto neuland = std::make_unique<R3BNeuland>(nDP, neulandGeoTrans);
     run->AddModule(neuland.release());

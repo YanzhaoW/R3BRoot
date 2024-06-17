@@ -59,7 +59,7 @@ namespace Neuland
 
     // Geometry & Material Constants
 
-    constexpr auto BarSize_XY = 5.0;                                  // cm NeuLAND parameter
+    constexpr auto BarSize_XY = 5.0;                                  // cm NeuLAND parameter 
     constexpr auto BarUncertainty_XY = BarSize_XY / __sqrt12;         // cm NeuLAND parameter
     constexpr auto BarSize_Z = 5.0;                                   // cm NeuLAND parameter
     constexpr auto BarUncertainty_Z = BarSize_Z / __sqrt12;           // cm NeuLAND parameter
