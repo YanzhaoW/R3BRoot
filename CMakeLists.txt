@@ -551,17 +551,6 @@ if(NOT MODULE)
         add_subdirectory(r3bsource)
     endif()
     add_subdirectory(neuland)
-<<<<<<< HEAD
-=======
-
-    include(ROOTMacros)
-    if(WITH_EPICS)
-        add_subdirectory(epics)
-    endif(WITH_EPICS)
-    if(Atima_FOUND)
-        add_subdirectory(atima)
-    endif(Atima_FOUND)
->>>>>>> 9cd6ea0c (Implement particle filtering via NeulandPointFilter)
     add_subdirectory(glad)
     add_subdirectory(xball)
     add_subdirectory(dch)

@@ -5,11 +5,6 @@
 #include "FairRunSim.h"
 #include "R3BCave.h"
 #include "R3BNeuland.h"
-<<<<<<< HEAD
-=======
-#include "R3BPhaseSpaceGenerator.h"
-#include "R3BShared.h"
->>>>>>> 9cd6ea0c (Implement particle filtering via NeulandPointFilter)
 #include "TStopwatch.h"
 #include <G4RunManager.hh>
 #include <G4UserEventAction.hh>
@@ -78,23 +73,7 @@ auto main(int argc, const char** argv) -> int
     auto fairField = std::make_unique<R3BFieldConst>();
     run->SetField(fairField.release());
 
-    // Box particle generator
-    // auto boxGen = std::make_unique<FairBoxGenerator>(neutron_PID, multi());
-    // boxGen->SetXYZ(0, 0, 0.);
-    // boxGen->SetThetaRange(0., 3.); //NOLINT
-    // boxGen->SetPhiRange(0., 360.); //NOLINT
-    // boxGen->SetEkinRange(pEnergy(), pEnergy());
-
-
-    // Phasespace particle generator
-    auto phasespaceGen = std::make_unique<R3BPhaseSpaceGenerator>();
-    phasespaceGen->Beam.SetEnergyDistribution(R3BDistribution1D::Delta(BeamEnergyAtTarget));
-    phasespaceGen->SetErelDistribution(R3BDistribution1D::Flat(0.,10000.)); //NOLINT
-    phasespaceGen->AddParticle(Sn_p, Sn_z);
-    phasespaceGen->AddParticle(neutron_PID);
-
     // Primary particle generator
-<<<<<<< HEAD
     auto gen = std::make_unique<R3BPhaseSpaceGenerator>();
 
     constexpr auto beam_energy = 883.;      // MeV
@@ -118,10 +97,6 @@ auto main(int argc, const char** argv) -> int
     // boxGen->SetPhiRange(0., 360.);
     // boxGen->SetEkinRange(pEnergy->value(), pEnergy->value());
     // primGen->AddGenerator(boxGen.release());
-=======
-    auto primGen = std::make_unique<FairPrimaryGenerator>();
-    primGen->AddGenerator(phasespaceGen.release());
->>>>>>> 9cd6ea0c (Implement particle filtering via NeulandPointFilter)
     run->SetGenerator(primGen.release());
 
     // Geometry: Cave

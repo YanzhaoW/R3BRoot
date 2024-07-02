@@ -127,7 +127,7 @@ auto main(int argc, const char** argv) -> int
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
     double const minimum_filter_energy_gev = 0.000;
     digiNeuland->SetEngine((neulandEngines.at({ paddleName->value(), channelName->value() }))());
-    digiNeuland->SetNeulandPointFilter(R3B::Neuland::BitSetParticle::proton,minimum_filter_energy_gev);
+    digiNeuland->SetNeulandPointFilter(R3B::Neuland::BitSetParticle::positron|R3B::Neuland::BitSetParticle::electron,minimum_filter_energy_gev);
     run->AddTask(digiNeuland.release());
     auto hitmon = std::make_unique<R3BNeulandHitMon>();
     run->AddTask(hitmon.release());
