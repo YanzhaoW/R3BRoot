@@ -12,6 +12,7 @@
  ******************************************************************************/
 
 #include "R3BNeulandGeoPar.h"
+#include "R3BException.h"
 #include "TGeoBBox.h"
 #include "TGeoMatrix.h"
 #include "TVector3.h"
@@ -85,6 +86,7 @@ Double_t R3BNeulandGeoPar::GetPaddleHalfLength() const
 // Convert positions of e.g. points to the local coordinate of the respective paddle [(-135,135),(-2.5,2.5),(-2.5,2.5)]
 TVector3 R3BNeulandGeoPar::ConvertToLocalCoordinates(const TVector3& position, const Int_t paddleID) const
 {
+
     Double_t pos_in[3] = { position.X(), position.Y(), position.Z() };
     Double_t pos_tmp[3];
     Double_t pos_out[3];

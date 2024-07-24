@@ -17,6 +17,8 @@
 #include <TObjString.h>
 #include <boost/program_options.hpp>
 
+constexpr int DEFAULT_RUNID = 999;
+
 namespace Digitizing = R3B::Digitizing;
 using NeulandPaddle = Digitizing::Neuland::NeulandPaddle;
 using MockPaddle = Digitizing::Neuland::MockPaddle;
@@ -108,7 +110,11 @@ auto main(int argc, const char** argv) -> int
     FairLogger::GetLogger()->SetLogScreenLevel(logLevel->value().c_str());
 
     auto run = std::make_unique<FairRunAna>();
-    auto filesource = std::make_unique<R3BFileSource2>(simuFileName->value().c_str());
+    auto filesource = std::make_unique<R3BFileSource2>();
+    filesource->SetEnableTreeFile(true);
+    filesource->AddFile(simuFileName->value());
+    filesource->SetInitRunID(DEFAULT_RUNID);
+
     auto filesink = std::make_unique<FairRootFileSink>(digiFileName->value().c_str());
     run->SetSource(filesource.release());
     run->SetSink(filesink.release());

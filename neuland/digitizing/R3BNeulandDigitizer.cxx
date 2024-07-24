@@ -16,6 +16,7 @@
 #include "FairRootManager.h"
 #include "FairRunAna.h"
 #include "FairRuntimeDb.h"
+#include "R3BException.h"
 #include "TGeoManager.h"
 #include "TGeoNode.h"
 #include "TH1F.h"
@@ -67,7 +68,7 @@ void R3BNeulandDigitizer::SetParContainers()
     fNeulandGeoPar = dynamic_cast<R3BNeulandGeoPar*>(rtdb->getContainer("R3BNeulandGeoPar"));
     if (fNeulandGeoPar == nullptr)
     {
-        LOG(fatal) << "R3BNeulandDigitizer::SetParContainers: No R3BNeulandGeoPar";
+        throw R3B::runtime_error("No R3BNeulandGeoPar!");
     }
 
     fDigitizingEngine->Init();
@@ -92,6 +93,11 @@ InitStatus R3BNeulandDigitizer::Init()
 
 void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
 {
+    if (fNeulandGeoPar->fNeulandGeoNode == nullptr)
+    {
+        throw R3B::runtime_error("Neuland geo node is empty!");
+    }
+
     fHits.Reset();
     const auto GeVToMeVFac = 1000.;
 
@@ -117,7 +123,7 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
             fDigitizingEngine->DepositLight(paddleID, point->GetTime(), point->GetLightYield() * GeVToMeVFac, dist);
             paddleEnergyDeposit[paddleID] += point->GetEnergyLoss() * GeVToMeVFac;
         } // eloss
-    }     // points
+    } // points
 
     const Double_t triggerTime = fDigitizingEngine->GetTriggerTime();
     const auto paddles = fDigitizingEngine->ExtractPaddles();
@@ -164,7 +170,7 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
                            << ", energy = " << signal.energy;
             }
         } // loop over all hits for each paddle
-    }     // loop over paddles
+    } // loop over paddles
 
     LOG(debug) << "R3BNeulandDigitizer: produced " << fHits.Size() << " hits";
 }

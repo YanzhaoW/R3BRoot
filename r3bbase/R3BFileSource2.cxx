@@ -17,6 +17,8 @@
 #include <FairEventHeader.h>
 #include <FairFileHeader.h>
 #include <FairRootManager.h>
+#include <TBranchElement.h>
+#include <TClonesArray.h>
 #include <TFolder.h>
 #include <TKey.h>
 #include <vector>
@@ -64,6 +66,61 @@ namespace
         return branchList;
     }
 
+    template <typename UnaryFunc>
+    void loop_through_branches(TFile* root_file, std::string_view tree_name, UnaryFunc&& action)
+    {
+        auto* tree = root_file->Get<TTree>(tree_name.data());
+        auto* branches = tree->GetListOfBranches();
+        for (auto* branch : TRangeDynCast<TBranchElement>(branches))
+        {
+            action(branch);
+        }
+    }
+
+    template <typename StringType = std::string>
+    auto GetBranchListFromTree(TFile* root_file, std::string_view tree_name) -> std::vector<StringType>
+    {
+        auto branch_name_list = std::vector<StringType>{};
+        loop_through_branches(root_file,
+                              tree_name,
+                              [&branch_name_list](auto* branch) { branch_name_list.emplace_back(branch->GetName()); });
+        return branch_name_list;
+    }
+
+    auto get_tca_data_class(TBranchElement* branch) -> std::string
+    {
+        TClonesArray* buffer = nullptr;
+        branch->SetAddress(&buffer);
+        branch->GetEntry(0);
+        branch->SetAddress(nullptr);
+        if (buffer != nullptr)
+        {
+            auto class_name = std::string{ buffer->GetClass()->GetName() };
+            R3BLOG(debug,
+                   fmt::format("Determine the class name {:?} of the branch {:?}", class_name, branch->GetName()));
+            return class_name;
+        }
+        R3BLOG(warn, fmt::format("Cannot determine the class name of the branch {:?}", branch->GetName()));
+        return std::string{ "TObject" };
+    }
+
+    void add_branches_to_folder(TFolder* folder, TFile* root_file, std::string_view tree_name)
+    {
+        loop_through_branches(root_file,
+                              tree_name,
+                              [folder](auto* branch)
+                              {
+                                  auto class_name = std::string_view{ branch->GetClassName() };
+                                  if (class_name == "TClonesArray")
+                                  {
+                                      const auto data_class = get_tca_data_class(branch);
+                                      auto tca_obj = std::make_unique<TClonesArray>(data_class.data());
+                                      tca_obj->SetName(branch->GetName());
+                                      folder->Add(tca_obj.release());
+                                  }
+                              });
+    }
+
     auto HasBranchList(TFile* rootFile, const std::vector<std::string>& branchList) -> bool
     {
         auto const newBranchList = GetBranchList(rootFile, "BranchList");
@@ -109,6 +166,7 @@ auto R3BInputRootFiles::AddFileName(std::string fileName) -> std::optional<std::
     if (fileNames_.empty())
     {
         Intitialize(fileName);
+        register_branch_name();
     }
     if (!ValidateFile(fileName))
     {
@@ -116,6 +174,15 @@ auto R3BInputRootFiles::AddFileName(std::string fileName) -> std::optional<std::
     }
     fileNames_.emplace_back(std::move(fileName));
     return {};
+}
+
+void R3BInputRootFiles::register_branch_name()
+{
+
+    for (auto const& branchName : branchList_)
+    {
+        FairRootManager::Instance()->AddBranchToList(branchName.c_str());
+    }
 }
 
 void R3BInputRootFiles::SetInputFileChain(TChain* chain)
@@ -139,7 +206,7 @@ void R3BInputRootFiles::RegisterTo(FairRootManager* rootMan)
 
     if (validMainFolders_.empty())
     {
-        throw R3B::runtime_error("There is no maian folder to be registered!");
+        throw R3B::runtime_error("There is no main folder to be registered!");
     }
 
     if (!is_friend_)
@@ -163,6 +230,19 @@ auto R3BInputRootFiles::ExtractMainFolder(TFile* rootFile) -> std::optional<TKey
 auto R3BInputRootFiles::ValidateFile(const std::string& filename) -> bool
 {
     auto rootFile = R3B::make_rootfile(filename.c_str());
+
+    if (is_tree_file_)
+    {
+        if (!is_friend_)
+        {
+            auto folder = std::make_unique<TFolder>("r3broot", "r3broot");
+            add_branches_to_folder(folder.get(), rootFile.get(), treeName_);
+            validRootFiles_.push_back(std::move(rootFile));
+            validMainFolders_.push_back(folder.release());
+        }
+        return true;
+    }
+
     auto folderKey = ExtractMainFolder(rootFile.get());
     auto res = folderKey.has_value() && HasBranchList(rootFile.get(), branchList_);
     if (res)
@@ -196,6 +276,12 @@ void R3BInputRootFiles::Intitialize(std::string_view filename)
 {
     auto file = R3B::make_rootfile(filename.data());
 
+    if (is_tree_file_)
+    {
+        branchList_ = GetBranchListFromTree(file.get(), treeName_);
+        return;
+    }
+
     if (const auto runID = ExtractRunId(file.get()); runID.has_value() && runID.value() != 0)
     {
         auto const msg = fmt::format(R"(Successfully extract RunID "{}" from root file "{}")", runID.value(), filename);
@@ -218,10 +304,6 @@ void R3BInputRootFiles::Intitialize(std::string_view filename)
     }
 
     branchList_ = GetBranchList(file.get(), "BranchList");
-    for (auto const& branchName : branchList_)
-    {
-        FairRootManager::Instance()->AddBranchToList(branchName.c_str());
-    }
 
     if (timeBasedBranchList_ = GetBranchList<TObjString>(file.get(), "TimeBasedBranchList");
         timeBasedBranchList_.empty())
@@ -282,12 +364,20 @@ R3BFileSource2::R3BFileSource2()
 
 void R3BFileSource2::AddFile(std::string fileName)
 {
-
     if (auto const res = inputDataFiles_.AddFileName(std::move(fileName)); res.has_value())
     {
-        R3BLOG(error,
-               fmt::format(
-                   "Root file {0} is incompatible with the first root file {1}", res.value(), dataFileNames_.front()));
+        if (not dataFileNames_.empty())
+        {
+
+            R3BLOG(
+                error,
+                fmt::format(
+                    "Root file {0} is incompatible with the first root file {1}", res.value(), dataFileNames_.front()));
+        }
+        else
+        {
+            R3BLOG(error, fmt::format("Failed to add the first root file {:?}", fileName));
+        }
     }
     dataFileNames_.emplace_back(fileName);
 }

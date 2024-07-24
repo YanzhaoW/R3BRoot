@@ -48,6 +48,8 @@ class R3BInputRootFiles
     void SetTreeName(std::string_view treeName) { treeName_ = treeName; }
     void SetTitle(std::string_view title) { title_ = title; }
     void SetFileHeaderName(std::string_view fileHeader) { fileHeader_ = fileHeader; }
+    void SetEnableTreeFile(bool is_tree_file) { is_tree_file_ = is_tree_file; }
+    void SetRunID(uint run_id) { initial_RunID_ = run_id; }
 
     // rule of five:
     ~R3BInputRootFiles() = default;
@@ -58,6 +60,7 @@ class R3BInputRootFiles
 
   private:
     bool is_friend_ = false;
+    bool is_tree_file_ = false;
     uint initial_RunID_ = 0;
     // title of each file group seems not necessary. Consider to remove it in the future.
     std::string title_;
@@ -75,6 +78,7 @@ class R3BInputRootFiles
     auto ValidateFile(const std::string& filename) -> bool;
     static auto ExtractMainFolder(TFile*) -> std::optional<TKey*>;
     auto ExtractRunId(TFile* rootFile) -> std::optional<uint>;
+    void register_branch_name();
 };
 
 class R3BFileSource2 : public FairSource
@@ -89,9 +93,16 @@ class R3BFileSource2 : public FairSource
     // public interface:
     void AddFile(std::string);
     void AddFriend(std::string_view);
+
+    // setters:
+    void SetEnablePrint(bool allow_print = true) { allow_print_ = allow_print; }
     void SetFileHeaderName(std::string_view fileHeaderName) { inputDataFiles_.SetFileHeaderName(fileHeaderName); }
-    void DisablePrint() { allow_print_ = false; }
-    void EnablePrint() { allow_print_ = true; }
+    void SetEnableTreeFile(bool is_tree_file) { inputDataFiles_.SetEnableTreeFile(is_tree_file); }
+    void SetInitRunID(int run_id)
+    {
+        inputDataFiles_.SetRunID(run_id);
+        SetRunId(run_id);
+    }
 
   private:
     bool allow_print_ = false;
