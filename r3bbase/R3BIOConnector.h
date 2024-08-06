@@ -161,6 +161,8 @@ namespace R3B
             opn(data_);
         }
 
+        auto size() const { return data_.size(); }
+
       private:
         std::string branch_name_;
         RawDataType data_;
