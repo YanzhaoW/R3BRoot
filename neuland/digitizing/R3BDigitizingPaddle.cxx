@@ -40,6 +40,26 @@ namespace R3B::Digitizing
         }
     }
 
+        //Paula: new SetChannel to have different Parameters for every paddleID
+    void Paddle::SetChannel(std::unique_ptr<Channel> channel, int Module_ID)
+    {
+        channel->SetPaddle(this);
+        channel->SetPar(Module_ID);
+        channel->AttachToPaddle(this);
+        if (channel->GetSide() == ChannelSide::left)
+        {
+            fLeftChannel = std::move(channel);
+        }
+        else if (channel->GetSide() == ChannelSide::right)
+        {
+            fRightChannel = std::move(channel);
+        }
+        else
+        {
+            LOG(error) << "Channel side is invalid!";
+        }
+    }
+    
     void Paddle::DepositLight(const Hit& hit)
     {
         auto channelHits = ComputeChannelHits(hit);
@@ -66,7 +86,7 @@ namespace R3B::Digitizing
     auto Paddle::ConstructPaddelSignals(const Channel::Signals& firstSignals,
                                         const Channel::Signals& secondSignals) const -> Signals
     {
-        auto channelSignalPairs = fSignalCouplingStrategy(firstSignals, secondSignals);
+        auto channelSignalPairs = fSignalCouplingStrategy(*this,firstSignals, secondSignals);
 
         auto paddleSignals = std::vector<Signal>();
         paddleSignals.reserve(channelSignalPairs.size());
@@ -113,7 +133,7 @@ namespace R3B::Digitizing
         return fSignals.getRef();
     }
 
-    auto Paddle::SignalCouplingByTime(const Channel::Signals& firstSignals, const Channel::Signals& secondSignals)
+    auto Paddle::SignalCouplingByTime(const Paddle&  /*self*/,const Channel::Signals& firstSignals, const Channel::Signals& secondSignals)
         -> std::vector<ChannelSignalPair>
     {
         auto firstSignalRefs =

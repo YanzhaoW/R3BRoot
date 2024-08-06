@@ -121,6 +121,18 @@ namespace R3B::Digitizing::Neuland::Tamex
         pmt_peaks_.reserve(TmxPeaksInitialCapacity);
     }
 
+    Channel::Channel(ChannelSide side,
+                     PeakPileUpStrategy strategy,
+                     const Params& par,
+                     R3B::Neuland::Cal2HitPar* cal_to_hit_par)
+        : Digitizing::Channel{ side }
+        , pileup_strategy_{ strategy }
+        , hit_par_{ cal_to_hit_par }
+        , par_{ par }
+    {
+        pmt_peaks_.reserve(TmxPeaksInitialCapacity);
+    }
+
     Channel::Channel(ChannelSide side, PeakPileUpStrategy strategy, TRandom3& rnd)
         : Channel{ side, strategy, Params{ rnd } }
     {
@@ -166,7 +178,26 @@ namespace R3B::Digitizing::Neuland::Tamex
                 par_.fEnergyGain = neuland_hit_module_par_->GetEnergyGain(static_cast<int>(side));
                 par_.fPedestal = neuland_hit_module_par_->GetPedestal(static_cast<int>(side));
                 par_.fPMTThresh = neuland_hit_module_par_->GetPMTThreshold(static_cast<int>(side));
-                par_.fQdcMin = 1 / par_.fEnergyGain;
+                // Paula: If for paraStuff left/right???!
+                if (GetHitModulePar().energyGain.left().value == 0&& GetHitModulePar().energyGain.right().value)
+                {
+                    par_.fQdcMin = 1 / par_.fEnergyGain;
+                }
+                else
+                {
+                    if (GetSide() == ChannelSide::left)
+                    {
+                        par_.fQdcMin = 1 / GetHitModulePar().energyGain.left().value;
+                    }
+                    else if (GetSide() == ChannelSide::right)
+                    {
+                        par_.fQdcMin = 1 / GetHitModulePar().energyGain.right().value;
+                    }
+                    else
+                    {
+                        LOG(error) << "Channel::AttachToPaddle: Channelside not correct defined";
+                    }
+                }
             }
         }
     }
@@ -236,6 +267,8 @@ namespace R3B::Digitizing::Neuland::Tamex
         auto peakTime = peak.GetLETime();
         auto qdc = ToQdc(peakQdc);
 
+        LOG(debug) << "qdc Signal " << qdc << " and tdc " << peakTime << std::endl;
+
         auto signal = Signal{};
         signal.qdcUnSat = ToUnSatQdc(qdc);
         signal.qdc = qdc;
@@ -244,6 +277,45 @@ namespace R3B::Digitizing::Neuland::Tamex
         LOG(debug) << "R3BDigitizingTamex: Create a signal with qdc " << signal.qdc << " and tdc " << signal.tdc
                    << std::endl;
         return signal;
+    }
+
+    auto Channel::CreateCalSignal(const FQTPeak& peak) const -> CalSignal
+    {
+        auto peakQdc = peak.GetQDC();
+        auto peakTime = peak.GetLETime();
+        auto qdc = ToQdc(peakQdc);
+
+        LOG(debug) << "qdc Cal " << qdc << " and tdc " << peakTime << std::endl;
+
+        auto signal = CalSignal{};
+        signal.tot = CalculateTOT(qdc);
+        signal.tle = peakTime;
+        signal.side = this->GetSide();
+        LOG(debug) << "R3BDigitizingTamex: Create a CalSignal with tot " << signal.tot << " and let " << signal.tle
+                   << std::endl
+                   << " qdc: " << qdc << std::endl;
+        return signal;
+    }
+
+    auto Channel::CalculateTOT(const double& qdc) const -> double
+    {
+        // ToDo: Decide if ERROR stuff is needed
+        //  if (GetErrorCalculation())
+        //  {
+        //      ValueError<double> qdc_err_val{ qdc, 0 };
+        //      auto par_err_val = GetParErrVal();
+        //      auto tot_err_val = qdc_err_val * par_err_val.energyGain + par_err_val.pedestal;
+        //      auto randGen = GetDefaultRandomGen();
+        //      return randGen.Gaus(tot_err_val.value, tot_err_val.error);
+        //  }
+        //  else {
+        //
+        //      auto par = GetParConstRef();
+        //      return (qdc * par.fEnergyGain + par.fPedestal);
+        //  }
+
+        auto par = GetParConstRef();
+        return (qdc * par.fEnergyGain + par.fPedestal);
     }
 
     template <typename Peak>
@@ -382,6 +454,25 @@ namespace R3B::Digitizing::Neuland::Tamex
         }
         return signals;
     }
+
+    auto Channel::ConstructCalSignals() -> CalSignals
+    {
+        fqt_peaks_ = ConstructFQTPeaks(pmt_peaks_);
+        // signal pileup:
+        FQTPeakPileUp(fqt_peaks_);
+
+        // construct Channel signals:
+        auto cal_signals = std::vector<CalSignal>{};
+        cal_signals.reserve(fqt_peaks_.size());
+
+        for (const auto& peak : fqt_peaks_)
+        {
+            cal_signals.emplace_back(CreateCalSignal(peak));
+        }
+        return cal_signals;
+    }
+
+    auto Channel::GetCalSignals() -> CalSignals { return ConstructCalSignals(); }
 
     auto Channel::GetFQTPeaks() -> const std::vector<FQTPeak>&
     {

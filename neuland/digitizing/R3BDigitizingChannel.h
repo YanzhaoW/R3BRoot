@@ -74,6 +74,14 @@ namespace R3B::Digitizing
         auto GetSignals() -> const Signals&;
         auto GetSide() const -> ChannelSide { return fSide; }
         auto GetPaddle() const -> Paddle* { return fPaddle; }
+        virtual auto GetCalSignals()  ->  CalSignals
+        {
+            auto virtual_sig = CalSignals{};
+            return virtual_sig;
+        }
+
+        //Paula: Testin ParStuff
+        virtual void SetPar(int Module_ID){}
 
         void SetPaddle(Paddle* v_paddle) { fPaddle = v_paddle; }
         auto Is_ValidSignals() -> bool { return fSignals.valid(); }

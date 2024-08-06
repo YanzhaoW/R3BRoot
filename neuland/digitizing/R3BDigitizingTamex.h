@@ -141,6 +141,7 @@ namespace R3B::Digitizing::Neuland::Tamex
       public:
         Channel(ChannelSide, PeakPileUpStrategy strategy, TRandom3&);
         Channel(ChannelSide, PeakPileUpStrategy strategy, const Params&);
+        Channel(ChannelSide, PeakPileUpStrategy strategy, const Params&, R3B::Neuland::Cal2HitPar* cal_to_hit_par);
         explicit Channel(ChannelSide side, PeakPileUpStrategy strategy = PeakPileUpStrategy::width)
             : Channel(side, strategy, GetDefaultRandomGen())
         {
@@ -148,23 +149,34 @@ namespace R3B::Digitizing::Neuland::Tamex
         // Setters:
         void SetPileUpStrategy(PeakPileUpStrategy strategy) { pileup_strategy_ = strategy; }
 
+        // Paula:Testing ParStuff
+
+        void SetPar(int Module_ID) override { hit_module_par_ = hit_par_->GetModuleParAt(Module_ID); };
+
         // Getters:
         auto GetPar() -> Tamex::Params& { return par_; }
         auto GetParConstRef() const -> const Tamex::Params& { return par_; }
         auto GetFQTPeaks() -> const std::vector<FQTPeak>&;
         auto GetPMTPeaks() -> const std::vector<PMTPeak>&;
+        auto GetCalSignals() -> CalSignals override;
 
         void AddHit(Hit /*hit*/) override;
         auto CreateSignal(const FQTPeak& peak) const -> Signal;
         static void GetHitPar(const std::string& hitParName);
 
+        auto GetHitModulePar() const -> R3B::Neuland::HitModulePar { return hit_module_par_; } // Added for qdc in time
+        auto GetCal2HitPar() { return hit_par_; }
+
       private:
         PeakPileUpStrategy pileup_strategy_ = PeakPileUpStrategy::width;
         std::vector<PMTPeak> pmt_peaks_;
         std::vector<FQTPeak> fqt_peaks_;
-        static R3BNeulandHitPar* neuland_hit_par_; // NOLINT
-        R3BNeulandHitModulePar* neuland_hit_module_par_ = nullptr;
+        static R3BNeulandHitPar* neuland_hit_par_;                 // NOLINT
+        R3BNeulandHitModulePar* neuland_hit_module_par_ = nullptr; // old version
         Tamex::Params par_;
+
+        R3B::Neuland::Cal2HitPar* hit_par_ = nullptr;
+        R3B::Neuland::HitModulePar hit_module_par_; // Added for qdc in time
 
         // private virtual functions
         auto ConstructSignals() -> Signals override;

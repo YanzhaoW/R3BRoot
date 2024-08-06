@@ -12,6 +12,7 @@
  ******************************************************************************/
 #pragma once
 #include "R3BDigitizingEngine.h"
+#include "R3BNeulandCommon.h"
 
 /**
  * Simulation of NeuLAND Bar/Paddle
@@ -25,6 +26,8 @@ namespace R3B::Digitizing::Neuland
     {
       public:
         explicit NeulandPaddle(uint16_t paddleID);
+
+        explicit NeulandPaddle(uint16_t paddleID, R3B::Neuland::Cal2HitPar* cal_to_hit_par);
 
       private:
         [[nodiscard]] auto ComputeTime(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
@@ -41,10 +44,18 @@ namespace R3B::Digitizing::Neuland
         static constexpr double gLambda = 1. / 2.1;
         static const double ReverseAttenFac;
 
-        static auto MatchSignals(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) -> float;
-        [[nodiscard]] static auto SignalCouplingNeuland(const Channel::Signals& firstSignals,
+        auto MatchSignals(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const-> float override;
+        [[nodiscard]] static auto SignalCouplingNeuland(const Paddle& self,const Channel::Signals& firstSignals,
                                                         const Channel::Signals& secondSignals)
             -> std::vector<ChannelSignalPair>;
-        static auto GenerateChannelHit(Double_t mcTime, Double_t mcLight, Double_t dist) -> Channel::Hit;
+        auto GenerateChannelHit(Double_t mcTime, Double_t mcLight, Double_t dist) const -> const Channel::Hit;
+      private:
+        //Paula: non static member variables, are not used in TacQuila
+        double gHalfLength_ = 135.;   // [cm]
+        double gCMedium_ = 14.;       // speed of light in material in [cm/ns]
+        double gAttenuation_ = 0.008; // light attenuation of plastic scintillator [1/cm]
+        double gLambda_ = 1. / 2.1;
+        double ReverseAttenFac_= std::exp(NeulandPaddle::gHalfLength * NeulandPaddle::gAttenuation);
+         double effective_speed_ = R3B::Neuland::DEFAULT_EFFECTIVE_C;
     };
 } // namespace R3B::Digitizing::Neuland
