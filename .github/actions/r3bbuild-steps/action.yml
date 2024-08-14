@@ -21,14 +21,18 @@ runs:
         done
       shell: bash
 
-    - name: cmake configure ${{ matrix.repos }}
+    - name: cmake config ${{ matrix.repos }}
       run: |
         git config --global --add safe.directory $GITHUB_WORKSPACE
+        git submodule update --init --recursive
         git clone https://github.com/R3BRootGroup/macros.git
-        cmake . -B build -C cmake/CI_CD/configure_options.cmake
+        echo ""
+        echo "path environment variable: $PATH\n"
+        echo ""
+        cmake --preset ${{ matrix.preset }} . -C "$GITHUB_WORKSPACE/cmake/CI_CD/configure_options.cmake"
       shell: bash
 
-    - name: ctest ${{ matrix.repos }}
+    - name: build ${{ matrix.repos }}
       if: inputs.build-needed == 'true'
       run: |
         cmake --build ./build -- -j ${NUM_THREADS}

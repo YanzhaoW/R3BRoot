@@ -68,11 +68,13 @@ jobs:
       # any of them fail. By setting it to false, all jobs will be run
       # undisruptively.
       fail-fast: false
-      # Definition of the strategy matrix
+      # Definition of the strategy matrix. See
+      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/running-variations-of-jobs-in-a-workflow
       matrix:
         # Here are the groups of repositories that need to be downloaded inside
         # r3broot. Each group is used by only one job.
-        repos: [ r3broot, glad-tpc, sofia-frs-asy ]
+        repos: [ r3broot, glad-tpc, sofia-frs-asy, r3broot-conan ]
+
         # The list under "include" defines some properties for each group:
         #
         # repos: the name of the group. It must exist in matrix.repos as
@@ -92,12 +94,15 @@ jobs:
         # url: the github repository urls that need to be downloaded during the
         # run
         include:
+          # The R3BFileSource repo is used for testing unpacking.
+          - url: https://github.com/R3BRootGroup/R3BFileSource.git
+          - cache: r3broot
+          # disable conan build by default
+          - preset: simple
+
           # This job is only for testing R3BRoot without downloading any
           # dependencies.
           - repos: r3broot
-          # The R3BFileSource repo is used for testing unpacking.
-            url: https://github.com/R3BRootGroup/R3BFileSource.git
-            cache: r3broot
           # The job for testing with glad-tpc
           - repos: glad-tpc
             url: https://github.com/R3BRootGroup/glad-tpc.git
@@ -118,11 +123,15 @@ jobs:
             # Using own cache file
             cache: other-repos
 
+          # build with conan package manager
+          - repos: r3broot-conan
+            preset: default
+
     # Jobs are run inside a Docker container, which provides different compiled
     # tool-kits for the building, such as clang-tidy and cvmfs. For more
     # information, please visit the Docker repository at Dockerhub.
     container: 
-      image: yanzhaowang/cvmfs_clang:v15
+      image: yanzhaowang/cvmfs_clang:latest
       volumes:
         - /tmp:/cvmfs
       env:

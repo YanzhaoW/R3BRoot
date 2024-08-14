@@ -44,9 +44,11 @@ export FAIRROOTPATH=%PATH_TO_FAIRROOT%
 # from %R3BRoot_DIRECTORY%
 mkdir build
 cmake -S . -B ./build
-cmake --build ./build
+cmake --build ./build -- -j${number_of_threads}
 source build/config.sh
 ~~~
+
+For the building with Conan package manager, see [this instruction](doc/conan_usage.md).
 
 To run the detector tests do:
 
