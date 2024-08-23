@@ -12,6 +12,9 @@
 ##############################################################################
 
 set(SRCS
+    # cmake-format: sortable
+    data_monitor/R3BDataMonitor.cxx
+    data_monitor/R3BDataMonitorCanvas.cxx
     R3BCoarseTimeStitch.cxx
     R3BDataPropagator.cxx
     R3BDetector.cxx
@@ -27,6 +30,9 @@ set(SRCS
     R3BWhiterabbitPropagator.cxx)
 
 set(HEADERS
+    # cmake-format: sortable
+    data_monitor/R3BDataMonitor.h
+    data_monitor/R3BDataMonitorCanvas.h
     R3BCoarseTimeStitch.h
     R3BDataPropagator.h
     R3BDetector.h
@@ -55,6 +61,7 @@ add_library_with_dictionary(
     SRCS
     ${SRCS}
     INCLUDEDIRS
+    data_monitor
     ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDENCIES
     ${DEPENDENCIES})

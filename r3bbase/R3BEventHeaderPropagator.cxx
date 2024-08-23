@@ -11,7 +11,6 @@
  * or submit itself to any jurisdiction.                                      *
  ******************************************************************************/
 
-#include "FairLogger.h"
 #include <FairRootManager.h>
 
 #include "R3BEventHeaderPropagator.h"
@@ -23,20 +22,10 @@ R3BEventHeaderPropagator::R3BEventHeaderPropagator()
 {
 }
 
-R3BEventHeaderPropagator::R3BEventHeaderPropagator(const TString& name, Int_t iVerbose, const TString& nameheader)
+R3BEventHeaderPropagator::R3BEventHeaderPropagator(const TString& name, Int_t iVerbose, std::string_view nameheader)
     : FairTask(name, iVerbose)
     , fNameHeader(nameheader)
-    , fHeader(nullptr)
-    , fSource(nullptr)
 {
-}
-
-R3BEventHeaderPropagator::~R3BEventHeaderPropagator()
-{
-    if (fHeader)
-    {
-        delete fHeader;
-    }
 }
 
 InitStatus R3BEventHeaderPropagator::Init()
@@ -47,21 +36,20 @@ InitStatus R3BEventHeaderPropagator::Init()
     R3BLOG_IF(fatal, !fHeader, "EventHeader. not found.");
     R3BLOG_IF(info, fHeader, "EventHeader. found.");
 
-    frm->Register(fNameHeader, "EventHeader", fHeader, kTRUE);
+    frm->Register(fNameHeader.data(), "EventHeader", fHeader, kTRUE);
 
-    fSource = R3BFileSource::Instance();
+    fSource = frm->GetSource();
     R3BLOG_IF(fatal, !fSource, "R3BFileSource not found.");
 
     return kSUCCESS;
 }
 
-void R3BEventHeaderPropagator::Exec(Option_t*)
+void R3BEventHeaderPropagator::Exec(Option_t* /*option*/)
 {
-    if (fSource)
+    if (fSource != nullptr)
     {
         fHeader->SetRunId(fSource->GetRunId());
     }
-    return;
 }
 
 ClassImp(R3BEventHeaderPropagator);

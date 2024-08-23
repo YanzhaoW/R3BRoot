@@ -18,7 +18,7 @@
 #include <Rtypes.h>
 
 #include "R3BEventHeader.h"
-class R3BFileSource;
+class FairSource;
 
 class R3BEventHeaderPropagator : public FairTask
 {
@@ -35,13 +35,9 @@ class R3BEventHeaderPropagator : public FairTask
      * @param name a name of the task.
      * @param iVerbose a verbosity level.
      */
-    R3BEventHeaderPropagator(const TString& name, Int_t iVerbose = 1, const TString& nameheader = "EventHeader.");
-
-    /**
-     * Destructor.
-     * Frees the memory used by the object.
-     */
-    ~R3BEventHeaderPropagator() override;
+    explicit R3BEventHeaderPropagator(const TString& name,
+                                      Int_t iVerbose = 1,
+                                      std::string_view nameheader = "EventHeader.");
 
     /**
      * Method for task initialization.
@@ -56,15 +52,15 @@ class R3BEventHeaderPropagator : public FairTask
      * Is called by the framework every time a new event is read.
      * @param option an execution option.
      */
-    void Exec(Option_t*) override;
+    void Exec(Option_t* /*option*/) override;
 
   private:
-    TString fNameHeader;
-    R3BEventHeader* fHeader;
-    R3BFileSource* fSource;
+    std::string fNameHeader;
+    R3BEventHeader* fHeader = nullptr;
+    FairSource* fSource = nullptr;
 
   public:
-    ClassDefOverride(R3BEventHeaderPropagator, 0)
+    ClassDefOverride(R3BEventHeaderPropagator, 1)
 };
 
 #endif // R3BEVENTHEADERPROPAGATOR_H

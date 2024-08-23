@@ -13,14 +13,35 @@
 
 #pragma once
 
-#include "FairSource.h"
 #include "R3BShared.h"
+#include <FairFileSourceBase.h>
 #include <TObjString.h>
+#include <chrono>
 #include <optional>
 
 class FairRootManager;
 class TChain;
 class TFolder;
+
+class R3BEventProgressPrinter
+{
+  public:
+    R3BEventProgressPrinter() = default;
+    void SetRunID(unsigned int runID) { run_id_ = runID; }
+    void SetMaxEventNum(unsigned int max_event_num) { max_event_num_ = max_event_num; }
+    void SetRefreshRate_Hz(float rate);
+    void ShowProgress(uint64_t event_num);
+
+  private:
+    uint64_t max_event_num_ = 0;
+    float refresh_rate_ = 2.; // Hz
+    std::chrono::milliseconds refresh_period_{ static_cast<int>(1000. / refresh_rate_) };
+    unsigned int run_id_ = 0;
+    std::chrono::time_point<std::chrono::steady_clock> previous_t_ = std::chrono::steady_clock::now();
+    uint64_t previous_event_num_ = 0;
+
+    void Print(uint64_t event_num, double speed_per_ms);
+};
 
 class R3BInputRootFiles
 {
@@ -48,6 +69,8 @@ class R3BInputRootFiles
     void SetTreeName(std::string_view treeName) { treeName_ = treeName; }
     void SetTitle(std::string_view title) { title_ = title; }
     void SetFileHeaderName(std::string_view fileHeader) { fileHeader_ = fileHeader; }
+    void SetEnableTreeFile(bool is_tree_file) { is_tree_file_ = is_tree_file; }
+    void SetRunID(uint run_id) { initial_RunID_ = run_id; }
 
     // rule of five:
     ~R3BInputRootFiles() = default;
@@ -58,8 +81,9 @@ class R3BInputRootFiles
 
   private:
     bool is_friend_ = false;
+    bool is_tree_file_ = false;
     uint initial_RunID_ = 0;
-    // title of each file group seems not necessary. Consider to remove it in the future.
+    // TODO: title of each file group seems not necessary. Consider to remove it in the future.
     std::string title_;
     std::string treeName_ = "evt";
     std::string folderName_;
@@ -75,33 +99,42 @@ class R3BInputRootFiles
     auto ValidateFile(const std::string& filename) -> bool;
     static auto ExtractMainFolder(TFile*) -> std::optional<TKey*>;
     auto ExtractRunId(TFile* rootFile) -> std::optional<uint>;
+    void register_branch_name();
 };
 
-class R3BFileSource2 : public FairSource
+class R3BFileSource2 : public FairFileSourceBase
 {
   public:
-    // constructors:
     R3BFileSource2();
     explicit R3BFileSource2(std::string file, std::string_view title = "InputRootFile");
     R3BFileSource2(std::vector<std::string> fileNames, std::string_view title);
     explicit R3BFileSource2(std::vector<std::string> fileNames);
 
-    // public interface:
     void AddFile(std::string);
     void AddFriend(std::string_view);
+
+    [[nodiscard]] auto GetEventEnd() const { return event_end_; }
+
+    // setters:
     void SetFileHeaderName(std::string_view fileHeaderName) { inputDataFiles_.SetFileHeaderName(fileHeaderName); }
-    void DisablePrint() { allow_print_ = false; }
-    void EnablePrint() { allow_print_ = true; }
+    // Set event print refresh rate in Hz
+    void SetEventPrintRefreshRate(float rate) { event_progress_.SetRefreshRate_Hz(rate); }
+    void SetEnableTreeFile(bool is_tree_file) { inputDataFiles_.SetEnableTreeFile(is_tree_file); }
+    void SetInitRunID(int run_id)
+    {
+        inputDataFiles_.SetRunID(run_id);
+        SetRunId(run_id);
+    }
 
   private:
-    bool allow_print_ = false;
+    int event_end_ = 0;
     R3BInputRootFiles inputDataFiles_;
+    R3BEventProgressPrinter event_progress_;
     FairEventHeader* evtHeader_ = nullptr;
     std::vector<R3BInputRootFiles> inputFriendFiles_;
     std::vector<std::string> dataFileNames_;
     std::vector<std::string> friendFileNames_;
 
-    // virtual functions should be private!
     Bool_t Init() override;
     Int_t ReadEvent(UInt_t eventID = 0) override;
     void Close() override {}
@@ -115,9 +148,9 @@ class R3BFileSource2 : public FairSource
     void ReadBranchEvent(const char* BrName, Int_t Entry) override;
     void FillEventHeader(FairEventHeader* evtHeader) override;
     Bool_t ActivateObject(TObject** obj, const char* BrName) override;
-
+    Bool_t ActivateObjectAny(void** obj, const std::type_info& info, const char* BrName) override;
     // WTF is this?
-    Bool_t SpecifyRunId() override { return ReadEvent(0) == 0; }
+    Bool_t SpecifyRunId() override { return true; }
 
   public:
     ClassDefOverride(R3BFileSource2, 0) // NOLINT
