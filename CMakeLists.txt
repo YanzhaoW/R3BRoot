@@ -294,7 +294,7 @@ if(CONAN_ENABLED)
         CACHE BOOL "disable implicit conversion of JSON" FORCE)
 endif()
 
-find_package(GTest REQUIRED)
+find_package2(PRIVATE GTest)
 find_package2(PUBLIC Pythia6)
 find_package2(PUBLIC Pythia8)
 find_package2(PUBLIC Protobuf)

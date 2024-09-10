@@ -1,3 +1,6 @@
+# set required packages for CI test
+set(CMAKE_REQUIRE_FIND_PACKAGE_GTest TRUE)
+
 find_program(CCACHE "ccache")
 if(CCACHE)
     message("enable ccache for cmake build")
