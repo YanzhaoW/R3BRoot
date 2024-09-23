@@ -20,6 +20,11 @@
  * @since July 15, 2022
  */
 
+namespace R3B::Neuland
+{
+    class Cal2HitPar;
+}
+
 namespace R3B::Digitizing::Neuland
 {
     class NeulandPaddle : public Digitizing::Paddle
@@ -44,18 +49,21 @@ namespace R3B::Digitizing::Neuland
         static constexpr double gLambda = 1. / 2.1;
         static const double ReverseAttenFac;
 
-        auto MatchSignals(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const-> float override;
-        [[nodiscard]] static auto SignalCouplingNeuland(const Paddle& self,const Channel::Signals& firstSignals,
+        auto MatchSignals(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
+            -> float override;
+        [[nodiscard]] static auto SignalCouplingNeuland(const Paddle& self,
+                                                        const Channel::Signals& firstSignals,
                                                         const Channel::Signals& secondSignals)
             -> std::vector<ChannelSignalPair>;
         auto GenerateChannelHit(Double_t mcTime, Double_t mcLight, Double_t dist) const -> const Channel::Hit;
+
       private:
-        //Paula: non static member variables, are not used in TacQuila
+        // Paula: non static member variables, are not used in TacQuila
         double gHalfLength_ = 135.;   // [cm]
         double gCMedium_ = 14.;       // speed of light in material in [cm/ns]
         double gAttenuation_ = 0.008; // light attenuation of plastic scintillator [1/cm]
         double gLambda_ = 1. / 2.1;
-        double ReverseAttenFac_= std::exp(NeulandPaddle::gHalfLength * NeulandPaddle::gAttenuation);
-         double effective_speed_ = R3B::Neuland::DEFAULT_EFFECTIVE_C;
+        double ReverseAttenFac_ = std::exp(NeulandPaddle::gHalfLength * NeulandPaddle::gAttenuation);
+        double effective_speed_ = R3B::Neuland::DEFAULT_EFFECTIVE_C;
     };
 } // namespace R3B::Digitizing::Neuland

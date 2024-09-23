@@ -39,8 +39,17 @@ namespace R3B::Digitizing
         double energy{};
         double time{};
         double position{};
-        const Channel::Signal& leftChannel;
-        const Channel::Signal& rightChannel;
+        const Channel::Signal leftChannel;
+        const Channel::Signal rightChannel;
+        Channel::CalSignal leftChannelCal;
+        Channel::CalSignal rightChannelCal;
+
+        explicit PaddleSignal(LRPair<const Channel::CalSignal> p_signals)
+            : leftChannelCal{ p_signals.left }
+            , rightChannelCal{ p_signals.right }
+        {
+        }
+
         explicit PaddleSignal(LRPair<const Channel::Signal&> p_signals)
             : leftChannel{ p_signals.left }
             , rightChannel{ p_signals.right }
@@ -64,8 +73,8 @@ namespace R3B::Digitizing
         using Hit = PaddleHit;
         using Signals = std::vector<Signal>;
         using ChannelSignalPair = Pair<std::reference_wrapper<const Channel::Signal>>;
-        using SignalCouplingStrategy =
-            std::function<std::vector<ChannelSignalPair>(const Paddle&,const Channel::Signals&, const Channel::Signals&)>;
+        using SignalCouplingStrategy = std::function<
+            std::vector<ChannelSignalPair>(const Paddle&, const Channel::Signals&, const Channel::Signals&)>;
 
         explicit Paddle(int paddleID, SignalCouplingStrategy strategy = SignalCouplingByTime);
         auto HasFired() const -> bool;
@@ -82,7 +91,7 @@ namespace R3B::Digitizing
 
         void SetChannel(std::unique_ptr<Channel> channel);
 
-        //Paula: new SetChannel to have different Parameters for every paddleID
+        // Paula: new SetChannel to have different Parameters for every paddleID
         void SetChannel(std::unique_ptr<Channel> channel, int Module_ID);
 
         void SetSignalCouplingStrategy(const SignalCouplingStrategy& strategy) { fSignalCouplingStrategy = strategy; }
@@ -104,7 +113,7 @@ namespace R3B::Digitizing
         std::unique_ptr<Channel> fRightChannel{};
         SignalCouplingStrategy fSignalCouplingStrategy;
         // virtual std::function<indexMapFunc> IndexMapFunc() const { return ConstructIndexMapByTime; }
-        
+
         virtual auto ConstructPaddelSignals(const Channel::Signals& firstSignals,
                                             const Channel::Signals& secondSignals) const -> Signals;
         virtual auto ComputeTime(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
@@ -116,9 +125,14 @@ namespace R3B::Digitizing
         virtual auto ComputeChannelHits(const Hit& hit) const -> Pair<Channel::Hit> = 0;
 
       public:
-virtual auto MatchSignals(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const-> float{return 0.;}
-        static auto SignalCouplingByTime(const Paddle& self,const Channel::Signals& firstSignals, const Channel::Signals& secondSignals)
-            -> std::vector<ChannelSignalPair>;
+        virtual auto MatchSignals(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
+            -> float
+        {
+            return 0.;
+        }
+        static auto SignalCouplingByTime(const Paddle& self,
+                                         const Channel::Signals& firstSignals,
+                                         const Channel::Signals& secondSignals) -> std::vector<ChannelSignalPair>;
     };
 } // namespace R3B::Digitizing
 #endif

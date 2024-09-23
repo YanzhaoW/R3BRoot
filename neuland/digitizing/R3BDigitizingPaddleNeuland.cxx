@@ -1,6 +1,7 @@
 #include "R3BDigitizingPaddleNeuland.h"
 #include <R3BNeulandCommon.h>
 #include <cmath>
+#include <R3BNeulandCalToHitPar.h>
 #include <memory>
 
 using R3B::Neuland::DEFAULT_EFFECTIVE_C;
