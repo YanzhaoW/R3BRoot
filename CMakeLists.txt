@@ -49,6 +49,10 @@ if(NOT DEFINED ENV{SIMPATH})
     )
 endif(NOT DEFINED ENV{SIMPATH})
 
+# fairsoft lib path needed to be added for root dictionary detection:
+set(LD_LIBRARY_PATH ${SIMPATH}/lib ${LD_LIBRARY_PATH})
+set(GRAPHVIZ_EXTERNAL_LIBS FALSE)
+
 if(NOT DEFINED ENV{FAIRROOTPATH})
     message(
         FATAL_ERROR
@@ -81,6 +85,7 @@ set(CheckSrcDir "${FAIRROOTPATH}/share/fairbase/cmake/checks")
 # Set option(s)
 option(BUILD_GEOMETRY "Build all ROOT geometries" ON)
 option(USE_PATH_INFO "Information from PATH and LD_LIBRARY_PATH are used." OFF)
+option(USE_LD_LIBRARY_PATH_INFO "Information from PATH and LD_LIBRARY_PATH are used." ON)
 option(WITH_UCESB "Build UCESB" OFF)
 option(WITH_EPICS "Build EPICS" OFF)
 option(WITH_ACTAR "Build ACTAR" OFF)
@@ -115,9 +120,6 @@ if("${FairRoot_VERSION}" VERSION_LESS 18.2.1)
 else()
     message(STATUS "You seem to be using FairRoot ${FairRoot_VERSION}.")
 endif()
-
-# added a variable to point to r3broot path in the system
-set(R3BROOTPATH ${CMAKE_INSTALL_PREFIX})
 
 # Load some basic macros which are needed later on
 include(FairMacros)
@@ -401,6 +403,7 @@ set(R3BROOT_MAJOR_VERSION 0)
 set(R3BROOT_MINOR_VERSION 0)
 set(R3BROOT_PATCH_VERSION 0)
 set(R3BROOT_VERSION "${FairRoot_VERSION}")
+set(R3BROOTPATH ${CMAKE_BINARY_DIR})
 
 if(NOT DEFINED ROOT_FOUND_VERSION)
     set(ROOT_FOUND_VERSION "${found_vers}")
@@ -529,6 +532,15 @@ set(ROOT_CINT_EXECUTABLE ${ROOT_rootcling_CMD})
 include(CTest)
 include(RootCTest)
 
+find_program(
+    ROOT_CINT_EXECUTABLE
+    NAMES rootcint
+    PATHS ${ROOT_BINDIR}
+    NO_DEFAULT_PATH)
+
+include(CTest)
+include(RootCTest)
+
 if(MODULE)
     add_subdirectory(${MODULE})
 endif(MODULE)
@@ -591,6 +603,19 @@ if(NOT MODULE)
     if(WITH_SOFIA)
         add_subdirectory(sofia)
     endif(WITH_SOFIA)
+
+    #================================================================================
+    # TODO: Since other dependencies still use the old cmake configurations, include(ROOTMacros) has to be used. Please change them using CMake targets ASAP.
+    include(ROOTMacros)
+    if(WITH_EPICS)
+        add_subdirectory(epics)
+    endif(WITH_EPICS)
+    if(Atima_FOUND)
+        add_subdirectory(atima)
+    endif(Atima_FOUND)
+    if(WITH_ACTAR)
+        add_subdirectory(actar)
+    endif(WITH_ACTAR)
     if(WITH_GTPC)
         add_subdirectory(glad-tpc)
     endif(WITH_GTPC)
