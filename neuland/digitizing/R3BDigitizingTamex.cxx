@@ -179,7 +179,30 @@ namespace R3B::Digitizing::Neuland::Tamex
                 par_.fPedestal = neuland_hit_module_par_->GetPedestal(static_cast<int>(side));
                 par_.fPMTThresh = neuland_hit_module_par_->GetPMTThreshold(static_cast<int>(side));
                 // Paula: If for paraStuff left/right???!
-                if (GetHitModulePar().energyGain.left().value == 0&& GetHitModulePar().energyGain.right().value)
+                // if (GetHitModulePar().energyGain.left().value == 0&& GetHitModulePar().energyGain.right().value)
+                // {
+                //     par_.fQdcMin = 1 / par_.fEnergyGain;
+                // }
+                // else
+                // {
+                //     if (GetSide() == ChannelSide::left)
+                //     {
+                //         par_.fQdcMin = 1 / GetHitModulePar().energyGain.left().value;
+                //     }
+                //     else if (GetSide() == ChannelSide::right)
+                //     {
+                //         par_.fQdcMin = 1 / GetHitModulePar().energyGain.right().value;
+                //     }
+                //     else
+                //     {
+                //         LOG(error) << "Channel::AttachToPaddle: Channelside not correct defined";
+                //     }
+                // }
+                auto energy_gain_left =
+                    double{ GetCal2HitPar()->GetModuleParAt(GetPaddle()->GetPaddleID()).energyGain.left().value };
+                auto energy_gain_right =
+                    double{ GetCal2HitPar()->GetModuleParAt(GetPaddle()->GetPaddleID()).energyGain.right().value };
+                if (energy_gain_left == 0 && energy_gain_right == 0)
                 {
                     par_.fQdcMin = 1 / par_.fEnergyGain;
                 }
@@ -187,11 +210,11 @@ namespace R3B::Digitizing::Neuland::Tamex
                 {
                     if (GetSide() == ChannelSide::left)
                     {
-                        par_.fQdcMin = 1 / GetHitModulePar().energyGain.left().value;
+                        par_.fQdcMin = 1 / energy_gain_left;
                     }
                     else if (GetSide() == ChannelSide::right)
                     {
-                        par_.fQdcMin = 1 / GetHitModulePar().energyGain.right().value;
+                        par_.fQdcMin = 1 / energy_gain_right;
                     }
                     else
                     {

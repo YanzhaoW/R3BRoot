@@ -91,9 +91,6 @@ namespace R3B::Digitizing
 
         void SetChannel(std::unique_ptr<Channel> channel);
 
-        // Paula: new SetChannel to have different Parameters for every paddleID
-        void SetChannel(std::unique_ptr<Channel> channel, int Module_ID);
-
         void SetSignalCouplingStrategy(const SignalCouplingStrategy& strategy) { fSignalCouplingStrategy = strategy; }
 
         // Getters:

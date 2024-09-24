@@ -178,7 +178,7 @@ auto main(int argc, const char** argv) -> int
     auto digiNeuland = std::make_unique<R3BNeulandDigitizerCalTask>();
     auto neulandEngine = neulandEngines.at({ paddleName(), channelName() });
     // Paula: If stuff needs to be added here
-    digiNeuland->SetEngine((neulandEngine)(), true);
+    digiNeuland->SetEngine((neulandEngine)());
     run->AddTask(digiNeuland.release());
 
     run->Init();

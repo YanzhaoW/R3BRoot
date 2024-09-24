@@ -27,12 +27,7 @@ namespace R3B::Digitizing
 {
     class DigitizingEngineInterface
     {
-      private:
-        bool custom_par_{ false };
-
       public:
-        void SetCustomPar(bool custom_par) { custom_par_ = custom_par; }
-        auto GetCustomPar(){return custom_par_;}
 
         DigitizingEngineInterface() = default;
         // rule of 5
@@ -102,16 +97,10 @@ namespace R3B::Digitizing
             if (paddles.find(paddle_id) == paddles.end())
             {
                 auto newPaddle = paddleClass_.BuildPaddle(paddle_id);
-                if (GetCustomPar() == false)
-                {
+
                     newPaddle->SetChannel(channelClass_.BuildChannel(Digitizing::ChannelSide::left));
                     newPaddle->SetChannel(channelClass_.BuildChannel(Digitizing::ChannelSide::right));
-                }
-                else
-                {
-                    newPaddle->SetChannel(channelClass_.BuildChannel(Digitizing::ChannelSide::left), paddle_id);
-                    newPaddle->SetChannel(channelClass_.BuildChannel(Digitizing::ChannelSide::right), paddle_id);
-                }
+
                 paddles[paddle_id] = std::move(newPaddle);
             }
             paddles.at(paddle_id)->DepositLight({ time, light, dist });

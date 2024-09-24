@@ -81,7 +81,6 @@ class R3BNeulandDigitizerCalTask : public FairTask
                                         TString output = "NeulandSimCal");
 
     void SetEngine(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine);
-    void SetEngine(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine, bool custom_par);
     void AddFilter(const Filterable<R3B::Neuland::SimCalData&>::Filter& filter) { fHitFilters.Add(filter); }
 
   private:

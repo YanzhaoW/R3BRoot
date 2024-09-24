@@ -154,10 +154,6 @@ namespace R3B::Digitizing::Neuland::Tamex
             hit_module_par_ = hit_module_par;
         } // Added for qdc in time
 
-        // Paula:Testing ParStuff
-
-        void SetPar(int Module_ID) override { hit_module_par_ = hit_par_->GetModuleParAt(Module_ID); };
-
         // Getters:
         auto GetPar() -> Tamex::Params& { return par_; }
         auto GetParConstRef() const -> const Tamex::Params& { return par_; }

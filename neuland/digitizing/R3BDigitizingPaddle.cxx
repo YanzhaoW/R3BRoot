@@ -40,26 +40,6 @@ namespace R3B::Digitizing
         }
     }
 
-        //Paula: new SetChannel to have different Parameters for every paddleID
-    void Paddle::SetChannel(std::unique_ptr<Channel> channel, int Module_ID)
-    {
-        channel->SetPaddle(this);
-        channel->SetPar(Module_ID);
-        channel->AttachToPaddle(this);
-        if (channel->GetSide() == ChannelSide::left)
-        {
-            fLeftChannel = std::move(channel);
-        }
-        else if (channel->GetSide() == ChannelSide::right)
-        {
-            fRightChannel = std::move(channel);
-        }
-        else
-        {
-            LOG(error) << "Channel side is invalid!";
-        }
-    }
-    
     void Paddle::DepositLight(const Hit& hit)
     {
         auto channelHits = ComputeChannelHits(hit);

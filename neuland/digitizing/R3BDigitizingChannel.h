@@ -86,14 +86,8 @@ namespace R3B::Digitizing
         auto GetSignals() -> const Signals&;
         auto GetSide() const -> ChannelSide { return fSide; }
         auto GetPaddle() const -> Paddle* { return fPaddle; }
-        virtual auto GetCalSignals() -> CalSignals
-        {
-            auto virtual_sig = CalSignals{};
-            return virtual_sig;
-        }
 
-        // Paula: Testin ParStuff
-        virtual void SetPar(int Module_ID) {}
+        virtual auto GetCalSignals() -> CalSignals { return {}; }
 
         void SetPaddle(Paddle* v_paddle) { fPaddle = v_paddle; }
         auto Is_ValidSignals() -> bool { return fSignals.valid(); }
@@ -106,11 +100,7 @@ namespace R3B::Digitizing
 
       private:
         virtual auto ConstructSignals() -> Signals = 0;
-        virtual auto ConstructCalSignals() -> CalSignals
-        {
-            auto virtual_cal_signal = CalSignals{};
-            return virtual_cal_signal;
-        };
+        virtual auto ConstructCalSignals() -> CalSignals { return {}; };
         Paddle* fPaddle = nullptr;                 // pointer to the paddle who owns this channel
         ChannelSide fSide;                         // side of the channel
         mutable Validated<Signals> fSignals;       // output signals from the channel

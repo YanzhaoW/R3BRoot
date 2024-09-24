@@ -52,13 +52,6 @@ void R3BNeulandDigitizerCalTask::SetEngine(std::unique_ptr<Digitizing::Digitizin
     fDigitizingEngine = std::move(engine);
 }
 
-void R3BNeulandDigitizerCalTask::SetEngine(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine,
-                                           bool custom_par)
-{
-    fDigitizingEngine = std::move(engine);
-    fDigitizingEngine->SetCustomPar(custom_par);
-}
-
 void R3BNeulandDigitizerCalTask::SetParContainers()
 {
     FairRunAna* run = FairRunAna::Instance();
