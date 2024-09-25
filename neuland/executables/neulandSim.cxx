@@ -1,10 +1,9 @@
 #include "CosmicMuon.h"
 #include "CosmicMuonDistributions.h"
-#include "FairBoxGenerator.h"
 #include "FairParRootFileIo.h"
-#include "FairPrimaryGenerator.h"
 #include "FairRootFileSink.h"
 #include "FairRunSim.h"
+#include "Generators.h"
 #include "R3BCave.h"
 #include "R3BNeuland.h"
 #include "TStopwatch.h"
@@ -14,20 +13,18 @@
 #include <R3BPhaseSpaceGenerator.h>
 #include <R3BProgramOptions.h>
 #include <TG4EventAction.h>
-#include <TRandom2.h>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options.hpp>
 #include <ctime>
 #include <iostream>
 #include <string>
 
-constexpr int DEFAULT_RUNID = 999;
+inline constexpr auto DEFAULT_RUNID = 999;
+inline constexpr auto defaultEventNum = 10;
 
 auto main(int argc, const char** argv) -> int
 {
     auto timer = TStopwatch{};
-    auto const PID = 2112;
-    auto const defaultEventNum = 10;
     timer.Start();
 
     auto programOptions = R3B::ProgramOptions("options for neuland simulation");
@@ -40,6 +37,7 @@ auto main(int argc, const char** argv) -> int
     auto pEnergy = programOptions.create_option<double>("energy", "set energy value (GeV) of the particle", 1);
     auto simuFileName =
         programOptions.create_option<std::string>("simuFile", "set the base filename of simulation ouput", "simu.root");
+    auto generator = programOptions.create_option<std::string>("gen,G", "Set the generator types: muon, box", "box");
     auto paraFileName =
         programOptions.create_option<std::string>("paraFile", "set the base filename of parameter sink", "para.root");
     auto logLevel = programOptions.create_option<std::string>("logLevel,v", "set log level of fairlog", "error");
@@ -74,53 +72,20 @@ auto main(int argc, const char** argv) -> int
     auto fairField = std::make_unique<R3BFieldConst>();
     run->SetField(fairField.release());
 
-    // Primary particle generator
-    // auto boxGen = std::make_unique<FairBoxGenerator>(PID, multi->value());
-    // boxGen->SetXYZ(0, 0, 0.);
-    // boxGen->SetThetaRange(0., 3.);
-    // boxGen->SetPhiRange(0., 360.);
-    // boxGen->SetEkinRange(pEnergy->value(), pEnergy->value());
-    // auto primGen = std::make_unique<FairPrimaryGenerator>();
-    // primGen->AddGenerator(boxGen.release());
-    // run->SetGenerator(primGen.release());
+    // auto primGen = create_muon_generator();
+    auto primGen = [gen = generator.value(), multi = multi.value(), energy = pEnergy.value()]()
+    {
+        if (gen == "muon")
+        {
+            return create_muon_generator();
+        }
+        if (gen == "box")
+        {
+            return create_box_generator(energy, multi);
+        }
+        throw std::runtime_error(fmt::format("unrecognized generator type: {}!", gen));
+    }();
 
-    // Paula primary partical gen Test
-    auto z_pos = double{ 0. };
-    auto detector_box_size = ::R3B::Neuland::DetectorBoxSize{};
-    auto const nDP = 13;
-    detector_box_size.xmin = -R3B::Neuland::BarLength / 2;
-    detector_box_size.xmax = R3B::Neuland::BarLength / 2;
-    detector_box_size.ymin = -R3B::Neuland::BarLength / 2;
-    detector_box_size.ymax = R3B::Neuland::BarLength / 2;
-    detector_box_size.zmin = z_pos - (R3B::Neuland::BarSize_Z * nDP);
-    detector_box_size.zmax = z_pos + (R3B::Neuland::BarSize_Z * nDP);
-    // detector_box_size.xmin = -R3B::Neuland::BarLength / 2;
-    // detector_box_size.xmax = R3B::Neuland::BarLength / 2;
-    // detector_box_size.ymin = -R3B::Neuland::BarLength / 2;
-    // detector_box_size.ymax = R3B::Neuland::BarLength / 2;
-    // detector_box_size.zmin = 1650.;
-    // detector_box_size.zmax = 1650. + (2 * R3B::Neuland::BarSize_Z * nDP);
-
-    auto angle_dist = R3B::Neuland::AngleDist{};
-    auto energy_dist = R3B::Neuland::EnergyDist{};
-    auto position_dist = R3B::Neuland::PositionDist{};
-
-    // auto const mean = 3000.;
-    // auto const sigma = 400.;
-    auto const mean = 10.;
-    auto const sigma = 0.2;
-    energy_dist.set_mean_sigma(mean, sigma);
-
-    position_dist.set_box_size(detector_box_size);
-
-    auto CosmicMuonGenerator = R3B::Neuland::CreateTrackGenerator(angle_dist, energy_dist, position_dist);
-
-    UInt_t seed = static_cast<UInt_t>(time(0));
-    TRandom2 random_gen(seed);
-    CosmicMuonGenerator->set_rd_engine(&random_gen);
-
-    auto primGen = std::make_unique<FairPrimaryGenerator>();
-    primGen->AddGenerator(CosmicMuonGenerator.release());
     run->SetGenerator(primGen.release());
 
     // Geometry: Cave
