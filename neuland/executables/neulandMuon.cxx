@@ -74,7 +74,7 @@ auto main(int argc, const char** argv) -> int
     auto errorcal = programOptions.create_option<bool>("errorCal", "usage of errors in calculations", false);
 
     // Paula:digi option for Caldata
-    auto calData = programOptions.create_option<bool>("calData", "Doing CalData calculations", false);
+    auto calData = programOptions.create_option<bool>("calData", "Doing CalData calculations", true);
 
     if (!programOptions.verify(argc, argv))
     {
