@@ -179,7 +179,7 @@ auto main(int argc, const char** argv) -> int
     // }
 
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
-    digiNeuland->SetCalDataCalc(calData.value());
+    digiNeuland->EnableCalDataOutput(calData.value());
     auto neulandEngine = neulandEngines.at({ paddleName(), channelName() });
     // Paula: If stuff needs to be added here
     digiNeuland->SetEngine((neulandEngine)());

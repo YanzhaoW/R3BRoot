@@ -12,9 +12,9 @@
  ******************************************************************************/
 
 #pragma once
-#include "NeulandSimCalData.h"
 #include "FairTask.h"
 #include "Filterable.h"
+#include "NeulandSimCalData.h"
 #include "R3BDigitizingEngine.h"
 #include "R3BDigitizingPaddleNeuland.h"
 #include "R3BDigitizingTacQuila.h"
@@ -24,6 +24,7 @@
 #include "R3BNeulandHitPar.h"
 #include "R3BNeulandPoint.h"
 #include "TCAConnector.h"
+#include <R3BIOConnector.h>
 #include <TClonesArray.h>
 #include <TH1.h>
 
@@ -61,10 +62,8 @@ class R3BNeulandDigitizer : public FairTask
     template <typename Type>
     using UsePaddle = Digitizing::UsePaddle<Type>;
 
-    explicit R3BNeulandDigitizer(TString input = "NeulandPoints", TString output = "NeulandHits");
-    explicit R3BNeulandDigitizer(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine,
-                                 TString input = "NeulandPoints",
-                                 TString output = "NeulandHits");
+    explicit R3BNeulandDigitizer();
+    explicit R3BNeulandDigitizer(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine);
 
     ~R3BNeulandDigitizer() override = default;
 
@@ -86,21 +85,21 @@ class R3BNeulandDigitizer : public FairTask
     void AddFilterCal(const Filterable<R3B::Neuland::SimCalData&>::Filter& filter) { fCalHitFilters.Add(filter); }
 
     // Paula:Flag for CalData
-    void SetCalDataCalc(bool calc_cal) { calc_cal_ = calc_cal; }
-    auto GetCalDataCalc() -> bool { return calc_cal_; }
+    void EnableCalDataOutput(bool calc_cal) { is_cal_output_ = calc_cal; }
+    auto HasCalDataOutput() -> bool { return is_cal_output_; }
 
   private:
     // Paula:Flag for CalData
-    bool calc_cal_ = false;
+    bool is_cal_output_ = false;
 
-    TCAInputConnector<R3BNeulandPoint> fPoints;
-    TCAOutputConnector<R3BNeulandHit> fHits;
-    TCAOutputConnector<R3B::Neuland::SimCalData> fCalHits{ "NeulandSimCal" };
+    R3B::InputVectorConnector<R3BNeulandPoint> fPoints{ "NeulandPoints" };
+    R3B::OutputVectorConnector<R3BNeulandHit> fHits{ "NeulandHits" };
+    // TCAOutputConnector<R3B::Neuland::SimCalData> fCalHits{ "NeulandSimCal" };
+    R3B::OutputVectorConnector<R3B::Neuland::SimCalData> fCalHits{ "NeulandSimCal" };
 
     std::unique_ptr<Digitizing::DigitizingEngineInterface> fDigitizingEngine; // owning
 
     Filterable<R3BNeulandHit&> fHitFilters;
-
     Filterable<R3B::Neuland::SimCalData&> fCalHitFilters;
 
     R3BNeulandGeoPar* fNeulandGeoPar = nullptr; // non-owning
@@ -108,6 +107,8 @@ class R3BNeulandDigitizer : public FairTask
     TH1I* hMultOne = nullptr;
     TH1I* hMultTwo = nullptr;
     TH1F* hRLTimeToTrig = nullptr;
+
+    void fill_cal_data(std::map<int, std::unique_ptr<R3B::Digitizing::Paddle>> paddles);
 
   public:
     template <typename... Args>
