@@ -11,7 +11,7 @@ inline constexpr auto z_pos = 0.;
 inline constexpr auto nDP = 13;
 inline constexpr auto PID = 2112;
 
-inline auto create_muon_generator()
+inline auto create_muon_generator(TRandom3& random_gen)
 {
     auto detector_box_size = ::R3B::Neuland::DetectorBoxSize{};
     detector_box_size.xmin = -R3B::Neuland::BarLength / 2;
@@ -41,7 +41,6 @@ inline auto create_muon_generator()
 
     auto CosmicMuonGenerator = R3B::Neuland::CreateTrackGenerator(angle_dist, energy_dist, position_dist);
 
-    TRandom3 random_gen(0);
     CosmicMuonGenerator->set_rd_engine(&random_gen);
 
     auto primGen = std::make_unique<FairPrimaryGenerator>();

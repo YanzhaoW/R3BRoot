@@ -2,6 +2,7 @@
 #include <Math/GenVector/Cartesian3D.h>
 #include <R3BNeulandCommon.h>
 #include <TRandom.h>
+#include <stdexcept>
 
 namespace R3B::Neuland
 {
@@ -86,10 +87,14 @@ namespace R3B::Neuland
         auto operator()(TRandom* rd_engine_) const -> ROOT::Math::Cartesian3D<double>
         {
             auto box_positions = ROOT::Math::Cartesian3D<double>{};
-            box_positions.SetX(rd_engine_->Uniform(detector_box_size_.xmin, detector_box_size_.xmax));
-            box_positions.SetY(rd_engine_->Uniform(detector_box_size_.ymin, detector_box_size_.ymax));
-            box_positions.SetZ(rd_engine_->Uniform(detector_box_size_.zmin, detector_box_size_.zmax));
-            return box_positions;
+            if (rd_engine_ != nullptr)
+            {
+                box_positions.SetX(rd_engine_->Uniform(detector_box_size_.xmin, detector_box_size_.xmax));
+                box_positions.SetY(rd_engine_->Uniform(detector_box_size_.ymin, detector_box_size_.ymax));
+                box_positions.SetZ(rd_engine_->Uniform(detector_box_size_.zmin, detector_box_size_.zmax));
+                return box_positions;
+            }
+            throw std::runtime_error("rnd engine is nullptr!");
         }
 
       private:

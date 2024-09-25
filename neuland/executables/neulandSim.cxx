@@ -73,11 +73,12 @@ auto main(int argc, const char** argv) -> int
     run->SetField(fairField.release());
 
     // auto primGen = create_muon_generator();
-    auto primGen = [gen = generator.value(), multi = multi.value(), energy = pEnergy.value()]()
+    TRandom3 random_gen(0);
+    auto primGen = [&random_gen, gen = generator.value(), multi = multi.value(), energy = pEnergy.value()]()
     {
         if (gen == "muon")
         {
-            return create_muon_generator();
+            return create_muon_generator(random_gen);
         }
         if (gen == "box")
         {
