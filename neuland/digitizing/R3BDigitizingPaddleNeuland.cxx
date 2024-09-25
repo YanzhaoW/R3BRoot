@@ -1,7 +1,7 @@
 #include "R3BDigitizingPaddleNeuland.h"
+#include <R3BNeulandCalToHitPar.h>
 #include <R3BNeulandCommon.h>
 #include <cmath>
-#include <R3BNeulandCalToHitPar.h>
 #include <memory>
 
 using R3B::Neuland::DEFAULT_EFFECTIVE_C;
@@ -35,6 +35,8 @@ namespace R3B::Digitizing::Neuland
     {
         effective_speed_ = cal_to_hit_par->GetModulePars().at(paddleID).effectiveSpeed.value;
         gAttenuation_ = cal_to_hit_par->GetModulePars().at(paddleID).lightAttenuationFactor.value;
+        time_offset_ = cal_to_hit_par->GetModulePars().at(paddleID).tDiff.value;
+        time_sync_ = cal_to_hit_par->GetModulePars().at(paddleID).tSync.value;
     }
 
     auto NeulandPaddle::MatchSignals(const Channel::Signal& firstSignal,
@@ -72,7 +74,7 @@ namespace R3B::Digitizing::Neuland
     inline auto NeulandPaddle::ComputeTime(const Channel::Signal& firstSignal,
                                            const Channel::Signal& secondSignal) const -> double
     {
-        return (firstSignal.tdc + secondSignal.tdc) / 2 - gHalfLength_ / effective_speed_;
+        return (firstSignal.tdc + secondSignal.tdc) / 2 - gHalfLength_ / effective_speed_ + time_sync_;
     }
 
     inline auto NeulandPaddle::ComputePosition(const Channel::Signal& leftSignal,
@@ -83,8 +85,9 @@ namespace R3B::Digitizing::Neuland
             R3BLOG(fatal, "cannot compute position with signals from same side!");
             return 0.F;
         }
-        return (leftSignal.side == ChannelSide::left) ? (leftSignal.tdc - rightSignal.tdc) / 2 * effective_speed_
-                                                      : (rightSignal.tdc - leftSignal.tdc) / 2 * effective_speed_;
+
+        return (leftSignal.side == ChannelSide::left) ? (leftSignal.tdc - rightSignal.tdc + time_offset_) / 2 * effective_speed_
+                                                      : (rightSignal.tdc - leftSignal.tdc+ time_offset_) / 2 * effective_speed_;
     }
 
     auto NeulandPaddle::ComputeChannelHits(const Hit& hit) const -> Paddle::Pair<Channel::Hit>
@@ -94,9 +97,9 @@ namespace R3B::Digitizing::Neuland
         return { leftChannelHit, rightChannelHit };
     }
 
-    auto NeulandPaddle::GenerateChannelHit(const Double_t mcTime,
-                                           const Double_t mcLight,
-                                           const Double_t dist) const -> const Channel::Hit
+    auto NeulandPaddle::GenerateChannelHit(const double mcTime,
+                                           const double mcLight,
+                                           const double dist) const -> const Channel::Hit
     {
         auto time = mcTime + (NeulandPaddle::gHalfLength_ - dist) / effective_speed_;
         auto light = mcLight * std::exp(-NeulandPaddle::gAttenuation_ * (NeulandPaddle::gHalfLength_ - dist));

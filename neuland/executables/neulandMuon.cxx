@@ -27,7 +27,7 @@
 #include "R3BProgramOptions.h"
 #include "TRandom3.h"
 #include "TStopwatch.h"
-#include <R3BNeulandDigitizerCalData.h>
+#include <R3BNeulandDigitizer.h>
 #include <TObjString.h>
 #include <boost/program_options.hpp>
 #include <memory>
@@ -72,6 +72,9 @@ auto main(int argc, const char** argv) -> int
 
     // Paula: Error not yet used in the code
     auto errorcal = programOptions.create_option<bool>("errorCal", "usage of errors in calculations", false);
+
+    // Paula:digi option for Caldata
+    auto calData = programOptions.create_option<bool>("calData", "Doing CalData calculations", false);
 
     if (!programOptions.verify(argc, argv))
     {
@@ -175,7 +178,8 @@ auto main(int argc, const char** argv) -> int
     //     }
     // }
 
-    auto digiNeuland = std::make_unique<R3BNeulandDigitizerCalTask>();
+    auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
+    digiNeuland->SetCalDataCalc(calData.value());
     auto neulandEngine = neulandEngines.at({ paddleName(), channelName() });
     // Paula: If stuff needs to be added here
     digiNeuland->SetEngine((neulandEngine)());

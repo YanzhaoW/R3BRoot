@@ -12,7 +12,7 @@
  ******************************************************************************/
 
 #pragma once
-
+#include "NeulandSimCalData.h"
 #include "FairTask.h"
 #include "Filterable.h"
 #include "R3BDigitizingEngine.h"
@@ -42,6 +42,7 @@ class TH2F;
  *   Additional output: Some control histograms
  *
  */
+
 namespace Digitizing = R3B::Digitizing;
 
 class R3BNeulandDigitizer : public FairTask
@@ -82,14 +83,25 @@ class R3BNeulandDigitizer : public FairTask
     void Exec(Option_t* /*option*/) override;
     void SetEngine(std::unique_ptr<Digitizing::DigitizingEngineInterface> engine);
     void AddFilter(const Filterable<R3BNeulandHit&>::Filter& filter) { fHitFilters.Add(filter); }
+    void AddFilterCal(const Filterable<R3B::Neuland::SimCalData&>::Filter& filter) { fCalHitFilters.Add(filter); }
+
+    // Paula:Flag for CalData
+    void SetCalDataCalc(bool calc_cal) { calc_cal_ = calc_cal; }
+    auto GetCalDataCalc() -> bool { return calc_cal_; }
 
   private:
+    // Paula:Flag for CalData
+    bool calc_cal_ = false;
+
     TCAInputConnector<R3BNeulandPoint> fPoints;
     TCAOutputConnector<R3BNeulandHit> fHits;
+    TCAOutputConnector<R3B::Neuland::SimCalData> fCalHits{ "NeulandSimCal" };
 
     std::unique_ptr<Digitizing::DigitizingEngineInterface> fDigitizingEngine; // owning
 
     Filterable<R3BNeulandHit&> fHitFilters;
+
+    Filterable<R3B::Neuland::SimCalData&> fCalHitFilters;
 
     R3BNeulandGeoPar* fNeulandGeoPar = nullptr; // non-owning
 

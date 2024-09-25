@@ -35,12 +35,12 @@ namespace R3B::Digitizing::Neuland
         explicit NeulandPaddle(uint16_t paddleID, R3B::Neuland::Cal2HitPar* cal_to_hit_par);
 
       private:
-        [[nodiscard]] auto ComputeTime(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
-            -> double override;
-        [[nodiscard]] auto ComputeEnergy(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
-            -> double override;
-        [[nodiscard]] auto ComputePosition(const Channel::Signal& leftSignal, const Channel::Signal& rightSignal) const
-            -> double override;
+        [[nodiscard]] auto ComputeTime(const Channel::Signal& firstSignal,
+                                       const Channel::Signal& secondSignal) const -> double override;
+        [[nodiscard]] auto ComputeEnergy(const Channel::Signal& firstSignal,
+                                         const Channel::Signal& secondSignal) const -> double override;
+        [[nodiscard]] auto ComputePosition(const Channel::Signal& leftSignal,
+                                           const Channel::Signal& rightSignal) const -> double override;
         auto ComputeChannelHits(const Hit& hit) const -> Pair<Channel::Hit> override;
 
       public:
@@ -49,13 +49,13 @@ namespace R3B::Digitizing::Neuland
         static constexpr double gLambda = 1. / 2.1;
         static const double ReverseAttenFac;
 
-        auto MatchSignals(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
-            -> float override;
+        auto MatchSignals(const Channel::Signal& firstSignal,
+                          const Channel::Signal& secondSignal) const -> float override;
         [[nodiscard]] static auto SignalCouplingNeuland(const Paddle& self,
                                                         const Channel::Signals& firstSignals,
                                                         const Channel::Signals& secondSignals)
             -> std::vector<ChannelSignalPair>;
-        auto GenerateChannelHit(Double_t mcTime, Double_t mcLight, Double_t dist) const -> const Channel::Hit;
+        auto GenerateChannelHit(double mcTime, double mcLight, double dist) const -> const Channel::Hit;
 
       private:
         // Paula: non static member variables, are not used in TacQuila
@@ -65,5 +65,7 @@ namespace R3B::Digitizing::Neuland
         double gLambda_ = 1. / 2.1;
         double ReverseAttenFac_ = std::exp(NeulandPaddle::gHalfLength * NeulandPaddle::gAttenuation);
         double effective_speed_ = R3B::Neuland::DEFAULT_EFFECTIVE_C;
+        double time_offset_ = 0.0;
+        double time_sync_ = 0.0;
     };
 } // namespace R3B::Digitizing::Neuland
