@@ -108,7 +108,7 @@ class R3BNeulandDigitizer : public FairTask
     TH1I* hMultTwo = nullptr;
     TH1F* hRLTimeToTrig = nullptr;
 
-    void fill_cal_data(std::map<int, std::unique_ptr<R3B::Digitizing::Paddle>> paddles);
+    void fill_cal_data(const std::map<int, std::unique_ptr<R3B::Digitizing::Paddle>>& paddles);
 
   public:
     template <typename... Args>

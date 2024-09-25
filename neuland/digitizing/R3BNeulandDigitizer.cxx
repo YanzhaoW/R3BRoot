@@ -166,7 +166,7 @@ void R3BNeulandDigitizer::Exec(Option_t* /*option*/)
     LOG(debug) << "R3BNeulandDigitizer: produced " << hits.size() << " hits";
 }
 
-void R3BNeulandDigitizer::fill_cal_data(std::map<int, std::unique_ptr<R3B::Digitizing::Paddle>> paddles)
+void R3BNeulandDigitizer::fill_cal_data(const std::map<int, std::unique_ptr<R3B::Digitizing::Paddle>>& paddles)
 {
     fCalHits.clear();
     auto& cal_hits = fCalHits.get();
