@@ -167,17 +167,17 @@ namespace R3B::Digitizing::Neuland::Tamex
         static void GetHitPar(const std::string& hitParName);
 
         auto GetHitModulePar() const -> R3B::Neuland::HitModulePar { return hit_module_par_; } // Added for qdc in time
-        auto GetCal2HitPar() { return hit_par_; }
+        auto GetCal2HitPar() { return neuland_hit_par_; }
 
       private:
         PeakPileUpStrategy pileup_strategy_ = PeakPileUpStrategy::width;
         std::vector<PMTPeak> pmt_peaks_;
         std::vector<FQTPeak> fqt_peaks_;
-        static R3BNeulandHitPar* neuland_hit_par_;                 // NOLINT
-        R3BNeulandHitModulePar* neuland_hit_module_par_ = nullptr; // old version
+        static R3BNeulandHitPar* neuland_hit_par;                 // NOLINT
+        R3BNeulandHitModulePar* neuland_hit_module_par = nullptr; // old version
         Tamex::Params par_;
 
-        R3B::Neuland::Cal2HitPar* hit_par_ = nullptr;
+        R3B::Neuland::Cal2HitPar* neuland_hit_par_ = nullptr;
         R3B::Neuland::HitModulePar hit_module_par_; // Added for qdc in time
 
         // private virtual functions
