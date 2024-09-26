@@ -11,10 +11,10 @@
  * or submit itself to any jurisdiction.                                      *
  ******************************************************************************/
 
-#include "R3BNeuland.h"
 #include "FairRun.h"
 #include "FairRuntimeDb.h"
 #include "R3BMCStack.h"
+#include "R3BNeuland.h"
 #include "R3BNeulandGeoPar.h"
 #include "R3BNeulandPoint.h"
 #include "TClonesArray.h"
@@ -61,7 +61,6 @@ R3BNeuland::R3BNeuland(const TString& geoFile, const TGeoTranslation& trans, con
 
 R3BNeuland::R3BNeuland(const TString& geoFile, const TGeoCombiTrans& combi)
     : R3BDetector("R3BNeuland", kNEULAND, geoFile, combi)
-    , fNeulandPoints(new TClonesArray("R3BNeulandPoint"))
 {
 }
 
@@ -73,15 +72,6 @@ R3BNeuland::R3BNeuland(Int_t nDP, const TGeoTranslation& trans, const TGeoRotati
 R3BNeuland::R3BNeuland(const Int_t nDP, const TGeoCombiTrans& combi)
     : R3BNeuland(TString::Format("neuland_v3_%ddp.geo.root", nDP), combi)
 {
-}
-
-R3BNeuland::~R3BNeuland()
-{
-    if (fNeulandPoints)
-    {
-        fNeulandPoints->Delete();
-        delete fNeulandPoints;
-    }
 }
 
 void R3BNeuland::Initialize()
@@ -138,16 +128,17 @@ Bool_t R3BNeuland::ProcessHits(FairVolume*)
                    << ") cm,  paddle " << fPaddleID << ", track " << fTrackID << ", energy loss " << fELoss << " GeV "
                    << gMC->GetStack()->GetCurrentParentTrackNumber();
 
-        Int_t size = fNeulandPoints->GetEntriesFast();
-        new ((*fNeulandPoints)[size]) R3BNeulandPoint(fTrackID,
-                                                      fPaddleID,
-                                                      fPosIn.Vect(),
-                                                      fMomIn.Vect(),
-                                                      fTime,
-                                                      fLength,
-                                                      fELoss,
-                                                      gMC->CurrentEvent(),
-                                                      fLightYield);
+        auto& point = fNeulandPoints.get().emplace_back(fTrackID,
+                                                        fPaddleID,
+                                                        fPosIn.Vect(),
+                                                        fMomIn.Vect(),
+                                                        fTime,
+                                                        fLength,
+                                                        fELoss,
+                                                        gMC->CurrentEvent(),
+                                                        fLightYield);
+        auto* point_ptr = fNeulandPointsTCA->ConstructedAt(fNeulandPointsTCA->GetEntries());
+        *point_ptr = point;
 
         // Increment number of LandPoints for this track
         auto stack = dynamic_cast<R3BStack*>(gMC->GetStack());
@@ -173,24 +164,22 @@ TClonesArray* R3BNeuland::GetCollection(Int_t iColl) const
 {
     if (iColl == 0)
     {
-        return fNeulandPoints;
+        return fNeulandPointsTCA.get();
     }
     return nullptr;
 }
 
-void R3BNeuland::Register()
-{
-    FairRootManager::Instance()->Register("NeulandPoints", GetName(), fNeulandPoints, kTRUE);
-}
+void R3BNeuland::Register() { fNeulandPoints.init(); }
 
 void R3BNeuland::Print(Option_t*) const
 {
-    LOG(info) << "R3BNeuland: " << fNeulandPoints->GetEntries() << " Neuland Points registered in this event";
+    LOG(info) << "R3BNeuland: " << fNeulandPoints.size() << " Neuland Points registered in this event";
 }
 
 void R3BNeuland::Reset()
 {
-    fNeulandPoints->Clear();
+    fNeulandPointsTCA->Clear();
+    fNeulandPoints.get().clear();
     ResetValues();
 }
 

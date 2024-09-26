@@ -25,7 +25,7 @@
 
 #include "FairTask.h"
 #include "R3BNeulandHit.h"
-#include "TCAConnector.h"
+#include <R3BIOConnector.h>
 
 class TH1D;
 class TH2D;
@@ -59,7 +59,7 @@ class R3BNeulandHitMon : public FairTask
   private:
     TString fOutput;
 
-    TCAInputConnector<R3BNeulandHit> fHits;
+    R3B::InputVectorConnector<R3BNeulandHit> fHits{ "NeulandHits" };
 
     double fDistanceToTarget = 0.;
 
