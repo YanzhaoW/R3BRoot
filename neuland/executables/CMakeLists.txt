@@ -1,6 +1,13 @@
+find_package(MPI)
+
 add_executable(neulandSim neulandSim.cxx)
 target_link_libraries(neulandSim PRIVATE R3BNeulandSimulation R3BGen ${Geant4_LIBRARIES}
                                          ${Geant4VMC_LIBRARIES})
+
+if(MPI_FOUND)
+    target_link_libraries(neulandSim PRIVATE MPI::MPI_CXX)
+    target_compile_definitions(neulandSim PRIVATE HAS_MPI)
+endif()
 
 add_executable(neulandAna neulandAna.cxx)
 target_link_libraries(neulandAna PRIVATE R3BNeulandDigitizing)
@@ -19,12 +26,7 @@ if(CONAN_ENABLED)
     target_link_libraries(neuland_cal_to_hit PRIVATE R3BNeulandCalibration R3BSource)
 
     add_executable(neuland_online_monitor neuland_online_monitor.cxx)
-    target_link_libraries(
-        neuland_online_monitor
-        PRIVATE R3BNeulandOnline
-                R3BLos
-                R3BSource
-                -pthread)
+    target_link_libraries(neuland_online_monitor PRIVATE R3BNeulandOnline R3BLos R3BSource -pthread)
 
     add_executable(neuland_par_merger neuland_par_merger.cxx)
     target_link_libraries(neuland_par_merger PRIVATE R3BNeulandShared)

@@ -46,7 +46,7 @@ using Digitizing::UsePaddle;
 //     return []() { Digitizing::Neuland::Tamex::Channel::GetHitPar("test"); };
 // }
 
-auto main(int argc, const char** argv) -> int
+auto main(int argc, char** argv) -> int
 {
     auto timer = TStopwatch{};
     timer.Start();

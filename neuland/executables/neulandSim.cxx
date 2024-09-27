@@ -18,12 +18,23 @@
 #include <ctime>
 #include <iostream>
 #include <string>
+#ifdef HAS_MPI
+#include <mpi.h>
+#endif
 
 inline constexpr auto DEFAULT_RUNID = 999;
 inline constexpr auto defaultEventNum = 10;
 
-auto main(int argc, const char** argv) -> int
+auto main(int argc, char** argv) -> int
 {
+#ifdef HAS_MPI
+    MPI_Init(&argc, &argv);
+    auto num_proc = 0;
+    auto num_rank = 0;
+    MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
+    MPI_Comm_rank(MPI_COMM_WORLD, &num_rank);
+#endif
+
     auto timer = TStopwatch{};
     timer.Start();
 
@@ -53,6 +64,14 @@ auto main(int argc, const char** argv) -> int
         return 0;
     }
 
+    auto simu_file_name = simuFileName.value();
+    auto para_file_name = paraFileName.value();
+
+#ifdef HAS_MPI
+    simu_file_name = fmt::format("{}.{}", simu_file_name, num_rank);
+    para_file_name = fmt::format("{}.{}", para_file_name, num_rank);
+#endif
+
     // Logging
     // FairLogger::GetLogger()->SetLogVerbosityLevel("LOW");
     FairLogger::GetLogger()->SetLogScreenLevel(logLevel().c_str());
@@ -68,7 +87,7 @@ auto main(int argc, const char** argv) -> int
     run->SetRunId(runID());
     run->SetStoreTraj(false);
     run->SetMaterials("media_r3b.geo");
-    run->SetSink(std::make_unique<FairRootFileSink>(simuFileName().c_str()));
+    run->SetSink(std::make_unique<FairRootFileSink>(simu_file_name.c_str()));
     auto fairField = std::make_unique<R3BFieldConst>();
     run->SetField(fairField.release());
 
@@ -111,7 +130,7 @@ auto main(int argc, const char** argv) -> int
 
     // Connect runtime parameter file
     auto parFileIO = std::make_unique<FairParRootFileIo>(true);
-    parFileIO->open(paraFileName().c_str());
+    parFileIO->open(para_file_name.c_str());
     auto* rtdb = run->GetRuntimeDb();
     rtdb->setOutput(parFileIO.release());
     rtdb->saveOutput();
@@ -123,5 +142,8 @@ auto main(int argc, const char** argv) -> int
     timer.Stop();
     std::cout << "Macro finished successfully." << std::endl;
     std::cout << "Real time: " << timer.RealTime() << "s, CPU time: " << timer.CpuTime() << "s" << std::endl;
+#ifdef HAS_MPI
+    MPI_Finalize();
+#endif
     return 0;
 }

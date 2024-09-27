@@ -44,7 +44,7 @@ using Digitizing::UsePaddle;
 //     return []() { Digitizing::Neuland::Tamex::Channel::GetHitPar("test"); };
 // }
 
-auto main(int argc, const char** argv) -> int
+auto main(int argc, char** argv) -> int
 {
     auto timer = TStopwatch{};
     timer.Start();
@@ -54,7 +54,7 @@ auto main(int argc, const char** argv) -> int
     auto paddleName =
         programOptions.create_option<std::string>("paddle", R"(set the paddle name. e.g. "neuland")", "neuland");
     auto channelName =
-        programOptions.create_option<std::string>("channel", R"(set the channel name. e.g. "tamex")", "tacquila");
+        programOptions.create_option<std::string>("channel", R"(set the channel name. e.g. "tamex")", "tamex");
     auto simuFileName =
         programOptions.create_option<std::string>("simuFile", "set the filename of simulation input", "simu.root");
     auto paraFileName =
@@ -91,16 +91,16 @@ auto main(int argc, const char** argv) -> int
         { { "neuland", "tamex" },
           [&]()
           {
-              return Digitizing::CreateEngine(
-                  UsePaddle<NeulandPaddle>(), UseChannel<TamexChannel>(pileup_strategy, tamexParameter));
+              return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(),
+                                              UseChannel<TamexChannel>(pileup_strategy, tamexParameter));
           } },
         { { "neuland", "tacquila" },
           []() { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<TacquilaChannel>()); } },
         { { "mock", "tamex" },
           [&]()
           {
-              return Digitizing::CreateEngine(
-                  UsePaddle<MockPaddle>(), UseChannel<TamexChannel>(pileup_strategy, tamexParameter));
+              return Digitizing::CreateEngine(UsePaddle<MockPaddle>(),
+                                              UseChannel<TamexChannel>(pileup_strategy, tamexParameter));
           } },
         { { "neuland", "mock" },
           []() { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<MockChannel>()); } },
@@ -111,8 +111,14 @@ auto main(int argc, const char** argv) -> int
 
     FairLogger::GetLogger()->SetLogScreenLevel(logLevel().c_str());
 
+    auto filenames = R3B::GetFilesFromRegex(simuFileName());
+
     auto run = std::make_unique<FairRunAna>();
-    auto filesource = std::make_unique<R3BFileSource2>(simuFileName().c_str());
+    auto filesource = std::make_unique<R3BFileSource2>();
+    for (auto filename : filenames)
+    {
+        filesource->AddFile(std::move(filename));
+    }
     auto filesink = std::make_unique<FairRootFileSink>(digiFileName().c_str());
     run->SetSource(filesource.release());
     run->SetSink(filesink.release());
