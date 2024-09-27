@@ -79,15 +79,6 @@ auto main(int argc, const char** argv) -> int
         return 0;
     }
 
-    auto const channelInit = [&]()
-    {
-        if (not hitLevelPar().empty())
-        {
-            FairRuntimeDb::instance()->getContainer(hitLevelPar().c_str());
-            Digitizing::Neuland::Tamex::Channel::GetHitPar(hitLevelPar());
-        }
-    };
-
     //=============================================================================
     // settings:
     auto tamexParameter = Digitizing::Neuland::Tamex::Params{ TamexChannel::GetDefaultRandomGen() };
@@ -101,7 +92,7 @@ auto main(int argc, const char** argv) -> int
           [&]()
           {
               return Digitizing::CreateEngine(
-                  UsePaddle<NeulandPaddle>(), UseChannel<TamexChannel>(pileup_strategy, tamexParameter), channelInit);
+                  UsePaddle<NeulandPaddle>(), UseChannel<TamexChannel>(pileup_strategy, tamexParameter));
           } },
         { { "neuland", "tacquila" },
           []() { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<TacquilaChannel>()); } },
@@ -109,7 +100,7 @@ auto main(int argc, const char** argv) -> int
           [&]()
           {
               return Digitizing::CreateEngine(
-                  UsePaddle<MockPaddle>(), UseChannel<TamexChannel>(pileup_strategy, tamexParameter), channelInit);
+                  UsePaddle<MockPaddle>(), UseChannel<TamexChannel>(pileup_strategy, tamexParameter));
           } },
         { { "neuland", "mock" },
           []() { return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(), UseChannel<MockChannel>()); } },

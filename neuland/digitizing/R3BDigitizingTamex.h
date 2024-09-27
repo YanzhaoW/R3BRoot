@@ -24,8 +24,8 @@
 #include "R3BDigitizingChannel.h"
 #include "R3BDigitizingPaddle.h"
 #include "TRandom3.h"
-#include <R3BNeulandCalToHitPar.h>
 #include "Validated.h"
+#include <R3BNeulandCalToHitPar.h>
 #include <optional>
 
 class R3BNeulandHitPar;
@@ -141,18 +141,20 @@ namespace R3B::Digitizing::Neuland::Tamex
     {
       public:
         Channel(ChannelSide, PeakPileUpStrategy strategy, TRandom3&);
-        Channel(ChannelSide, PeakPileUpStrategy strategy, const Params&);
-        Channel(ChannelSide, PeakPileUpStrategy strategy, const Params&, R3B::Neuland::Cal2HitPar* cal_to_hit_par);
+        Channel(ChannelSide,
+                PeakPileUpStrategy strategy,
+                const Params&,
+                R3B::Neuland::Cal2HitPar* cal_to_hit_par = nullptr);
         explicit Channel(ChannelSide side, PeakPileUpStrategy strategy = PeakPileUpStrategy::width)
             : Channel(side, strategy, GetDefaultRandomGen())
         {
         }
         // Setters:
         void SetPileUpStrategy(PeakPileUpStrategy strategy) { pileup_strategy_ = strategy; }
-        auto SetHitModulPar(R3B::Neuland::HitModulePar hit_module_par)
-        {
-            hit_module_par_ = hit_module_par;
-        } // Added for qdc in time
+        // auto SetHitModulPar(R3B::Neuland::HitModulePar hit_module_par)
+        // {
+        //     neuland_hit_module_par_ = hit_module_par;
+        // } // Added for qdc in time
 
         // Getters:
         auto GetPar() -> Tamex::Params& { return par_; }
@@ -164,21 +166,17 @@ namespace R3B::Digitizing::Neuland::Tamex
         void AddHit(Hit /*hit*/) override;
         auto CreateSignal(const FQTPeak& peak) const -> Signal;
         auto CreateCalSignal(const FQTPeak& peak) const -> CalSignal;
-        static void GetHitPar(const std::string& hitParName);
 
-        auto GetHitModulePar() const -> R3B::Neuland::HitModulePar { return hit_module_par_; } // Added for qdc in time
-        auto GetCal2HitPar() { return neuland_hit_par_; }
+        auto GetCal2HitPar() -> auto* { return neuland_hit_par_; }
 
       private:
         PeakPileUpStrategy pileup_strategy_ = PeakPileUpStrategy::width;
         std::vector<PMTPeak> pmt_peaks_;
         std::vector<FQTPeak> fqt_peaks_;
-        static R3BNeulandHitPar* neuland_hit_par;                 // NOLINT
-        R3BNeulandHitModulePar* neuland_hit_module_par = nullptr; // old version
+        // static R3BNeulandHitPar* neuland_hit_par;                 // NOLINT
+        R3B::Neuland::Cal2HitPar* neuland_hit_par_ = nullptr;
         Tamex::Params par_;
 
-        R3B::Neuland::Cal2HitPar* neuland_hit_par_ = nullptr;
-        R3B::Neuland::HitModulePar hit_module_par_; // Added for qdc in time
 
         // private virtual functions
         auto ConstructSignals() -> Signals override;
@@ -187,7 +185,6 @@ namespace R3B::Digitizing::Neuland::Tamex
 
         // private non-virtual functions
         auto CheckPaddleIDInHitPar() const -> bool;
-        auto CheckPaddleIDInHitModulePar() const -> bool;
         void SetHitModulePar(int PaddleId);
         auto ToQdc(double) const -> double;
         auto ToTdc(double) const -> double;

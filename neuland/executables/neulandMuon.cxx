@@ -87,15 +87,6 @@ auto main(int argc, const char** argv) -> int
         return 0;
     }
 
-    auto const channelInit = [&]()
-    {
-        if (not hitLevelPar().empty())
-        {
-            FairRuntimeDb::instance()->getContainer(hitLevelPar().c_str());
-            Digitizing::Neuland::Tamex::Channel::GetHitPar(hitLevelPar());
-        }
-    };
-
     //=============================================================================
     // settings:
     auto tamexParameter = Digitizing::Neuland::Tamex::Params{ TamexChannel::GetDefaultRandomGen() };
@@ -158,11 +149,10 @@ auto main(int argc, const char** argv) -> int
     const auto neulandEngines = std::map<std::pair<const std::string, const std::string>,
                                          std::function<std::unique_ptr<Digitizing::DigitizingEngineInterface>()>>{
         { { "neuland", "tamex" },
-          [&pileup_strategy, &tamexParameter, hit_par_ptr, channelInit]()
+          [&pileup_strategy, &tamexParameter, hit_par_ptr]()
           {
               return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(hit_par_ptr),
-                                              UseChannel<TamexChannel>(pileup_strategy, tamexParameter, hit_par_ptr),
-                                              channelInit);
+                                              UseChannel<TamexChannel>(pileup_strategy, tamexParameter, hit_par_ptr));
           } }
     };
 

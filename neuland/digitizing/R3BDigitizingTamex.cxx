@@ -17,14 +17,10 @@
 #include <cmath>
 
 #include "R3BException.h"
-#include "R3BNeulandHitModulePar.h"
-#include "R3BNeulandHitPar.h"
 #include <FairRunAna.h>
 #include <R3BLogger.h>
 #include <algorithm>
 #include <iostream>
-#include <numeric>
-#include <utility>
 
 namespace R3B::Digitizing::Neuland::Tamex
 {
@@ -37,6 +33,21 @@ namespace R3B::Digitizing::Neuland::Tamex
         void ReOverlapping(typename std::vector<T>::iterator v_iter, std::vector<T>& peaks);
         template <class T>
         void RemovePeakAt(typename std::vector<T>::iterator v_iter, std::vector<T>& peaks);
+
+        void set_par_with_hit_module_par(Tamex::Params& par,
+                                         const R3B::Neuland::HitModulePar& module_par,
+                                         ChannelSide channel_side)
+        {
+            auto side = (channel_side == ChannelSide::right) ? Side::right : Side::left;
+
+            par.fSaturationCoefficient = module_par.PMTSaturation.get(side).value;
+            par.fEnergyGain = module_par.energyGain.get(side).value;
+            par.fPedestal = module_par.pedestal.get(side);
+            par.fPMTThresh = module_par.PMTThreshold.get(side).value;
+            par.fQdcMin = 1 / par.fEnergyGain;
+
+            //TODO: Add other parameters:
+        }
     } // namespace
 
     // global variables for default options:
@@ -112,14 +123,6 @@ namespace R3B::Digitizing::Neuland::Tamex
         qdc_ = WidthToQdc(width_, channel_ptr_->GetParConstRef());
     }
 
-    Channel::Channel(ChannelSide side, PeakPileUpStrategy strategy, const Params& par)
-        : Digitizing::Channel{ side }
-        , pileup_strategy_{ strategy }
-        , par_{ par }
-    {
-        pmt_peaks_.reserve(TmxPeaksInitialCapacity);
-    }
-
     Channel::Channel(ChannelSide side,
                      PeakPileUpStrategy strategy,
                      const Params& par,
@@ -137,197 +140,17 @@ namespace R3B::Digitizing::Neuland::Tamex
     {
     }
 
-    void Channel::GetHitPar(const std::string& hitParName)
+    void Channel::AttachToPaddle(Digitizing::Paddle* paddle)
     {
-        if (hitParName.empty())
-        {
-            LOG(info) << "DigitizingTamex: Using default parameter for Tamex Channels.";
-            return;
-        }
-        auto* run = FairRunAna::Instance();
-        auto* rtdb = run->GetRuntimeDb();
-        neuland_hit_par_ = dynamic_cast<R3BNeulandHitPar*>(rtdb->findContainer(hitParName.c_str()));
-        if (neuland_hit_par_ != nullptr)
-        {
-            LOG(info) << "DigitizingTamex: HitPar " << hitParName
-                      << " has been found in the root file. Using calibration values in rootfile.";
-        }
-        else
-        {
-            LOG(info) << "DigitizingTamex: HitPar " << hitParName << " cannot be found. Using default values.";
-            neuland_hit_par_ = nullptr;
-        }
-    }
-
-    void Channel::AttachToPaddle(Digitizing::Paddle* /*v_paddle*/)
-    {
-        auto* paddle = GetPaddle();
         if (paddle == nullptr)
         {
             return;
         }
-
         if (CheckPaddleIDInHitPar())
         {
-            neuland_hit_module_par = neuland_hit_par_->GetModuleParAt(GetPaddle()->GetPaddleID() - 1);
-            if (CheckPaddleIDInHitModulePar())
-            {
-                if (neuland_hit_module_par == nullptr)
-                {
-                    throw;
-                }
-
-                auto side = GetSide();
-                // Paula: If for paraStuff left/right???!
-
-                auto module_par = GetCal2HitPar()->GetModuleParAt(GetPaddle()->GetPaddleID());
-
-                if (side == ChannelSide::right)
-{
-
-
-                    auto saturation_coeff_right = module_par.PMTSaturation.right().value;
-                    if (saturation_coeff_right == 0)
-                    {
-                        par_.fSaturationCoefficient = neuland_hit_module_par->GetPMTSaturation(static_cast<int>(side));
-                    }
-                    else
-                    {
-                        par_.fSaturationCoefficient = saturation_coeff_right;
-                    }
-
-                    auto energy_gain_right = module_par.energyGain.right().value;
-                    if (energy_gain_right== 0)
-                    {
-                        par_.fEnergyGain = neuland_hit_module_par->GetPMTSaturation(static_cast<int>(side));
-                    }
-                    else
-                    {
-                        par_.fEnergyGain = energy_gain_right;
-                    }
-
-                    auto pedestal_right = module_par.pedestal.right();
-                    if (energy_gain_right == 0)
-                    {
-                        par_.fPedestal = neuland_hit_module_par->GetPedestal(static_cast<int>(side));
-                    }
-                    else
-                    {
-                        par_.fPedestal = pedestal_right;
-                    }
-
-                    auto pmt_thresh_right = module_par.PMTThreshold.right().value;
-                    if (energy_gain_right == 0)
-                    {
-                        par_.fPMTThresh = neuland_hit_module_par->GetPMTThreshold(static_cast<int>(side));
-                    }
-                    else
-                    {
-                        par_.fPMTThresh = pmt_thresh_right;
-                    }
-                }
-
-                else if (side == ChannelSide::left)
-                {
-
-
-                    auto saturation_coeff_left = module_par.PMTSaturation.left().value;
-                    if (saturation_coeff_left == 0)
-                    {
-                        par_.fSaturationCoefficient = neuland_hit_module_par->GetPMTSaturation(static_cast<int>(side));
-                    }
-                    else
-                    {
-                        par_.fSaturationCoefficient = saturation_coeff_left;
-                    }
-
-                    auto energy_gain_left = module_par.energyGain.left().value;
-                    if (energy_gain_left == 0)
-                    {
-                        par_.fEnergyGain = neuland_hit_module_par->GetPMTSaturation(static_cast<int>(side));
-                    }
-                    else
-                    {
-                        par_.fEnergyGain = energy_gain_left;
-                    }
-
-                    auto pedestal_left = module_par.pedestal.left();
-                    if (energy_gain_left == 0)
-                    {
-                        par_.fPedestal = neuland_hit_module_par->GetPedestal(static_cast<int>(side));
-                    }
-                    else
-                    {
-                        par_.fPedestal = pedestal_left;
-                    }
-
-                    auto pmt_thresh_left = module_par.PMTThreshold.left().value;
-                    if (energy_gain_left == 0)
-                    {
-                        par_.fPMTThresh = neuland_hit_module_par->GetPMTThreshold(static_cast<int>(side));
-                    }
-                    else
-                    {
-                        par_.fPMTThresh = pmt_thresh_left;
-                    }
-                }
-                else
-                {
-                    LOG(error) << "Channel::AttachToPaddle() : Side neither left or right";
-                }
-                        par_.fQdcMin = 1 / par_.fEnergyGain;
-
-                // auto module_par = GetCal2HitPar()->GetModuleParAt(GetPaddle()->GetPaddleID());
-                //
-                // auto energy_gain_left = module_par.energyGain.left().value;
-                // auto energy_gain_right = module_par.energyGain.right().value;
-                //
-                // if (energy_gain_left == 0 && energy_gain_right == 0)
-                // {
-                //     par_.fQdcMin = 1 / par_.fEnergyGain;
-                // }
-                // else
-                // {
-                //     if (side == ChannelSide::left)
-                //     {
-                //         par_.fQdcMin = 1 / energy_gain_left;
-                //     }
-                //     else if (side == ChannelSide::right)
-                //     {
-                //         par_.fQdcMin = 1 / energy_gain_right;
-                //     }
-                //     else
-                //     {
-                //         LOG(error) << "Channel::AttachToPaddle: Channelside not correct defined";
-                //     }
-                // }
-                //
-                // par_.fSaturationCoefficient = neuland_hit_module_par_->GetPMTSaturation(static_cast<int>(side));
-                // par_.fEnergyGain = neuland_hit_module_par_->GetEnergyGain(static_cast<int>(side));
-                // par_.fPedestal = neuland_hit_module_par_->GetPedestal(static_cast<int>(side));
-                // par_.fPMTThresh = neuland_hit_module_par_->GetPMTThreshold(static_cast<int>(side));
-            }
+            const auto& module_par = neuland_hit_par_->GetModuleParAt(paddle->GetPaddleID() - 1);
+            set_par_with_hit_module_par(par_, module_par, GetSide());
         }
-    }
-
-    auto Channel::CheckPaddleIDInHitModulePar() const -> bool
-    {
-        auto is_valid = false;
-        if (neuland_hit_module_par == nullptr || GetPaddle() == nullptr)
-        {
-            return false;
-        }
-
-        if (GetPaddle()->GetPaddleID() != neuland_hit_module_par->GetModuleId())
-        {
-            LOG(warn) << "Channel::SetHitModulePar:Wrong paddleID for the parameters!";
-            is_valid = false;
-        }
-        else
-        {
-            is_valid = true;
-        }
-        return is_valid;
     }
 
     auto Channel::CheckPaddleIDInHitPar() const -> bool
