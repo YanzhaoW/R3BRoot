@@ -2,9 +2,6 @@
 #include <R3BNeulandCalToHitPar.h>
 #include <R3BNeulandCommon.h>
 #include <cmath>
-#include <memory>
-
-using R3B::Neuland::DEFAULT_EFFECTIVE_C;
 
 namespace R3B::Digitizing::Neuland
 {
@@ -31,16 +28,17 @@ namespace R3B::Digitizing::Neuland
     }
 
     NeulandPaddle::NeulandPaddle(uint16_t paddleID, R3B::Neuland::Cal2HitPar* cal_to_hit_par)
-        : Digitizing::Paddle(paddleID, SignalCouplingNeuland)
+        : NeulandPaddle(paddleID)
     {
-        effective_speed_ = cal_to_hit_par->GetModulePars().at(paddleID).effectiveSpeed.value;
-        gAttenuation_ = cal_to_hit_par->GetModulePars().at(paddleID).lightAttenuationFactor.value;
-        time_offset_ = cal_to_hit_par->GetModulePars().at(paddleID).tDiff.value;
-        time_sync_ = cal_to_hit_par->GetModulePars().at(paddleID).tSync.value;
+        const auto& module_par = cal_to_hit_par->GetModulePars().at(paddleID);
+        effective_speed_ = module_par.effectiveSpeed.value;
+        gAttenuation_ = module_par.lightAttenuationFactor.value;
+        time_offset_ = module_par.tDiff.value;
+        time_sync_ = module_par.tSync.value;
     }
 
-    auto NeulandPaddle::MatchSignals(const Channel::Signal& firstSignal,
-                                     const Channel::Signal& secondSignal) const -> float
+    auto NeulandPaddle::MatchSignals(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
+        -> float
     {
         auto firstE = static_cast<Float_t>(firstSignal.qdcUnSat);
         auto secondE = static_cast<Float_t>(secondSignal.qdcUnSat);
@@ -86,8 +84,9 @@ namespace R3B::Digitizing::Neuland
             return 0.F;
         }
 
-        return (leftSignal.side == ChannelSide::left) ? (leftSignal.tdc - rightSignal.tdc + time_offset_) / 2 * effective_speed_
-                                                      : (rightSignal.tdc - leftSignal.tdc+ time_offset_) / 2 * effective_speed_;
+        return (leftSignal.side == ChannelSide::left)
+                   ? (leftSignal.tdc - rightSignal.tdc + time_offset_) / 2 * effective_speed_
+                   : (rightSignal.tdc - leftSignal.tdc + time_offset_) / 2 * effective_speed_;
     }
 
     auto NeulandPaddle::ComputeChannelHits(const Hit& hit) const -> Paddle::Pair<Channel::Hit>
@@ -97,9 +96,8 @@ namespace R3B::Digitizing::Neuland
         return { leftChannelHit, rightChannelHit };
     }
 
-    auto NeulandPaddle::GenerateChannelHit(const double mcTime,
-                                           const double mcLight,
-                                           const double dist) const -> const Channel::Hit
+    auto NeulandPaddle::GenerateChannelHit(const double mcTime, const double mcLight, const double dist) const
+        -> const Channel::Hit
     {
         auto time = mcTime + (NeulandPaddle::gHalfLength_ - dist) / effective_speed_;
         auto light = mcLight * std::exp(-NeulandPaddle::gAttenuation_ * (NeulandPaddle::gHalfLength_ - dist));
