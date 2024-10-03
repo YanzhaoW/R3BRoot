@@ -99,8 +99,11 @@ namespace R3B::Digitizing::Neuland
     auto NeulandPaddle::GenerateChannelHit(const double mcTime, const double mcLight, const double dist) const
         -> const Channel::Hit
     {
-        auto time = mcTime + (NeulandPaddle::gHalfLength_ - dist) / effective_speed_;
-        auto light = mcLight * std::exp(-NeulandPaddle::gAttenuation_ * (NeulandPaddle::gHalfLength_ - dist));
+        //Paula: is this correct?
+        auto mcTime_= mcTime + time_sync_;
+        auto dist_ = dist + time_offset_ * gCMedium_ * 0.5;
+        auto time = mcTime_ + (NeulandPaddle::gHalfLength_ - dist) / effective_speed_;
+        auto light = mcLight * std::exp(-NeulandPaddle::gAttenuation_ * (NeulandPaddle::gHalfLength_ - dist_));
         return { time, light };
     }
 

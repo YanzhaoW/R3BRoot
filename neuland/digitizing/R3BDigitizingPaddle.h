@@ -39,18 +39,18 @@ namespace R3B::Digitizing
         double energy{};
         double time{};
         double position{};
-        const Channel::Signal leftChannel;
-        const Channel::Signal rightChannel;
-        Channel::CalSignal leftChannelCal;
-        Channel::CalSignal rightChannelCal;
+        Channel::Signal leftChannel{};
+        Channel::Signal rightChannel{};
+        Channel::CalSignal leftChannelCal{};
+        Channel::CalSignal rightChannelCal{};
 
-        explicit PaddleSignal(LRPair<const Channel::CalSignal> p_signals)
+        explicit PaddleSignal(LRPair<Channel::CalSignal> p_signals)
             : leftChannelCal{ p_signals.left }
             , rightChannelCal{ p_signals.right }
         {
         }
 
-        explicit PaddleSignal(LRPair<const Channel::Signal&> p_signals)
+        explicit PaddleSignal(LRPair<Channel::Signal> p_signals)
             : leftChannel{ p_signals.left }
             , rightChannel{ p_signals.right }
         {
@@ -113,17 +113,17 @@ namespace R3B::Digitizing
 
         virtual auto ConstructPaddelSignals(const Channel::Signals& firstSignals,
                                             const Channel::Signals& secondSignals) const -> Signals;
-        virtual auto ComputeTime(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
-            -> double = 0;
-        virtual auto ComputeEnergy(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
-            -> double = 0;
-        virtual auto ComputePosition(const Channel::Signal& rightSignal, const Channel::Signal& leftSignal) const
-            -> double = 0;
+        virtual auto ComputeTime(const Channel::Signal& firstSignal,
+                                 const Channel::Signal& secondSignal) const -> double = 0;
+        virtual auto ComputeEnergy(const Channel::Signal& firstSignal,
+                                   const Channel::Signal& secondSignal) const -> double = 0;
+        virtual auto ComputePosition(const Channel::Signal& rightSignal,
+                                     const Channel::Signal& leftSignal) const -> double = 0;
         virtual auto ComputeChannelHits(const Hit& hit) const -> Pair<Channel::Hit> = 0;
 
       public:
-        virtual auto MatchSignals(const Channel::Signal& firstSignal, const Channel::Signal& secondSignal) const
-            -> float
+        virtual auto MatchSignals(const Channel::Signal& firstSignal,
+                                  const Channel::Signal& secondSignal) const -> float
         {
             return 0.;
         }

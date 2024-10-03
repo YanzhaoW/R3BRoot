@@ -148,7 +148,7 @@ namespace R3B::Digitizing::Neuland::Tamex
         }
         if (CheckPaddleIDInHitPar())
         {
-            const auto& module_par = neuland_hit_par_->GetModuleParAt(paddle->GetPaddleID() - 1);
+            const auto& module_par = neuland_hit_par_->GetModuleParAt(paddle->GetPaddleID());
             set_par_with_hit_module_par(par_, module_par, GetSide());
         }
     }
