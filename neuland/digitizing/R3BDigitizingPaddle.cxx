@@ -66,7 +66,7 @@ namespace R3B::Digitizing
     auto Paddle::ConstructPaddelSignals(const Channel::Signals& firstSignals,
                                         const Channel::Signals& secondSignals) const -> Signals
     {
-        auto channelSignalPairs = fSignalCouplingStrategy(firstSignals, secondSignals);
+        auto channelSignalPairs = fSignalCouplingStrategy(*this,firstSignals, secondSignals);
 
         auto paddleSignals = std::vector<Signal>();
         paddleSignals.reserve(channelSignalPairs.size());
@@ -85,7 +85,11 @@ namespace R3B::Digitizing
             {
                 std::swap(it.left, it.right);
             }
-
+//Paula: change to pointer cause of the new struct for Signals?
+            // auto signal_input_left =std::make_unique<Channel::Signal>(it.left);
+            // auto signal_input_right =std::make_unique<Channel::Signal>(it.right);
+            // auto *test = LRPair{ it.left, it.right };
+            // auto paddleSignal = Signal{test};
             auto paddleSignal = Signal{ { it.left, it.right } };
             paddleSignal.energy = ComputeEnergy(it.left, it.right);
             paddleSignal.time = ComputeTime(it.left, it.right);
@@ -113,7 +117,7 @@ namespace R3B::Digitizing
         return fSignals.getRef();
     }
 
-    auto Paddle::SignalCouplingByTime(const Channel::Signals& firstSignals, const Channel::Signals& secondSignals)
+    auto Paddle::SignalCouplingByTime(const Paddle&  /*self*/,const Channel::Signals& firstSignals, const Channel::Signals& secondSignals)
         -> std::vector<ChannelSignalPair>
     {
         auto firstSignalRefs =

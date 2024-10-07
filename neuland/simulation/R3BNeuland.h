@@ -15,7 +15,9 @@
 #define R3BNEULAND_H
 
 #include "R3BDetector.h"
+#include "R3BNeulandPoint.h"
 #include "TLorentzVector.h"
+#include <R3BIOConnector.h>
 #include <memory>
 #include <string>
 
@@ -60,9 +62,6 @@ class R3BNeuland : public R3BDetector
      *@param combi   position + rotation */
     explicit R3BNeuland(Int_t nDP, const TGeoCombiTrans& combi = TGeoCombiTrans());
 
-    /** Default Destructor */
-    ~R3BNeuland() override;
-
     void Initialize() override;
 
     Bool_t ProcessHits(FairVolume* = nullptr) override;
@@ -79,15 +78,11 @@ class R3BNeuland : public R3BDetector
 
     Bool_t CheckIfSensitive(std::string name) override;
 
-    // No copy and no move is allowed (Rule of three/five)
-    R3BNeuland(const R3BNeuland&) = delete;            // copy constructor
-    R3BNeuland(R3BNeuland&&) = delete;                 // move constructor
-    R3BNeuland& operator=(const R3BNeuland&) = delete; // copy assignment
-    R3BNeuland& operator=(R3BNeuland&&) = delete;      // move assignment
-
   private:
-    TClonesArray* fNeulandPoints;     //!
-    R3BNeulandGeoPar* fNeulandGeoPar; //!
+    R3B::OutputVectorConnector<R3BNeulandPoint> fNeulandPoints{ "NeulandPoints" };                     //!
+    std::unique_ptr<TClonesArray> fNeulandPointsTCA = std::make_unique<TClonesArray>("R3BNeulandPoint"); //!
+                                                                                                         //
+    R3BNeulandGeoPar* fNeulandGeoPar;                                                                    //!
 
     /** Track information to be stored until the track leaves the active volume. */
     Int_t fTrackID;

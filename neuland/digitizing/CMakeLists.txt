@@ -21,7 +21,8 @@ set(SRCS
     R3BDigitizingTacQuila.cxx
     R3BDigitizingTamex.cxx
     R3BNeulandDigitizer.cxx
-    R3BNeulandHitMon.cxx)
+    R3BNeulandHitMon.cxx
+    Muon/R3BNeulandDigitizerCalData.cxx)
 
 set(HEADERS
     # cmake-format: sortable
@@ -34,7 +35,8 @@ set(HEADERS
     R3BDigitizingTacQuila.h
     R3BDigitizingTamex.h
     R3BNeulandDigitizer.h
-    R3BNeulandHitMon.h)
+    R3BNeulandHitMon.h
+    Muon/R3BNeulandDigitizerCalData.h)
 
 add_library_with_dictionary(
     LIBNAME
@@ -45,6 +47,7 @@ add_library_with_dictionary(
     ${SRCS}
     INCLUDEDIRS
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Muon
     HEADERS
     ${HEADERS}
     DEPENDENCIES

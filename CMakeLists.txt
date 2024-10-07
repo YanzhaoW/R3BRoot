@@ -96,7 +96,7 @@ option(WITH_ASYEOS "Build ASYEOS" OFF)
 option(BUILD_C3W "Build C3W" OFF)
 option(CONAN_ENABLED "conan package is enabled. (Use CMakePreset to set it)" OFF)
 
-find_package(FairCMakeModules 1.0.0 CONFIG REQUIRED)
+find_package(FairCMakeModules CONFIG REQUIRED)
 if(NOT FairCMakeModules_FOUND)
     message(FATAL_ERROR "Could not find FairCMakeModules! ")
 endif()

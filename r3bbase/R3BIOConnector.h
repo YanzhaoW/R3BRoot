@@ -151,6 +151,7 @@ namespace R3B
         }
 
         [[nodiscard]] inline auto get() -> RawDataType& { return data_; }
+        [[nodiscard]] inline auto get() const -> const RawDataType& { return data_; }
 
         inline void clear() { data_.clear(); }
 
@@ -159,6 +160,8 @@ namespace R3B
         {
             opn(data_);
         }
+
+        auto size() const { return data_.size(); }
 
       private:
         std::string branch_name_;

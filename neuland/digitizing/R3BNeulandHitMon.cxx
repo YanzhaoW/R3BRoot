@@ -11,10 +11,10 @@
  * or submit itself to any jurisdiction.                                      *
  ******************************************************************************/
 
-#include "R3BNeulandHitMon.h"
 #include "FairLogger.h"
 #include "FairRootManager.h"
 #include "R3BNeulandHit.h"
+#include "R3BNeulandHitMon.h"
 #include "R3BShared.h"
 #include "TDirectory.h"
 #include "TH1D.h"
@@ -44,7 +44,7 @@ R3BNeulandHitMon::R3BNeulandHitMon(TString input, TString output, const Option_t
 
 InitStatus R3BNeulandHitMon::Init()
 {
-    fHits.Init();
+    fHits.init();
 
     if (fIs3DTrackEnabled)
     {
@@ -100,13 +100,13 @@ InitStatus R3BNeulandHitMon::Init()
 
 void R3BNeulandHitMon::Exec(Option_t* /*option*/)
 {
-    const auto hits = fHits.Retrieve();
+    const auto& hits = fHits.get();
 
     // checking paddle multihits
     std::map<Int_t, Int_t> paddlenum;
     for (const auto& hit : hits)
     {
-        auto result = paddlenum.insert(std::pair<Int_t, Int_t>(hit->GetPaddle(), 1));
+        auto result = paddlenum.insert(std::pair<Int_t, Int_t>(hit.GetPaddle(), 1));
         if (!result.second)
         {
             result.first->second++;
@@ -123,65 +123,65 @@ void R3BNeulandHitMon::Exec(Option_t* /*option*/)
         fh3->Reset("ICES");
         for (const auto& hit : hits)
         {
-            fh3->Fill(hit->GetPosition().Z(), hit->GetPosition().X(), hit->GetPosition().Y(), hit->GetE());
+            fh3->Fill(hit.GetPosition().Z(), hit.GetPosition().X(), hit.GetPosition().Y(), hit.GetE());
         }
     }
 
     hMult->Fill(static_cast<double>(hits.size()));
     for (const auto& hit : hits)
     {
-        hPosVSEnergy->Fill(hit->GetPosition().Z(), hit->GetE());
-        hTime->Fill(hit->GetT());
-        hTimeAdj->Fill(fDistanceToTarget / hit->GetPosition().Mag() * hit->GetT());
-        hBeta->Fill(hit->GetBeta());
-        hE->Fill(hit->GetE());
-        hX->Fill(hit->GetPosition().X());
-        hY->Fill(hit->GetPosition().Y());
+        hPosVSEnergy->Fill(hit.GetPosition().Z(), hit.GetE());
+        hTime->Fill(hit.GetT());
+        hTimeAdj->Fill(fDistanceToTarget / hit.GetPosition().Mag() * hit.GetT());
+        hBeta->Fill(hit.GetBeta());
+        hE->Fill(hit.GetE());
+        hX->Fill(hit.GetPosition().X());
+        hY->Fill(hit.GetPosition().Y());
     }
 
     for (auto it1 = hits.begin(); it1 != hits.end(); it1++)
     {
         for (auto it2 = it1 + 1; it2 != hits.end(); it2++)
         {
-            if (std::abs((*it1)->GetPosition().X() - (*it2)->GetPosition().X()) < 7.5 &&
-                std::abs((*it1)->GetPosition().Y() - (*it2)->GetPosition().Y()) < 7.5 &&
-                std::abs((*it1)->GetPosition().Z() - (*it2)->GetPosition().Z()) < 7.5)
+            if (std::abs((*it1).GetPosition().X() - (*it2).GetPosition().X()) < 7.5 &&
+                std::abs((*it1).GetPosition().Y() - (*it2).GetPosition().Y()) < 7.5 &&
+                std::abs((*it1).GetPosition().Z() - (*it2).GetPosition().Z()) < 7.5)
             {
-                hTNeigh->Fill((*it1)->GetT() - (*it2)->GetT());
+                hTNeigh->Fill((*it1).GetT() - (*it2).GetT());
             }
-            hT->Fill((*it1)->GetT() - (*it2)->GetT());
+            hT->Fill(it1->GetT() - it2->GetT());
         }
     }
 
     auto maxDepthHit = std::max_element(hits.begin(),
                                         hits.end(),
-                                        [](R3BNeulandHit* one, R3BNeulandHit* another)
-                                        { return one->GetPosition().Z() < another->GetPosition().Z(); });
+                                        [](const R3BNeulandHit& one, const R3BNeulandHit& another)
+                                        { return one.GetPosition().Z() < another.GetPosition().Z(); });
     if (maxDepthHit != hits.end())
     {
-        hDepth->Fill((*maxDepthHit)->GetPosition().Z());
-        hSternmostEnergy->Fill((*maxDepthHit)->GetE());
-        hDepthVSSternmostEnergy->Fill((*maxDepthHit)->GetPosition().Z(), (*maxDepthHit)->GetE());
+        hDepth->Fill(maxDepthHit->GetPosition().Z());
+        hSternmostEnergy->Fill(maxDepthHit->GetE());
+        hDepthVSSternmostEnergy->Fill(maxDepthHit->GetPosition().Z(), maxDepthHit->GetE());
     }
 
     auto minDepthHit = std::min_element(hits.begin(),
                                         hits.end(),
-                                        [](R3BNeulandHit* one, R3BNeulandHit* another)
-                                        { return one->GetPosition().Z() < another->GetPosition().Z(); });
+                                        [](const R3BNeulandHit& one, const R3BNeulandHit& another)
+                                        { return one.GetPosition().Z() < another.GetPosition().Z(); });
     auto Etot =
-        std::accumulate(hits.begin(), hits.end(), 0., [](double init, const auto* hit) { return init + hit->GetE(); });
+        std::accumulate(hits.begin(), hits.end(), 0., [](double init, const auto& hit) { return init + hit.GetE(); });
 
     if (minDepthHit != hits.end())
     {
-        hForemostEnergy->Fill((*minDepthHit)->GetE());
-        hDepthVSForemostEnergy->Fill((*maxDepthHit)->GetPosition().Z(), (*minDepthHit)->GetE());
-        hdeltaEE->Fill(Etot, (*minDepthHit)->GetE());
+        hForemostEnergy->Fill(minDepthHit->GetE());
+        hDepthVSForemostEnergy->Fill(maxDepthHit->GetPosition().Z(), minDepthHit->GetE());
+        hdeltaEE->Fill(Etot, minDepthHit->GetE());
     }
 
     hEtot->Fill(Etot);
     if (maxDepthHit != hits.end())
     {
-        hDepthVSEtot->Fill((*maxDepthHit)->GetPosition().Z(), Etot);
+        hDepthVSEtot->Fill(maxDepthHit->GetPosition().Z(), Etot);
     }
 }
 
