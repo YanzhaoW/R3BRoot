@@ -44,13 +44,13 @@ namespace R3B::Digitizing
         Channel::CalSignal leftChannelCal{};
         Channel::CalSignal rightChannelCal{};
 
-        explicit PaddleSignal(LRPair<Channel::CalSignal> p_signals)
+        explicit PaddleSignal(LRPair<const Channel::CalSignal&> p_signals)
             : leftChannelCal{ p_signals.left }
             , rightChannelCal{ p_signals.right }
         {
         }
 
-        explicit PaddleSignal(LRPair<Channel::Signal> p_signals)
+        explicit PaddleSignal(LRPair<const Channel::Signal&> p_signals)
             : leftChannel{ p_signals.left }
             , rightChannel{ p_signals.right }
         {

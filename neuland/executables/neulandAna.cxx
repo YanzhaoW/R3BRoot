@@ -71,6 +71,7 @@ auto main(int argc, char** argv) -> int
     // Paula:digi option for Caldata
     auto calData = programOptions.create_option<bool>("calData", "Doing CalData calculations", true);
 
+    auto customPara = programOptions.create_option<bool>("customPar", "Custom parameter for CalDataAnalysis", false);
     if (!programOptions.verify(argc, argv))
     {
         return EXIT_FAILURE;
@@ -136,19 +137,25 @@ auto main(int argc, char** argv) -> int
         run->GetRuntimeDb()->setSecondInput(fileio2.release());
     }
 
-    //Paula: if statement/flag for second custon paras to be added
+    // Paula: if statement/flag for second custon paras to be added
     auto hit_par = std::make_unique<R3B::Neuland::Cal2HitPar>();
 
     auto* hit_par_ptr = hit_par.get();
 
     run->GetRuntimeDb()->addContainer(hit_par.release());
 
-
     const auto neulandEngines = std::map<std::pair<const std::string, const std::string>,
                                          std::function<std::unique_ptr<Digitizing::DigitizingEngineInterface>()>>{
         { { "neuland", "tamex" },
-          [&]()
+          [&customPara, &pileup_strategy, &tamexParameter, hit_par_ptr]()
           {
+              if (customPara.value())
+              {
+                  return Digitizing::CreateEngine(
+                      UsePaddle<NeulandPaddle>(hit_par_ptr),
+                      UseChannel<TamexChannel>(pileup_strategy, tamexParameter, hit_par_ptr));
+              }
+
               return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(),
                                               UseChannel<TamexChannel>(pileup_strategy, tamexParameter));
           } },
@@ -165,18 +172,6 @@ auto main(int argc, char** argv) -> int
         { { "mock", "mock" },
           []() { return Digitizing::CreateEngine(UsePaddle<MockPaddle>(), UseChannel<MockChannel>()); } }
     };
-    //=============================================================================
-
-    // const auto neulandEngines = std::map<std::pair<const std::string, const std::string>,
-    //                                      std::function<std::unique_ptr<Digitizing::DigitizingEngineInterface>()>>{
-    //     { { "neuland", "tamex" },
-    //       [&pileup_strategy, &tamexParameter, hit_par_ptr]()
-    //       {
-    //           return Digitizing::CreateEngine(UsePaddle<NeulandPaddle>(hit_par_ptr),
-    //                                           UseChannel<TamexChannel>(pileup_strategy, tamexParameter, hit_par_ptr));
-    //       } }
-    // };
-
 
     auto digiNeuland = std::make_unique<R3BNeulandDigitizer>();
     digiNeuland->EnableCalDataOutput(calData.value());

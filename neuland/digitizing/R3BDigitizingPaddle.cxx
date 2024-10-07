@@ -88,6 +88,8 @@ namespace R3B::Digitizing
 //Paula: change to pointer cause of the new struct for Signals?
             // auto signal_input_left =std::make_unique<Channel::Signal>(it.left);
             // auto signal_input_right =std::make_unique<Channel::Signal>(it.right);
+            // auto *test = LRPair{ it.left, it.right };
+            // auto paddleSignal = Signal{test};
             auto paddleSignal = Signal{ { it.left, it.right } };
             paddleSignal.energy = ComputeEnergy(it.left, it.right);
             paddleSignal.time = ComputeTime(it.left, it.right);
