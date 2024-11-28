@@ -15,9 +15,9 @@
 // -----                      R3BFieldPar source file                  -----
 // -------------------------------------------------------------------------
 
-#include "R3BFieldPar.h"
 #include "R3BAladinFieldMap.h"
 #include "R3BFieldConst.h"
+#include "R3BFieldPar.h"
 #include "R3BGladFieldMap.h"
 
 #include "FairParamList.h"
@@ -29,36 +29,20 @@
 R3BFieldPar::R3BFieldPar(const char* name, const char* title, const char* context)
     : FairParGenericSet(name, title, context)
 {
-    fType = -1;
-    fXmin = fXmax = fYmin = fYmax = fZmin = fZmax = 0.;
-    fBx = fBy = fBz = 0.;
-    fMapName = "";
-    fMapFileName = "";
-    fPosX = fPosY = fPosZ = 0.;
-    fXAngle = fYAngle = fZAngle = 0.;
-    fScale = 0.;
 }
 
 R3BFieldPar::R3BFieldPar()
+    : R3BFieldPar{ "R3BFieldPar", "Parameter for R3B field", "" }
 {
-    fType = -1;
-    fXmin = fXmax = fYmin = fYmax = fZmin = fZmax = 0.;
-    fBx = fBy = fBz = 0.;
-    fMapName = "";
-    fMapFileName = "";
-    fPosX = fPosY = fPosZ = 0.;
-    fXAngle = fYAngle = fZAngle = 0.;
-    fScale = 0.;
 }
-
-// ------   Destructor   ---------------------------------------------------
-R3BFieldPar::~R3BFieldPar() {}
 
 // ------   Put parameters   -----------------------------------------------
 void R3BFieldPar::putParams(FairParamList* list)
 {
-    if (!list)
+    if (list == nullptr)
+    {
         return;
+    }
 
     list->add("Field Type", fType);
 
@@ -77,8 +61,8 @@ void R3BFieldPar::putParams(FairParamList* list)
 
     else if (fType >= 1 && fType <= kMaxFieldMapType)
     { // field map
-        list->add("Field map name", fMapName);
-        list->add("Field map file name", fMapFileName);
+        list->add("Field map name", fMapName.c_str());
+        list->add("Field map file name", fMapFileName.c_str());
         list->add("Field x position", fPosX);
         list->add("Field y position", fPosY);
         list->add("Field z position", fPosZ);
@@ -93,32 +77,54 @@ void R3BFieldPar::putParams(FairParamList* list)
 // --------   Get parameters   ---------------------------------------------
 Bool_t R3BFieldPar::getParams(FairParamList* list)
 {
-    if (!list)
+    if (list == nullptr)
+    {
         return kFALSE;
+    }
 
     if (!list->fill("Field Type", &fType))
+    {
         return kFALSE;
+    }
 
     if (fType == 0)
     { // constant field
         if (!list->fill("Field min x", &fXmin))
+        {
             return kFALSE;
+        }
         if (!list->fill("Field max x", &fXmax))
+        {
             return kFALSE;
+        }
         if (!list->fill("Field min y", &fYmin))
+        {
             return kFALSE;
+        }
         if (!list->fill("Field max y", &fYmax))
+        {
             return kFALSE;
+        }
         if (!list->fill("Field min z", &fZmin))
+        {
             return kFALSE;
+        }
         if (!list->fill("Field max z", &fZmax))
+        {
             return kFALSE;
+        }
         if (!list->fill("Field Bx", &fBx))
+        {
             return kFALSE;
+        }
         if (!list->fill("Field By", &fBy))
+        {
             return kFALSE;
+        }
         if (!list->fill("Field Bz", &fBz))
+        {
             return kFALSE;
+        }
     }
 
     else if (fType >= 1 && fType <= kMaxFieldMapType)

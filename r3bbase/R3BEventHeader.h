@@ -54,18 +54,18 @@ class R3BEventHeader : public FairEventHeader
 
     [[nodiscard]] inline double GetTnext() const { return fTnext; }
 
-    void Register(bool Persistance = true) override{};
+    // void Register(bool Persistance = true) override{};
 
   private:
-    int fExpId = 0;
-    uint64_t fEventno = 0;
-    int fTrigger = 0;
-    uint64_t fTimeStamp = 0;
-    int fTpat = 0;
-    double fTStart = 0;
-    double fTStartSimple = 0;
-    double fTprev = 0;
-    double fTnext = 0;
+    int fExpId{};
+    uint64_t fEventno{};
+    int fTrigger{};
+    uint64_t fTimeStamp{};
+    int fTpat{};
+    double fTStart{};
+    double fTStartSimple{};
+    double fTprev{};
+    double fTnext{};
 
   public:
     ClassDefOverride(R3BEventHeader, 10)
