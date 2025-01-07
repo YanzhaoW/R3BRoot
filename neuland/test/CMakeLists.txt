@@ -73,17 +73,17 @@ add_test(NeulandDigitizerMacro ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandDig
 set_tests_properties(NeulandDigitizerMacro PROPERTIES DEPENDS NeulandSimulationMacro)
 set_tests_properties(NeulandDigitizerMacro PROPERTIES TIMEOUT "1000")
 
-# generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandTrain.C)
-# add_test(NeulandTrain ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandTrain.sh)
-# set_tests_properties(NeulandTrain PROPERTIES DEPENDS NeulandDigitizer)
-# set_tests_properties(NeulandTrain PROPERTIES TIMEOUT "1000")
-# set_tests_properties(NeulandTrain PROPERTIES PASS_REGULAR_EXPRESSION "Macro finished successfully.")
+generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandTrain.C)
+add_test(NeulandTrain ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandTrain.sh)
+set_tests_properties(NeulandTrain PROPERTIES DEPENDS NeulandDigitizer)
+set_tests_properties(NeulandTrain PROPERTIES TIMEOUT "1000")
+set_tests_properties(NeulandTrain PROPERTIES PASS_REGULAR_EXPRESSION "Macro finished successfully.")
 
-# generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandReconstruction.C)
-# add_test(NeulandReconstruction ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandReconstruction.sh)
-# set_tests_properties(NeulandReconstruction PROPERTIES DEPENDS NeulandTrain)
-# set_tests_properties(NeulandReconstruction PROPERTIES TIMEOUT "1000")
-# set_tests_properties(NeulandReconstruction PROPERTIES PASS_REGULAR_EXPRESSION
-#                                                       "Macro finished successfully.")
+generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandReconstruction.C)
+add_test(NeulandReconstruction ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandReconstruction.sh)
+set_tests_properties(NeulandReconstruction PROPERTIES DEPENDS NeulandTrain)
+set_tests_properties(NeulandReconstruction PROPERTIES TIMEOUT "1000")
+set_tests_properties(NeulandReconstruction PROPERTIES PASS_REGULAR_EXPRESSION
+                                                      "Macro finished successfully.")
 
 add_subdirectory(calibration)
