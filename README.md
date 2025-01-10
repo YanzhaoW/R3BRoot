@@ -1,4 +1,8 @@
-# R3BRoot Software [![license](https://alfa-ci.gsi.de/shields/badge/license-GPL--3.0-orange.svg)](COPYRIGHT) 
+\mainpage
+
+# R3BRoot Software 
+
+![license](https://alfa-ci.gsi.de/shields/badge/license-GPL--3.0-orange.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5549469.svg)](https://doi.org/10.5281/zenodo.5549469) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9851/badge)](https://www.bestpractices.dev/projects/9851) [![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu)
 
 [![CI-CD](https://github.com/R3BRootGroup/R3BRoot/actions/workflows/main.yml/badge.svg)](https://github.com/R3BRootGroup/R3BRoot/actions/workflows/main.yml) [![Static Analysis](https://github.com/R3BRootGroup/R3BRoot/actions/workflows/static_analysis.yml/badge.svg)](https://github.com/R3BRootGroup/R3BRoot/actions/workflows/static_analysis.yml) [![Validate Codemeta](https://github.com/R3BRootGroup/R3BRoot/actions/workflows/codemeta_validate.yaml/badge.svg)](https://github.com/R3BRootGroup/R3BRoot/actions/workflows/codemeta_validate.yaml) [![Cleanup Caches on PR Close](https://github.com/R3BRootGroup/R3BRoot/actions/workflows/cleanup_cache.yml/badge.svg)](https://github.com/R3BRootGroup/R3BRoot/actions/workflows/cleanup_cache.yml)
@@ -11,13 +15,21 @@ The R3BRoot software is based on the [FairRoot](https://github.com/FairRootGroup
 
 For the software-related user support you can post a new topic on our [forum](https://forum.gsi.de/index.php?t=index&cat=40&).
 
+## Documentation
+
+Please visit the [Doxygen documentation](https://yanzhaow.github.io/R3BRoot/) for the code implementation details.
+
+Detector specifics:
+
+- [NeuLAND detector](neuland/readme.md)
+
 ## License
 
 R3BRoot is distributed under the terms of the GNU General Public Licence version 3 ([GPLv3](https://github.com/R3BRootGroup/R3BRoot/blob/dev/LICENSE)).
 
 ## Release Information
 
-Please visit [releases](https://github.com/R3BRootGroup/R3BRoot/releases)
+Please visit [releases](https://github.com/R3BRootGroup/R3BRoot/releases).
 
 ## Download
 

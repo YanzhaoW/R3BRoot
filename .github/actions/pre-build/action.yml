@@ -31,10 +31,13 @@ runs:
 =======
         apt-get install --fix-missing -y ccache sudo
 <<<<<<< HEAD
+<<<<<<< HEAD
         conda install -y conda-forge::ninja
 =======
 >>>>>>> d4adb981 (Find ROOT using config mode and cmake targets)
 >>>>>>> 4b1b666c (neuland calibration process reformat and millepde)
+=======
+>>>>>>> cb1ece1d (add NO_BUILD and a preset only to build documentation)
         wget https://cernbox.cern.ch/remote.php/dav/public-files/RmnTeeOZpYjCJQb/masterkey.gsi.de.pub
         mv masterkey.gsi.de.pub /etc/cvmfs/keys
         cp .github/config/fairsoft.gsi.de.conf /etc/cvmfs/config.d
