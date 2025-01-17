@@ -47,7 +47,8 @@ set(HEADERS
     R3BShared.h
     R3BTcutPar.h
     R3BTsplinePar.h
-    R3BWhiterabbitPropagator.h)
+    R3BWhiterabbitPropagator.h
+    TCAConnector.h)
 
 set(DEPENDENCIES FairRoot::Generators FairRoot::Online)
 
