@@ -27,43 +27,37 @@ if(GTest_FOUND)
 endif(GTest_FOUND)
 
 set(simuPars
-    --simuFile
+    -o
     test_exe.simu.root
-    --paraFile
+    --par-out
     test_exe.para.root
-    --eventNum
+    --event-num
     100
-    --eventPrint
-    10
-    --energy
-    1.0
-    --multiplicity
-    4
-    --logLevel
+    -v
     error)
-add_test(NeulandSimulation ${R3BROOT_BINARY_DIR}/bin/neulandSim ${simuPars})
+add_test(NeulandSimulation ${R3BROOT_BINARY_DIR}/bin/neuland sim ${simuPars})
 set_tests_properties(NeulandSimulation PROPERTIES TIMEOUT "2000")
 set_tests_properties(NeulandSimulation PROPERTIES PASS_REGULAR_EXPRESSION
-                                                  "Macro finished successfully.")
+                                                  "Neuland Application finished successfully.")
 
 set(digiPars
-    --simuFile
+    -i
     test_exe.simu.root
-    --paraFile
+    --par-in
     test_exe.para.root
     --paddle
     neuland
     --channel
     tamex
-    --digiFile
-    test_exe.digi.root
+    -o
+    test.neul.root
     -v
     info)
-add_test(NeulandDigitizer ${R3BROOT_BINARY_DIR}/bin/neulandAna ${digiPars})
+add_test(NeulandDigitizer ${R3BROOT_BINARY_DIR}/bin/neuland ana ${digiPars})
 set_tests_properties(NeulandDigitizer PROPERTIES DEPENDS NeulandSimulation)
 set_tests_properties(NeulandDigitizer PROPERTIES TIMEOUT "1000")
 set_tests_properties(NeulandDigitizer PROPERTIES PASS_REGULAR_EXPRESSION
-                                                 "Macro finished successfully.")
+                                                 "Neuland Application finished successfully.")
 
 generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandSimulation.C)
 add_test(NeulandSimulationMacro ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandSimulation.sh)
@@ -75,7 +69,7 @@ set_tests_properties(NeulandDigitizerMacro PROPERTIES TIMEOUT "1000")
 
 generate_root_test_script(${R3BROOT_SOURCE_DIR}/neuland/test/testNeulandTrain.C)
 add_test(NeulandTrain ${R3BROOT_BINARY_DIR}/neuland/test/testNeulandTrain.sh)
-set_tests_properties(NeulandTrain PROPERTIES DEPENDS NeulandDigitizer)
+set_tests_properties(NeulandTrain PROPERTIES DEPENDS NeulandDigitizerMacro)
 set_tests_properties(NeulandTrain PROPERTIES TIMEOUT "1000")
 set_tests_properties(NeulandTrain PROPERTIES PASS_REGULAR_EXPRESSION "Macro finished successfully.")
 
