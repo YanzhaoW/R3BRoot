@@ -250,6 +250,11 @@ set(HEADERS
     mwpc/R3BMwpcReader.h
     sync_check/R3BSyncCheckReader.h)
 
+if(CONAN_ENABLED)
+    list(APPEND SRCS neuland/R3BNeulandTamexReader2.cxx)
+    list(APPEND HEADERS neuland/R3BNeulandTamexReader2.h)
+endif()
+
 set(HEADERS ${STRUCT_HEADERS} ${HEADERS})
 
 set(DIRS
@@ -294,3 +299,9 @@ add_library_with_dictionary(
     DEPENDENCIES
     R3BData
     Ucesb)
+
+if(CONAN_ENABLED)
+    target_link_libraries(R3BSource PRIVATE Microsoft.GSL::GSL range-v3::range-v3)
+    list(APPEND SRCS neuland/R3BNeulandTamexReader2.cxx)
+    list(APPEND HEADERS neuland/R3BNeulandTamexReader2.h)
+endif()

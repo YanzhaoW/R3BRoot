@@ -12,7 +12,6 @@
  ******************************************************************************/
 
 #include "R3BDigitizingPaddle.h"
-#include "FairLogger.h"
 
 namespace R3B::Digitizing
 {
@@ -66,7 +65,7 @@ namespace R3B::Digitizing
     auto Paddle::ConstructPaddelSignals(const Channel::Signals& firstSignals,
                                         const Channel::Signals& secondSignals) const -> Signals
     {
-        auto channelSignalPairs = fSignalCouplingStrategy(firstSignals, secondSignals);
+        auto channelSignalPairs = fSignalCouplingStrategy(*this, firstSignals, secondSignals);
 
         auto paddleSignals = std::vector<Signal>();
         paddleSignals.reserve(channelSignalPairs.size());
@@ -85,8 +84,8 @@ namespace R3B::Digitizing
             {
                 std::swap(it.left, it.right);
             }
+            auto paddleSignal = Signal{ LRPair{ it.left, it.right } };
 
-            auto paddleSignal = Signal{ { it.left, it.right } };
             paddleSignal.energy = ComputeEnergy(it.left, it.right);
             paddleSignal.time = ComputeTime(it.left, it.right);
             paddleSignal.position = ComputePosition(it.left, it.right);
@@ -113,8 +112,9 @@ namespace R3B::Digitizing
         return fSignals.getRef();
     }
 
-    auto Paddle::SignalCouplingByTime(const Channel::Signals& firstSignals, const Channel::Signals& secondSignals)
-        -> std::vector<ChannelSignalPair>
+    auto Paddle::SignalCouplingByTime(const Paddle& /*self*/,
+                                      const Channel::Signals& firstSignals,
+                                      const Channel::Signals& secondSignals) -> std::vector<ChannelSignalPair>
     {
         auto firstSignalRefs =
             std::vector<std::reference_wrapper<const Channel::Signal>>(firstSignals.begin(), firstSignals.end());

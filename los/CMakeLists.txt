@@ -53,6 +53,4 @@ add_library_with_dictionary(
     params
     DEPENDENCIES
     R3BTracking
-    R3BTCal
-    # TODO: only due to TCAConnector.
-    R3BNeulandShared)
+    R3BTCal)

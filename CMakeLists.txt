@@ -29,8 +29,22 @@ cmake_policy(VERSION 3.15...3.31)
 # Set name of our project to "R3BROOT". Has to be done after check of cmake version
 project(R3BROOT LANGUAGES C CXX Fortran)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS ON)
+
 # use default gnu install convention:
 include(GNUInstallDirs)
+
+option(WITH_DOX "Generate doxygen documentation" OFF)
+option(NO_BUILD "Don't build anything except documentation" OFF)
+
+if(WITH_DOX)
+    add_subdirectory(doc)
+endif()
+
+if(NO_BUILD)
+    return()
+endif()
 
 if(NOT EXISTS "${PROJECT_SOURCE_DIR}/macros")
     message(STATUS "  ")
@@ -81,13 +95,13 @@ set(CheckSrcDir "${FAIRROOTPATH}/share/fairbase/cmake/checks")
 # Set option(s)
 option(BUILD_GEOMETRY "Build all ROOT geometries" ON)
 option(USE_PATH_INFO "Information from PATH and LD_LIBRARY_PATH are used." OFF)
+option(USE_LD_LIBRARY_PATH_INFO "Information from PATH and LD_LIBRARY_PATH are used." ON)
 option(WITH_UCESB "Build UCESB" OFF)
 option(WITH_EPICS "Build EPICS" OFF)
 option(WITH_ACTAR "Build ACTAR" OFF)
 option(WITH_SOFIA "Build SOFIA" OFF)
 option(WITH_GTPC "Build GTPC" OFF)
 option(WITH_FRS "Build FRS" OFF)
-option(WITH_DOX "Generate doxygen documentation" YES)
 option(WITH_ASYEOS "Build ASYEOS" OFF)
 option(BUILD_C3W "Build C3W" OFF)
 option(CONAN_ENABLED "conan package is enabled. (Use CMakePreset to set it)" OFF)
@@ -116,9 +130,6 @@ if("${FairRoot_VERSION}" VERSION_LESS 18.2.1)
             "Incompatible FairRoot version detected: ${FairRoot_VERSION}. R3BRoot requires FairRoot v18.2.1 or later"
     )
 endif()
-
-# added a variable to point to r3broot path in the system
-set(R3BROOTPATH ${CMAKE_INSTALL_PREFIX})
 
 # Load some basic macros which are needed later on
 include(FairMacros)
@@ -295,6 +306,8 @@ if(CONAN_ENABLED)
         CACHE BOOL "disable implicit conversion of JSON" FORCE)
 endif()
 
+include(${CMAKE_SOURCE_DIR}/cmake/modules/FetchAllContents.cmake)
+
 find_package2(PRIVATE GTest)
 find_package2(PUBLIC Pythia6)
 find_package2(PUBLIC Pythia8)
@@ -312,6 +325,7 @@ find_package2(PUBLIC Geant4VMC)
 find_package2(PUBLIC IWYU)
 
 find_package2(PUBLIC GSL)
+find_package2(PUBLIC nlohmann_json)
 
 find_package2(PUBLIC Git)
 set(Git_VERSION ${GIT_VERSION_STRING})
@@ -423,6 +437,10 @@ set(R3BROOT_MAJOR_VERSION 0)
 set(R3BROOT_MINOR_VERSION 0)
 set(R3BROOT_PATCH_VERSION 0)
 set(R3BROOT_VERSION "${FairRoot_VERSION}")
+set(R3BROOTPATH ${CMAKE_BINARY_DIR})
+
+# added a variable to point to r3broot path in the system
+set(R3BROOTPATH ${CMAKE_INSTALL_PREFIX})
 
 if(NOT DEFINED ROOT_FOUND_VERSION)
     set(ROOT_FOUND_VERSION "${found_vers}")
@@ -555,10 +573,6 @@ if(MODULE)
     add_subdirectory(${MODULE})
 endif(MODULE)
 
-if(WITH_DOX)
-    add_subdirectory(doc)
-endif()
-
 if(NOT MODULE)
     if(BUILD_GEOMETRY)
         set(ROOTSYS ${SIMPATH})
@@ -578,7 +592,9 @@ if(NOT MODULE)
     if(WITH_UCESB)
         add_subdirectory(r3bsource)
     endif()
-    add_subdirectory(neuland)
+    if(CONAN_ENABLED)
+        add_subdirectory(neuland)
+    endif()
     add_subdirectory(glad)
     add_subdirectory(dch)
     add_subdirectory(fiber)

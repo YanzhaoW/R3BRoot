@@ -18,6 +18,9 @@
 
 #include "R3BFieldPar.h"
 
+#include <FairRun.h>
+#include <FairRuntimeDb.h>
+#include <R3BException.h>
 #include <iomanip>
 #include <iostream>
 
@@ -28,31 +31,22 @@ using std::setw;
 
 // -----   Default constructor   -------------------------------------------
 R3BFieldConst::R3BFieldConst()
-    : fXmin(0.)
-    , fXmax(0.)
-    , fYmin(0.)
-    , fYmax(0.)
-    , fZmin(0.)
-    , fZmax(0.)
-    , fBx(0.)
-    , fBy(0.)
-    , fBz(0.)
+    : R3BFieldConst{ "R3BConstField", 0., 0., 0., 0., 0., 0., 0., 0., 0. }
 {
-    fType = 0;
 }
 // -------------------------------------------------------------------------
 
 // -----   Standard constructor   ------------------------------------------
 R3BFieldConst::R3BFieldConst(const char* name,
-                             Double_t xMin,
-                             Double_t xMax,
-                             Double_t yMin,
-                             Double_t yMax,
-                             Double_t zMin,
-                             Double_t zMax,
-                             Double_t bX,
-                             Double_t bY,
-                             Double_t bZ)
+                             double xMin,
+                             double xMax,
+                             double yMin,
+                             double yMax,
+                             double zMin,
+                             double zMax,
+                             double bX,
+                             double bY,
+                             double bZ)
     : FairField(name)
     , fXmin(xMin)
     , fXmax(xMax)
@@ -70,15 +64,6 @@ R3BFieldConst::R3BFieldConst(const char* name,
 
 // --------   Constructor from R3BFieldPar   -------------------------------
 R3BFieldConst::R3BFieldConst(R3BFieldPar* fieldPar)
-    : fXmin(0.)
-    , fXmax(0.)
-    , fYmin(0.)
-    , fYmax(0.)
-    , fZmin(0.)
-    , fZmax(0.)
-    , fBx(0.)
-    , fBy(0.)
-    , fBz(0.)
 {
     if (!fieldPar)
     {
@@ -106,12 +91,7 @@ R3BFieldConst::~R3BFieldConst() {}
 // -------------------------------------------------------------------------
 
 // -----   Set field region   ----------------------------------------------
-void R3BFieldConst::SetFieldRegion(Double_t xMin,
-                                   Double_t xMax,
-                                   Double_t yMin,
-                                   Double_t yMax,
-                                   Double_t zMin,
-                                   Double_t zMax)
+void R3BFieldConst::SetFieldRegion(double xMin, double xMax, double yMin, double yMax, double zMin, double zMax)
 {
     fXmin = xMin;
     fXmax = xMax;
@@ -123,7 +103,7 @@ void R3BFieldConst::SetFieldRegion(Double_t xMin,
 // -------------------------------------------------------------------------
 
 // -----   Set field values   ----------------------------------------------
-void R3BFieldConst::SetField(Double_t bX, Double_t bY, Double_t bZ)
+void R3BFieldConst::SetField(double bX, double bY, double bZ)
 {
     fBx = bX;
     fBy = bY;
@@ -132,7 +112,7 @@ void R3BFieldConst::SetField(Double_t bX, Double_t bY, Double_t bZ)
 // -------------------------------------------------------------------------
 
 // -----   Get x component of field   --------------------------------------
-Double_t R3BFieldConst::GetBx(Double_t x, Double_t y, Double_t z)
+double R3BFieldConst::GetBx(double x, double y, double z)
 {
     if (x < fXmin || x > fXmax || y < fYmin || y > fYmax || z < fZmin || z > fZmax)
         return 0.;
@@ -141,7 +121,7 @@ Double_t R3BFieldConst::GetBx(Double_t x, Double_t y, Double_t z)
 // -------------------------------------------------------------------------
 
 // -----   Get y component of field   --------------------------------------
-Double_t R3BFieldConst::GetBy(Double_t x, Double_t y, Double_t z)
+double R3BFieldConst::GetBy(double x, double y, double z)
 {
     if (x < fXmin || x > fXmax || y < fYmin || y > fYmax || z < fZmin || z > fZmax)
         return 0.;
@@ -150,7 +130,7 @@ Double_t R3BFieldConst::GetBy(Double_t x, Double_t y, Double_t z)
 // -------------------------------------------------------------------------
 
 // -----   Get z component of field   --------------------------------------
-Double_t R3BFieldConst::GetBz(Double_t x, Double_t y, Double_t z)
+double R3BFieldConst::GetBz(double x, double y, double z)
 {
     if (x < fXmin || x > fXmax || y < fYmin || y > fYmax || z < fZmin || z > fZmax)
         return 0.;
@@ -175,5 +155,18 @@ void R3BFieldConst::Print(Option_t*) const
     cout << "======================================================" << endl;
 }
 // -------------------------------------------------------------------------
+
+void R3BFieldConst::FillParContainer()
+{
+    auto* run = FairRun::Instance();
+    auto* rtdb = run->GetRuntimeDb();
+    auto* par = std::make_unique<R3BFieldPar>().release();
+    par->SetParameters(this);
+    par->setChanged();
+    if (rtdb->addContainer(par); par == nullptr)
+    {
+        throw R3B::runtime_error("Calibration parameter becomes nullptr!");
+    }
+}
 
 ClassImp(R3BFieldConst)

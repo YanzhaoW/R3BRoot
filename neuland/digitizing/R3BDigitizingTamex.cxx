@@ -17,14 +17,9 @@
 #include <cmath>
 
 #include "R3BException.h"
-#include "R3BNeulandHitModulePar.h"
-#include "R3BNeulandHitPar.h"
 #include <FairRunAna.h>
 #include <R3BLogger.h>
 #include <algorithm>
-#include <iostream>
-#include <numeric>
-#include <utility>
 
 namespace R3B::Digitizing::Neuland::Tamex
 {
@@ -37,31 +32,35 @@ namespace R3B::Digitizing::Neuland::Tamex
         void ReOverlapping(typename std::vector<T>::iterator v_iter, std::vector<T>& peaks);
         template <class T>
         void RemovePeakAt(typename std::vector<T>::iterator v_iter, std::vector<T>& peaks);
+
+        void set_par_with_hit_module_par(Tamex::Params& par,
+                                         const R3B::Neuland::HitModulePar& module_par,
+                                         ChannelSide channel_side)
+        {
+            auto side = (channel_side == ChannelSide::right) ? Side::right : Side::left;
+
+            par.fSaturationCoefficient = module_par.PMTSaturation.get(side).value;
+            par.fEnergyGain = module_par.energyGain.get(side).value;
+            par.fPedestal = module_par.pedestal.get(side);
+            par.fPMTThresh = module_par.PMTThreshold.get(side).value;
+            par.fQdcMin = 1 / par.fEnergyGain;
+
+            // TODO: Add other parameters:
+        }
     } // namespace
 
     // global variables for default options:
     const size_t TmxPeaksInitialCapacity = 10;
-    R3BNeulandHitPar* Channel::neuland_hit_par_ = nullptr; // NOLINT
 
     Params::Params(TRandom3& rnd)
-        : fRnd{ &rnd }
+        : fRnd{ rnd }
     {
-    }
-
-    Params::Params(const Params& other)
-    {
-        if (other.fRnd == nullptr)
-        {
-            throw std::runtime_error(
-                "R3BDigitizingTamex: copy constructor of Params cannot take nullptr of random generator!");
-        }
-        *this = other;
     }
 
     PMTPeak::PMTPeak(Digitizing::Channel::Hit pmtHit, const Channel& channel)
         : time_(pmtHit.time)
     {
-        auto par = channel.GetParConstRef();
+        const auto& par = channel.GetParConstRef();
         // apply saturation coefficent
         qdc_ = pmtHit.light / (1. + par.fSaturationCoefficient * pmtHit.light);
     };
@@ -113,9 +112,13 @@ namespace R3B::Digitizing::Neuland::Tamex
         qdc_ = WidthToQdc(width_, channel_ptr_->GetParConstRef());
     }
 
-    Channel::Channel(ChannelSide side, PeakPileUpStrategy strategy, const Params& par)
+    Channel::Channel(ChannelSide side,
+                     PeakPileUpStrategy strategy,
+                     const Params& par,
+                     R3B::Neuland::Cal2HitPar* cal_to_hit_par)
         : Digitizing::Channel{ side }
         , pileup_strategy_{ strategy }
+        , neuland_hit_par_{ cal_to_hit_par }
         , par_{ par }
     {
         pmt_peaks_.reserve(TmxPeaksInitialCapacity);
@@ -126,69 +129,18 @@ namespace R3B::Digitizing::Neuland::Tamex
     {
     }
 
-    void Channel::GetHitPar(const std::string& hitParName)
+    void Channel::AttachToPaddle(Digitizing::Paddle* paddle)
     {
-        if (hitParName.empty())
-        {
-            LOG(info) << "DigitizingTamex: Using default parameter for Tamex Channels.";
-            return;
-        }
-        auto* run = FairRunAna::Instance();
-        auto* rtdb = run->GetRuntimeDb();
-        neuland_hit_par_ = dynamic_cast<R3BNeulandHitPar*>(rtdb->findContainer(hitParName.c_str()));
-        if (neuland_hit_par_ != nullptr)
-        {
-            LOG(info) << "DigitizingTamex: HitPar " << hitParName
-                      << " has been found in the root file. Using calibration values in rootfile.";
-        }
-        else
-        {
-            LOG(info) << "DigitizingTamex: HitPar " << hitParName << " cannot be found. Using default values.";
-            neuland_hit_par_ = nullptr;
-        }
-    }
 
-    void Channel::AttachToPaddle(Digitizing::Paddle* /*v_paddle*/)
-    {
-        auto* paddle = GetPaddle();
         if (paddle == nullptr)
         {
             return;
         }
-
         if (CheckPaddleIDInHitPar())
         {
-            neuland_hit_module_par_ = neuland_hit_par_->GetModuleParAt(GetPaddle()->GetPaddleID() - 1);
-            if (CheckPaddleIDInHitModulePar())
-            {
-                auto side = GetSide();
-                par_.fSaturationCoefficient = neuland_hit_module_par_->GetPMTSaturation(static_cast<int>(side));
-                par_.fEnergyGain = neuland_hit_module_par_->GetEnergyGain(static_cast<int>(side));
-                par_.fPedestal = neuland_hit_module_par_->GetPedestal(static_cast<int>(side));
-                par_.fPMTThresh = neuland_hit_module_par_->GetPMTThreshold(static_cast<int>(side));
-                par_.fQdcMin = 1 / par_.fEnergyGain;
-            }
+            const auto& module_par = neuland_hit_par_->GetModuleParAt(paddle->GetPaddleID());
+            set_par_with_hit_module_par(par_, module_par, GetSide());
         }
-    }
-
-    auto Channel::CheckPaddleIDInHitModulePar() const -> bool
-    {
-        auto is_valid = false;
-        if (neuland_hit_module_par_ == nullptr || GetPaddle() == nullptr)
-        {
-            return false;
-        }
-
-        if (GetPaddle()->GetPaddleID() != neuland_hit_module_par_->GetModuleId())
-        {
-            LOG(warn) << "Channel::SetHitModulePar:Wrong paddleID for the parameters!";
-            is_valid = false;
-        }
-        else
-        {
-            is_valid = true;
-        }
-        return is_valid;
     }
 
     auto Channel::CheckPaddleIDInHitPar() const -> bool
@@ -236,14 +188,54 @@ namespace R3B::Digitizing::Neuland::Tamex
         auto peakTime = peak.GetLETime();
         auto qdc = ToQdc(peakQdc);
 
+        LOG(debug) << "qdc Signal " << qdc << " and tdc " << peakTime << "\n";
+
         auto signal = Signal{};
         signal.qdcUnSat = ToUnSatQdc(qdc);
         signal.qdc = qdc;
         signal.tdc = ToTdc(peakTime);
         signal.side = this->GetSide();
         LOG(debug) << "R3BDigitizingTamex: Create a signal with qdc " << signal.qdc << " and tdc " << signal.tdc
-                   << std::endl;
+                   << "\n";
         return signal;
+    }
+
+    auto Channel::CreateCalSignal(const FQTPeak& peak) const -> CalSignal
+    {
+        auto peakQdc = peak.GetQDC();
+        auto peakTime = peak.GetLETime();
+        auto qdc = ToQdc(peakQdc);
+
+        LOG(debug) << "qdc Cal " << qdc << " and tdc " << peakTime << "\n";
+
+        auto signal = CalSignal{};
+        signal.tot = CalculateTOT(qdc);
+        signal.tle = peakTime;
+        signal.side = this->GetSide();
+        LOG(debug) << "R3BDigitizingTamex: Create a CalSignal with tot " << signal.tot << " and let " << signal.tle
+                   << "\n qdc: " << qdc << "\n";
+        return signal;
+    }
+
+    auto Channel::CalculateTOT(const double& qdc) const -> double
+    {
+        // ToDo: Decide if ERROR stuff is needed
+        //  if (GetErrorCalculation())
+        //  {
+        //      ValueError<double> qdc_err_val{ qdc, 0 };
+        //      auto par_err_val = GetParErrVal();
+        //      auto tot_err_val = qdc_err_val * par_err_val.energyGain + par_err_val.pedestal;
+        //      auto randGen = GetDefaultRandomGen();
+        //      return randGen.Gaus(tot_err_val.value, tot_err_val.error);
+        //  }
+        //  else {
+        //
+        //      auto par = GetParConstRef();
+        //      return (qdc * par.fEnergyGain + par.fPedestal);
+        //  }
+
+        auto par = GetParConstRef();
+        return ((qdc * par.fEnergyGain) + par.fPedestal);
     }
 
     template <typename Peak>
@@ -383,6 +375,25 @@ namespace R3B::Digitizing::Neuland::Tamex
         return signals;
     }
 
+    auto Channel::ConstructCalSignals() -> CalSignals
+    {
+        fqt_peaks_ = ConstructFQTPeaks(pmt_peaks_);
+        // signal pileup:
+        FQTPeakPileUp(fqt_peaks_);
+
+        // construct Channel signals:
+        auto cal_signals = std::vector<CalSignal>{};
+        cal_signals.reserve(fqt_peaks_.size());
+
+        for (const auto& peak : fqt_peaks_)
+        {
+            cal_signals.emplace_back(CreateCalSignal(peak));
+        }
+        return cal_signals;
+    }
+
+    auto Channel::GetCalSignals() -> CalSignals { return ConstructCalSignals(); }
+
     auto Channel::GetFQTPeaks() -> const std::vector<FQTPeak>&
     {
 
@@ -405,11 +416,11 @@ namespace R3B::Digitizing::Neuland::Tamex
     auto Channel::ToQdc(double qdc) const -> double
     {
         // apply energy smearing
-        qdc = par_.fRnd->Gaus(qdc, par_.fEResRel * qdc);
+        qdc = par_.fRnd.get().Gaus(qdc, par_.fEResRel * qdc);
         return qdc;
     }
 
-    auto Channel::ToTdc(double time) const -> double { return time + par_.fRnd->Gaus(0., par_.fTimeRes); }
+    auto Channel::ToTdc(double time) const -> double { return time + par_.fRnd.get().Gaus(0., par_.fTimeRes); }
 
     auto Channel::ToUnSatQdc(double qdc) const -> double
     {
@@ -417,6 +428,7 @@ namespace R3B::Digitizing::Neuland::Tamex
         if (par_.fExperimentalDataIsCorrectedForSaturation)
         {
             qdc = qdc / (1 - par_.fSaturationCoefficient * qdc);
+            LOG(debug) << "ToUnSatQdc: fSaturationCoefficient = " << par_.fSaturationCoefficient << '\n';
         }
         // Apply reverse attenuation
         return qdc;

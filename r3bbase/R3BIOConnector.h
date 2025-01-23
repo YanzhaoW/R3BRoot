@@ -17,6 +17,10 @@
 
 #include <FairRootManager.h>
 #include <R3BException.h>
+#include <R3BLogger.h>
+#include <TClonesArray.h>
+#include <TCollection.h>
+#include <TObject.h>
 #include <fmt/format.h>
 #include <map>
 #include <string>
@@ -37,20 +41,34 @@ namespace R3B
         {
         }
 
-        // rule of 5
-        ~InputConnector() = default;
-        InputConnector(const InputConnector&) = default;
-        InputConnector(InputConnector&&) = delete;
-        InputConnector& operator=(const InputConnector&) = default;
-        InputConnector& operator=(InputConnector&&) = delete;
-
-        void init(const boost::source_location& loc = BOOST_CURRENT_LOCATION)
+        /**
+         * \brief Initialisation for the connector of non-TCA input data.
+         *
+         * Initialize a non-TCA input data from the root file.
+         * @param is_optional Don't report error if the input data doesn't exist.
+         * @param loc Location for the current call site for better logging.
+         */
+        void init(bool is_optional = false, const boost::source_location& loc = BOOST_CURRENT_LOCATION)
         {
-            if (auto* ioman = FairRootManager::Instance(); ioman != nullptr)
+            auto* ioman = FairRootManager::Instance();
+            if (ioman == nullptr)
             {
-                data_ = ioman->InitObjectAs<const RawDataType*>(branch_name_.c_str());
+                throw R3B::runtime_error(fmt::format("FairRootManager is nullptr during the initialisation of the "
+                                                     "input data with  the branch name \"{}\"",
+                                                     branch_name_),
+                                         loc);
+            }
 
-                if (data_ == nullptr)
+            data_ = ioman->InitObjectAs<const RawDataType*>(branch_name_.c_str());
+
+            if (data_ == nullptr)
+            {
+                if (is_optional)
+                {
+                    R3BLOG(warn,
+                           fmt::format("The data branch {:?} doesn't exist in the input root file!", branch_name_));
+                }
+                else
                 {
                     throw R3B::runtime_error(
                         fmt::format("Initialisation of the input data with the branch name \"{}\" failed!",
@@ -58,17 +76,9 @@ namespace R3B
                         loc);
                 }
             }
-            else
-            {
-                throw R3B::runtime_error(fmt::format("FairRootManager is nullptr during the initialisation of the "
-                                                     "input data with  the branch name \"{}\"",
-                                                     branch_name_),
-                                         loc);
-            }
         }
 
-        [[nodiscard]] inline auto get(const boost::source_location& loc = BOOST_CURRENT_LOCATION) const
-            -> const RawDataType&
+        [[nodiscard]] auto get(const boost::source_location& loc = BOOST_CURRENT_LOCATION) const -> const RawDataType&
         {
             check_init(loc);
             return *data_;
@@ -110,10 +120,91 @@ namespace R3B
         {
             if (data_ == nullptr)
             {
-                throw R3B::runtime_error(
-                    fmt::format("Input data with the branch name \"{}\" cannot be queried without an initialisation!",
-                                branch_name_),
-                    loc);
+                throw R3B::runtime_error(fmt::format("Input data with the branch name \"{}\" cannot be "
+                                                     "queried without an initialisation!",
+                                                     branch_name_),
+                                         loc);
+            }
+        }
+    };
+
+    template <typename InputType,
+              typename = std::enable_if_t<std::is_base_of_v<TObject, std::remove_const_t<std::remove_cv_t<InputType>>>>>
+    class InputTCAConnector
+    {
+      public:
+        using RawDataType = std::remove_const_t<std::remove_cv_t<InputType>>;
+        explicit InputTCAConnector(std::string_view branchName)
+            : branch_name_{ branchName }
+        {
+        }
+
+        void init(bool is_optional = false, const boost::source_location& loc = BOOST_CURRENT_LOCATION)
+        {
+            auto* ioman = FairRootManager::Instance();
+            if (ioman == nullptr)
+            {
+                throw R3B::runtime_error(fmt::format("FairRootManager is nullptr during the initialisation of the "
+                                                     "input data with  the branch name \"{}\"",
+                                                     branch_name_),
+                                         loc);
+            }
+
+            data_ = dynamic_cast<TClonesArray*>(ioman->GetObject(branch_name_.c_str()));
+            if (data_ == nullptr)
+            {
+                const auto msg = fmt::format(
+                    "Input TCA data with the branch name {:?} cannot be retrieved from the input file !", branch_name_);
+                if (is_optional)
+                {
+                    R3BLOG(warn, msg.c_str());
+                    return;
+                }
+                throw R3B::runtime_error(msg, loc);
+            }
+
+            check_element_type(is_optional, loc);
+        }
+
+        auto read() -> const std::vector<RawDataType>&
+        {
+            output_data_.clear();
+            if (data_ == nullptr)
+            {
+                return output_data_;
+            }
+
+            output_data_.reserve(data_->GetEntriesFast());
+            for (auto* element : TRangeDynCast<RawDataType>(data_))
+            {
+                output_data_.emplace_back(*element);
+            }
+            return output_data_;
+        }
+
+        [[nodiscard]] auto size() const -> std::size_t { return data_ == nullptr ? 0 : data_->GetEntriesFast(); }
+
+        [[nodiscard]] auto get() const -> const std::vector<RawDataType>& { return output_data_; }
+
+      private:
+        std::string branch_name_;
+        std::vector<RawDataType> output_data_;
+        TClonesArray* data_ = nullptr;
+
+        void check_element_type(bool is_optional, const boost::source_location& loc)
+        {
+            if (std::string_view{ data_->GetClass()->GetName() } != InputType::Class_Name())
+            {
+                const auto msg = fmt::format(
+                    "The type of the retrieved data {:?} is not the same as the type given by the connector class {}!",
+                    data_->GetClass()->GetName(),
+                    InputType::Class_Name());
+                if (is_optional)
+                {
+                    R3BLOG(warn, msg.c_str());
+                    return;
+                }
+                throw R3B::runtime_error(msg, loc);
             }
         }
     };
@@ -150,16 +241,18 @@ namespace R3B
             }
         }
 
-        [[nodiscard]] inline auto get() -> RawDataType& { return data_; }
-        [[nodiscard]] inline auto get_constref() const -> const RawDataType& { return data_; }
+        [[nodiscard]] auto get() -> RawDataType& { return data_; }
+        [[nodiscard]] auto get_constref() const -> const RawDataType& { return data_; }
 
-        inline void clear() { data_.clear(); }
+        void clear() { data_.clear(); }
 
         template <typename ResetOp>
-        inline void clear(ResetOp&& opn)
+        void clear(ResetOp opn)
         {
             opn(data_);
         }
+
+        auto size() const { return data_.size(); }
 
       private:
         std::string branch_name_;
