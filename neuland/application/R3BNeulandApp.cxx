@@ -1,5 +1,5 @@
-#include "R3BFileSource2.h"
 #include "R3BNeulandApp.h"
+#include "R3BFileSource2.h"
 #include <CLI/CLI.hpp>
 #include <FairParRootFileIo.h>
 #include <FairRootFileSink.h>
@@ -150,7 +150,6 @@ namespace R3B::Neuland
     void Application::add_inout_files()
     {
         const auto& option = option_.get();
-        // output files:
         const auto output_name =
             option.enable_mpi ? fmt::format("{}.{}", option.output.data, rank_num_) : option.output.data;
         if (not option_.get().output.data.empty())
@@ -164,6 +163,7 @@ namespace R3B::Neuland
         if (option_.get().run_id >= 0)
         {
             file_source->SetInitRunID(option_.get().run_id);
+            run_->SetRunId(option_.get().run_id);
             R3BLOG(info, fmt::format("Filesource2: Set to run id {}", option_.get().run_id));
         }
         add_input_filename(file_source.get());
@@ -191,8 +191,11 @@ namespace R3B::Neuland
 
         if (not option_.get().output.par.empty())
         {
+            const auto& option = option_.get();
+            const auto output_name =
+                option.enable_mpi ? fmt::format("{}.{}", option.output.par, rank_num_) : option.output.par;
             auto fileio = std::make_unique<FairParRootFileIo>(true);
-            fileio->open(option_.get().output.par.c_str(), "RECREATE");
+            fileio->open(output_name.c_str(), "RECREATE");
             auto* rtdb = run_->GetRuntimeDb();
             rtdb->setOutput(fileio.release());
         }
