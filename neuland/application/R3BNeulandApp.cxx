@@ -96,7 +96,7 @@ namespace R3B::Neuland
             dump_json_filename_ = filename;
         };
 
-        auto use_config_callback = [this](const std::string& filename)
+        auto use_config_callback = [this](const std::vector<std::string>& filename)
         {
             if (not is_already_parsed_)
             {
@@ -107,10 +107,10 @@ namespace R3B::Neuland
 
         auto& options = option_.get();
         program_options
-            .add_option_function<std::string>("-c, --config-file", use_config_callback, "Set the json config file")
+            .add_option_function<std::vector<std::string>>(
+                "-c, --config-file", use_config_callback, "Set the json config file")
             ->default_val(fmt::format("{}_{}", app_name_, DEFAULT_JSON_FILENAME))
             ->run_callback_for_default()
-            ->expected(0, 1)
             ->trigger_on_parse();
         program_options.add_flag("--print-config", has_print_default_options_, "Print default option value");
         program_options
