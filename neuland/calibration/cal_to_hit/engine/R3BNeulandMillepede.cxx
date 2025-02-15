@@ -290,17 +290,20 @@ namespace R3B::Neuland::Calibration
                 "Writting Mille data to binary file with meas = {} and z = {}", input_data_buffer_.measurement, pos_z));
     }
 
-    void MillepedeEngine::AddSignal(const BarCalData& signal)
+    void MillepedeEngine::AddSignals(const std::vector<BarCalData>& signals)
     {
-        // all bar signal must have one signal on both sides
-        if (signal.left.size() != 1 or signal.right.size() != 1)
+        for (const auto& signal : signals)
         {
-            return;
-        }
+            // all bar signal must have one signal on both sides
+            if (signal.left.size() != 1 or signal.right.size() != 1)
+            {
+                return;
+            }
 
-        add_signal_t_sum(signal);
-        add_signal_t_diff(signal);
-        add_spacial_local_constraint(static_cast<int>(signal.module_num));
+            add_signal_t_sum(signal);
+            add_signal_t_diff(signal);
+            add_spacial_local_constraint(static_cast<int>(signal.module_num));
+        }
     }
 
     void MillepedeEngine::Calibrate(Cal2HitPar& hit_par)

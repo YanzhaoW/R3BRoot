@@ -49,6 +49,7 @@ namespace R3B::Neuland::Calibration
         std::string input_data_filename_ = "neuland_cosmic_mille.bin";
         std::string pede_steer_filename_ = "neuland_steer.txt";
         std::string parameter_filename_ = "neuland_pars.txt";
+
         Mille binary_data_writer_{ input_data_filename_ };
         Millepede::ResultReader par_result_;
         Millepede::Launcher pede_launcher_;
@@ -62,7 +63,7 @@ namespace R3B::Neuland::Calibration
         Cal2HitPar* cal_to_hit_par_ = nullptr;
 
         void Init() override;
-        void AddSignal(const BarCalData& signal) override;
+        void AddSignals(const std::vector<BarCalData>& signals) override;
         void Calibrate(Cal2HitPar& hit_par) override;
         void EndOfEvent(unsigned int event_num = 0) override;
         void EventReset() override;

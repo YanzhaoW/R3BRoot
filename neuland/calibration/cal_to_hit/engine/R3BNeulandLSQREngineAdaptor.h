@@ -31,7 +31,7 @@ namespace R3B::Neuland::Calibration
         CosmicTracker cosmic_tracker_;
 
         void Init() override;
-        void AddSignal(const BarCalData& signal) override;
+        void AddSignals(const std::vector<BarCalData>& signals) override;
         void Calibrate(Cal2HitPar& hit_par) override;
         void EndOfEvent(unsigned int event_num = 0) override;
         void EventReset() override
