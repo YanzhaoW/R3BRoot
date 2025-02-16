@@ -1,11 +1,18 @@
 #include "R3BNeulandMilleCalDataProcessor.h"
+#include <Fit/BinData.h>
+#include <Math/WrappedMultiTF1.h>
 #include <R3BNeulandCommon.h>
 #include <algorithm>
 #include <range/v3/algorithm.hpp>
 
 namespace R3B::Neuland::Calibration
 {
-    MilleDataProcessor::MilleDataProcessor(int num_of_modules) { init_data_registers(num_of_modules); }
+    MilleDataProcessor::MilleDataProcessor(int num_of_modules)
+    {
+        init_data_registers(num_of_modules);
+        fitter.SetFunction(
+            ROOT::Math::WrappedMultiTF1{ fit_function, static_cast<unsigned int>(fit_function.GetNdim()) }, false);
+    }
 
     void MilleDataProcessor::init_data_registers(int num_of_modules)
     {
@@ -25,6 +32,8 @@ namespace R3B::Neuland::Calibration
         }
         fit_result_.x_z = FitPar{};
         fit_result_.y_z = FitPar{};
+        x_z_vals.clear();
+        y_z_vals.clear();
     }
 
     auto MilleDataProcessor::operator()(const std::vector<BarCalData>& signals) -> const auto&
@@ -41,6 +50,7 @@ namespace R3B::Neuland::Calibration
         }
 
         remove_isolated_bar_signal();
+        fit_planes();
 
         return *this;
     }
@@ -71,5 +81,61 @@ namespace R3B::Neuland::Calibration
         }
     }
 
-    void MilleDataProcessor::fit_planes() {}
+    void MilleDataProcessor::fit_planes()
+    {
+        fill_fit_data();
+
+        fit_plane_data();
+    }
+
+    void MilleDataProcessor::fill_fit_data()
+    {
+        for (auto& [plane_id, bar_data] : data_regsiters_)
+        {
+            const auto is_plane_horizontal = IsPlaneIDHorizontal(plane_id);
+            auto& fit_data = is_plane_horizontal ? y_z_vals : x_z_vals;
+            const auto z_val = PlaneID2ZPos(plane_id);
+
+            const auto displacement =
+                std::accumulate(bar_data.begin(),
+                                bar_data.end(),
+                                0.,
+                                [](double sum, const MilleCalData& signal)
+                                { return sum + GetBarVerticalDisplacement(static_cast<int>(signal.module_num)); }) /
+                static_cast<double>(bar_data.size());
+            fit_data.z_vals.push_back(z_val);
+            fit_data.z_errs.push_back(BarSize_Z / 2.);
+            fit_data.errs.push_back(0.);
+            fit_data.vals.push_back(displacement);
+        }
+    }
+
+    void MilleDataProcessor::fit_plane_data()
+    {
+        const auto x_z_data = ROOT::Fit::BinData{ static_cast<unsigned int>(x_z_vals.size()),
+                                                  x_z_vals.z_vals.data(),
+                                                  x_z_vals.vals.data(),
+                                                  x_z_vals.z_errs.data(),
+                                                  x_z_vals.errs.data() };
+        const auto y_z_data = ROOT::Fit::BinData{ static_cast<unsigned int>(y_z_vals.size()),
+                                                  y_z_vals.z_vals.data(),
+                                                  y_z_vals.vals.data(),
+                                                  y_z_vals.z_errs.data(),
+                                                  y_z_vals.errs.data() };
+        fitter.Fit(x_z_data);
+        fit_result_.x_z.slope = fitter.Result().Parameter(0);
+        fit_result_.x_z.offset = fitter.Result().Parameter(1);
+
+        fitter.Fit(y_z_data);
+        fit_result_.y_z.slope = fitter.Result().Parameter(0);
+        fit_result_.y_z.offset = fitter.Result().Parameter(1);
+    }
+
+    auto MilleDataProcessor::calculate_residual(double z_val, double val, int module_num) const -> double
+    {
+        const auto is_plane_horizontal = IsPlaneIDHorizontal(ModuleID2PlaneID(module_num - 1));
+        const auto& fit_result = is_plane_horizontal ? fit_result_.x_z : fit_result_.y_z;
+        const auto diff = val - (fit_result.slope * z_val) - fit_result.offset;
+        return diff * diff;
+    }
 } // namespace R3B::Neuland::Calibration
