@@ -2,6 +2,7 @@
 
 #include <Fit/Fitter.h>
 #include <R3BNeulandCalData2.h>
+#include <R3BNeulandCommon.h>
 #include <TF1.h>
 
 namespace R3B::Neuland::Calibration
@@ -52,25 +53,43 @@ namespace R3B::Neuland::Calibration
         };
 
         explicit MilleDataProcessor(int num_of_modules);
-        auto operator()(const std::vector<BarCalData>& signals) -> const auto&;
+        auto filter(const std::vector<BarCalData>& signals) -> bool;
         [[nodiscard]] auto get_data() const -> const auto& { return data_regsiters_; }
         [[nodiscard]] auto get_fit() const -> const auto& { return fit_result_; }
-        [[nodiscard]] auto calculate_residual(double z_val, double val, int module_num) const -> double;
+        [[nodiscard]] auto calculate_residual(double val, int module_num) const -> double;
         void reset();
 
+        void set_p_value_cut(double val) { p_value_cut_ = val; }
+
       private:
+        double p_value_cut_ = DEFAULT_CALIBRATION_P_VALUE_CUT;
         std::unordered_map<int, std::vector<MilleCalData>> data_regsiters_;
         FitResult fit_result_;
-        FitData x_z_vals;
-        FitData y_z_vals;
+        FitData x_z_vals_;
+        FitData y_z_vals_;
 
-        ROOT::Fit::Fitter fitter;
-        TF1 fit_function{ "mille_fitting", "[0] * x + [1]" };
+        ROOT::Fit::Fitter fitter_;
+        TF1 fit_function_{ "mille_fitting", "[0] * x + [1]" };
 
         void init_data_registers(int num_of_modules);
         void remove_isolated_bar_signal();
-        void fit_planes();
         void fill_fit_data();
-        void fit_plane_data();
+        void reset_fitpars();
+        auto fit_planes() -> bool;
+        auto fit_plane_data() -> bool;
+        auto linear_fit(const FitData& data, FitPar& fit_par) -> bool;
     };
 } // namespace R3B::Neuland::Calibration
+
+template <>
+class fmt::formatter<R3B::Neuland::Calibration::MilleCalData>
+{
+  public:
+    static constexpr auto parse(format_parse_context& ctx) { return ctx.end(); }
+    template <typename FmtContent>
+    constexpr auto format(const R3B::Neuland::Calibration::MilleCalData& signal, FmtContent& ctn) const
+    {
+        return format_to(
+            ctn.out(), "ModuleNum: {}, left bar: {}, right bar: {}", signal.module_num, signal.left, signal.right);
+    }
+};

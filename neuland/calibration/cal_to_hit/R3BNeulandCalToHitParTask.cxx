@@ -29,7 +29,6 @@ namespace R3B::Neuland
         : CalibrationTask(name, iVerbose)
         , cal_data_{ cal_data_name }
         , base_par_{ InputPar<CalibrationBasePar>(base_par_name) }
-        , hit_par_{ OutputPar<Cal2HitPar>(hit_par_name) }
     // NOLINTEND
     {
         switch (method)
@@ -37,14 +36,17 @@ namespace R3B::Neuland
             case Cal2HitParMethod::LSQT:
                 R3BLOG(info, "Cal2HitPar method: LSQT.");
                 engine_ = std::make_unique<Calibration::LSQREngineAdaptor>();
+                hit_par_ = OutputPar<Cal2HitPar>(hit_par_name);
                 break;
-            case Cal2HitParMethod::millipede:
+            case Cal2HitParMethod::millepede:
                 R3BLOG(info, "Cal2HitPar method: Millepede.");
                 engine_ = std::make_unique<Calibration::MillepedeEngine>();
+                hit_par_ = InputPar<Cal2HitPar>(hit_par_name);
                 break;
             case Cal2HitParMethod::predecessor:
                 R3BLOG(info, "Cal2HitPar method: predecessor.");
                 engine_ = std::make_unique<Calibration::Predecessor>();
+                hit_par_ = OutputPar<Cal2HitPar>(hit_par_name);
                 break;
         }
     }

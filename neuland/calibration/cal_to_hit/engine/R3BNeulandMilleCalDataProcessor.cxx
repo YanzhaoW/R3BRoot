@@ -3,6 +3,7 @@
 #include <Math/WrappedMultiTF1.h>
 #include <R3BNeulandCommon.h>
 #include <algorithm>
+#include <fmt/ranges.h>
 #include <range/v3/algorithm.hpp>
 
 namespace R3B::Neuland::Calibration
@@ -10,8 +11,9 @@ namespace R3B::Neuland::Calibration
     MilleDataProcessor::MilleDataProcessor(int num_of_modules)
     {
         init_data_registers(num_of_modules);
-        fitter.SetFunction(
-            ROOT::Math::WrappedMultiTF1{ fit_function, static_cast<unsigned int>(fit_function.GetNdim()) }, false);
+        fitter_.SetFunction(
+            ROOT::Math::WrappedMultiTF1{ fit_function_, static_cast<unsigned int>(fit_function_.GetNdim()) }, true);
+        fitter_.Config().SetMinimizer("Linear");
     }
 
     void MilleDataProcessor::init_data_registers(int num_of_modules)
@@ -24,6 +26,12 @@ namespace R3B::Neuland::Calibration
         }
     }
 
+    void MilleDataProcessor::reset_fitpars()
+    {
+        fitter_.Config().ParSettings(0).SetValue(0.);
+        fitter_.Config().ParSettings(1).SetValue(0.);
+    }
+
     void MilleDataProcessor::reset()
     {
         for (auto& [plane_id, bar_data] : data_regsiters_)
@@ -32,11 +40,12 @@ namespace R3B::Neuland::Calibration
         }
         fit_result_.x_z = FitPar{};
         fit_result_.y_z = FitPar{};
-        x_z_vals.clear();
-        y_z_vals.clear();
+        x_z_vals_.clear();
+        y_z_vals_.clear();
+        reset_fitpars();
     }
 
-    auto MilleDataProcessor::operator()(const std::vector<BarCalData>& signals) -> const auto&
+    auto MilleDataProcessor::filter(const std::vector<BarCalData>& signals) -> bool
     {
         // fill only the bar_cal_data with only one pmt signal on both sides
         for (const auto& signal : signals)
@@ -50,9 +59,8 @@ namespace R3B::Neuland::Calibration
         }
 
         remove_isolated_bar_signal();
-        fit_planes();
 
-        return *this;
+        return fit_planes();
     }
 
     void MilleDataProcessor::remove_isolated_bar_signal()
@@ -81,19 +89,23 @@ namespace R3B::Neuland::Calibration
         }
     }
 
-    void MilleDataProcessor::fit_planes()
+    auto MilleDataProcessor::fit_planes() -> bool
     {
         fill_fit_data();
 
-        fit_plane_data();
+        return fit_plane_data();
     }
 
     void MilleDataProcessor::fill_fit_data()
     {
         for (auto& [plane_id, bar_data] : data_regsiters_)
         {
+            if (bar_data.empty())
+            {
+                continue;
+            }
             const auto is_plane_horizontal = IsPlaneIDHorizontal(plane_id);
-            auto& fit_data = is_plane_horizontal ? y_z_vals : x_z_vals;
+            auto& fit_data = is_plane_horizontal ? y_z_vals_ : x_z_vals_;
             const auto z_val = PlaneID2ZPos(plane_id);
 
             const auto displacement =
@@ -105,37 +117,63 @@ namespace R3B::Neuland::Calibration
                 static_cast<double>(bar_data.size());
             fit_data.z_vals.push_back(z_val);
             fit_data.z_errs.push_back(BarSize_Z / 2.);
-            fit_data.errs.push_back(0.);
+            fit_data.errs.push_back(BarSize_XY / 2.);
             fit_data.vals.push_back(displacement);
         }
     }
 
-    void MilleDataProcessor::fit_plane_data()
+    auto MilleDataProcessor::fit_plane_data() -> bool
     {
-        const auto x_z_data = ROOT::Fit::BinData{ static_cast<unsigned int>(x_z_vals.size()),
-                                                  x_z_vals.z_vals.data(),
-                                                  x_z_vals.vals.data(),
-                                                  x_z_vals.z_errs.data(),
-                                                  x_z_vals.errs.data() };
-        const auto y_z_data = ROOT::Fit::BinData{ static_cast<unsigned int>(y_z_vals.size()),
-                                                  y_z_vals.z_vals.data(),
-                                                  y_z_vals.vals.data(),
-                                                  y_z_vals.z_errs.data(),
-                                                  y_z_vals.errs.data() };
-        fitter.Fit(x_z_data);
-        fit_result_.x_z.slope = fitter.Result().Parameter(0);
-        fit_result_.x_z.offset = fitter.Result().Parameter(1);
-
-        fitter.Fit(y_z_data);
-        fit_result_.y_z.slope = fitter.Result().Parameter(0);
-        fit_result_.y_z.offset = fitter.Result().Parameter(1);
+        return linear_fit(x_z_vals_, fit_result_.x_z) and linear_fit(y_z_vals_, fit_result_.y_z);
     }
 
-    auto MilleDataProcessor::calculate_residual(double z_val, double val, int module_num) const -> double
+    auto MilleDataProcessor::calculate_residual(double val, int module_num) const -> double
     {
+        const auto z_val = ModuleNum2ZPos(module_num);
         const auto is_plane_horizontal = IsPlaneIDHorizontal(ModuleID2PlaneID(module_num - 1));
         const auto& fit_result = is_plane_horizontal ? fit_result_.x_z : fit_result_.y_z;
         const auto diff = val - (fit_result.slope * z_val) - fit_result.offset;
         return diff * diff;
+    }
+
+    auto MilleDataProcessor::linear_fit(const FitData& data, FitPar& fit_par) -> bool
+    {
+
+        const auto bin_data = ROOT::Fit::BinData{ static_cast<unsigned int>(data.size()),
+                                                  data.z_vals.data(),
+                                                  data.vals.data(),
+                                                  data.z_errs.data(),
+                                                  data.errs.data() };
+        reset_fitpars();
+
+        // disable annoying root printouts
+        auto old_var = gErrorIgnoreLevel;
+        gErrorIgnoreLevel = kFatal;
+        auto res = fitter_.Fit(bin_data);
+        gErrorIgnoreLevel = old_var;
+
+        if (not res)
+        {
+            R3BLOG(debug, "Linear fitting on x_z data failed");
+            return false;
+        }
+        fit_par.slope = fitter_.Result().Parameter(0);
+        fit_par.offset = fitter_.Result().Parameter(1);
+        if (fitter_.Result().Prob() < p_value_cut_)
+        {
+            R3BLOG(debug,
+                   fmt::format("p-value ({}) is too small from the fit.\n\
+                       x = np.array({}) \n\
+                       x_err = np.array({}) \n\
+                       y = np.array({}) \n\
+                       y_err = np.array({})",
+                               fitter_.Result().Prob(),
+                               data.z_vals,
+                               data.z_errs,
+                               data.vals,
+                               data.errs));
+            return false;
+        }
+        return true;
     }
 } // namespace R3B::Neuland::Calibration
