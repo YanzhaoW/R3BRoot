@@ -12,10 +12,20 @@
  ******************************************************************************/
 
 #include "R3BNeulandCalToHitParTask.h"
+#include "R3BDataMonitor.h"
+#include "R3BException.h"
+#include "R3BNeulandBasePar.h"
+#include "R3BNeulandCalToHitPar.h"
+#include "R3BNeulandCalibrationTask.h"
+#include "R3BNeulandCommon.h"
+#include <FairRootManager.h>
+#include <FairRuntimeDb.h>
 #include <R3BLogger.h>
 #include <R3BNeulandLSQREngineAdaptor.h>
 #include <R3BNeulandMillepede.h>
 #include <R3BNeulandPredecessor.h>
+#include <memory>
+#include <string_view>
 
 namespace R3B::Neuland
 {

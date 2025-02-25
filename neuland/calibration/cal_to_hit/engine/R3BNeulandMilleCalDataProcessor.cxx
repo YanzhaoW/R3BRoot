@@ -7,9 +7,7 @@
 #include <TError.h>
 #include <algorithm>
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 #include <numeric>
-#include <range/v3/algorithm.hpp>
 #include <range/v3/algorithm/find_if.hpp>
 #include <vector>
 
