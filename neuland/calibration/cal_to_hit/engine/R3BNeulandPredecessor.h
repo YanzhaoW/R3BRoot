@@ -1,6 +1,14 @@
 #pragma once
 
+#include "R3BDataMonitor.h"
+#include "R3BLogger.h"
+#include "R3BNeulandCalData2.h"
+#include "R3BNeulandCalToHitPar.h"
 #include "R3BNeulandCosmicEngine.h"
+
+#include <TH2.h>
+#include <fmt/core.h>
+#include <vector>
 
 namespace R3B::Neuland::Calibration
 {

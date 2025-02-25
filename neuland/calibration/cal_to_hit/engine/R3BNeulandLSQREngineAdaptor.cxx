@@ -12,13 +12,19 @@
  ******************************************************************************/
 
 #include "R3BNeulandLSQREngineAdaptor.h"
-#include "R3BDataMonitor.h"
-#include "R3BNeulandHitPar.h"
+
 #include <FairRuntimeDb.h>
+#include <R3BException.h>
 #include <R3BLogger.h>
+#include <R3BNeulandCalData2.h>
+#include <R3BNeulandCalToHitPar.h>
+#include <R3BNeulandCommon.h>
+#include <R3BNeulandHitModulePar.h>
+#include <R3BNeulandHitPar.h>
 #include <R3BNeulandParDirCreator.h>
 #include <R3BShared.h>
-#include <algorithm>
+#include <cmath>
+#include <vector>
 
 namespace
 {

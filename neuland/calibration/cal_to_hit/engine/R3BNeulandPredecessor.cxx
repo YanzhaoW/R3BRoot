@@ -1,8 +1,19 @@
 #include "R3BNeulandPredecessor.h"
+#include "R3BDataMonitor.h"
+#include "R3BLogger.h"
+#include "R3BNeulandCalData2.h"
+#include "R3BNeulandCalToHitPar.h"
+#include "R3BNeulandCommon.h"
+#include "R3BValueError.h"
 #include <R3BNeulandCalToHitParTask.h>
 #include <TF1.h>
 #include <TFitResult.h>
 #include <TFitResultPtr.h>
+#include <TH1.h>
+#include <TH2.h>
+#include <array>
+#include <fmt/core.h>
+#include <vector>
 
 namespace R3B::Neuland::Calibration
 {

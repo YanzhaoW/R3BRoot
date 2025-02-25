@@ -4,6 +4,9 @@
 #include <R3BNeulandCalData2.h>
 #include <R3BNeulandCommon.h>
 #include <TF1.h>
+#include <fmt/core.h>
+#include <unordered_map>
+#include <vector>
 
 namespace R3B::Neuland::Calibration
 {

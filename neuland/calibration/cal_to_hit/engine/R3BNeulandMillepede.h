@@ -12,13 +12,25 @@
  ******************************************************************************/
 #pragma once
 
+#include "MilleEntry.h"
+#include "R3BDataMonitor.h"
+#include "R3BLogger.h"
+#include "R3BNeulandCalData2.h"
+#include "R3BNeulandCalToHitPar.h"
 #include "R3BNeulandCosmicEngine.h"
 #include "R3BNeulandMilleCalDataProcessor.h"
 #include <Mille.h>
 #include <ParResultReader.h>
 #include <PedeLauncher.h>
 #include <R3BNeulandCommon.h>
+#include <TH1.h>
+#include <cstdint>
+#include <fmt/core.h>
+#include <memory>
 #include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 // #include <RankChecker.h>
 
 class TGraphErrors;

@@ -12,26 +12,46 @@
  ******************************************************************************/
 
 #include "R3BNeulandMillepede.h"
+#include "ParResultReader.h"
+#include "R3BDataMonitor.h"
+#include "R3BLogger.h"
+#include "R3BNeulandCalData2.h"
+#include "R3BNeulandCalToHitPar.h"
+#include "R3BNeulandMilleCalDataProcessor.h"
 #include <R3BException.h>
 #include <R3BNeulandCalToHitParTask.h>
 #include <R3BNeulandCommon.h>
 #include <SteerWriter.h>
 
 #include <TGraphErrors.h>
+#include <TH1.h>
+#include <algorithm>
+#include <array>
+#include <fmt/core.h>
+#include <iterator>
+#include <memory>
+#include <numeric>
 #include <range/v3/algorithm/all_of.hpp>
+#include <range/v3/iterator/operations.hpp>
 #include <range/v3/numeric/accumulate.hpp>
 #include <range/v3/view.hpp>
 
 #include <cstdlib>
 #include <optional>
+#include <range/v3/view/all.hpp>
+#include <range/v3/view/filter.hpp>
+#include <range/v3/view/sliding.hpp>
+#include <range/v3/view/transform.hpp>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace rng = ranges;
 
 constexpr auto DEFAULT_RES_FILENAME = "millepede.res";
 constexpr auto SCALE_FACTOR = 10.F;
-constexpr auto REFERENCE_BAR_NUM = 25;
+// constexpr auto REFERENCE_BAR_NUM = 25;
 constexpr auto MILLE_BUFFER_SIZE = std::size_t{ 100000 };
 constexpr auto DEFAULT_T_ERROR = 2; // ns
 
@@ -332,7 +352,7 @@ namespace R3B::Neuland::Calibration
 
     auto MillepedeEngine::select_t_diff_signal(const std::vector<MilleCalData>& plane_data)
     {
-        if (plane_data.size() < 1)
+        if (plane_data.empty())
         {
             return plane_data.end();
         }
@@ -463,21 +483,10 @@ namespace R3B::Neuland::Calibration
 
     void MillepedeEngine::init_parameter()
     {
-        auto num_of_modules = GetModuleSize();
-
         if (cal_to_hit_par_ == nullptr)
         {
             throw R3B::runtime_error("Pointer to cal_to_hit_par is nullptr!");
         }
-
-        // auto& module_pars = cal_to_hit_par_->GetListOfModuleParRef();
-        // module_pars.clear();
-
-        // for (unsigned int module_num{ 1 }; module_num <= num_of_modules; ++module_num)
-        // {
-        //     auto module_par_iter = module_pars.try_emplace(module_num).first;
-        //     module_par_iter->second.effective_speed.value = init_effective_c_;
-        // }
     }
 
     void MillepedeEngine::init_steer_writer()
@@ -486,7 +495,10 @@ namespace R3B::Neuland::Calibration
         steer_writer.set_filepath(pede_steer_filename_);
         steer_writer.set_parameter_file(parameter_filename_);
         steer_writer.set_data_filepath(input_data_filename_);
-        steer_writer.add_method(SteerWriter::Method::inversion, std::make_pair(3.F, 0.001F));
+        static constexpr auto NUMBER_OF_ITERARTION = 3.F;
+        static constexpr auto CONVERGENCE_RECOGNITION = 0.001F;
+        steer_writer.add_method(SteerWriter::Method::inversion,
+                                std::make_pair(NUMBER_OF_ITERARTION, CONVERGENCE_RECOGNITION));
         steer_writer.add_other_options(std::vector<std::string>{ "hugecut", "50000" });
         steer_writer.add_other_options(std::vector<std::string>{ "outlierdownweighting", "4" });
 

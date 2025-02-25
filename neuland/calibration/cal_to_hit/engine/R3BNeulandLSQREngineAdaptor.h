@@ -14,9 +14,13 @@
 #pragma once
 
 #include "R3BNeulandCosmicEngine.h"
+
+#include <R3BNeulandCalData2.h>
+#include <R3BNeulandCalToHitPar.h>
 #include <R3BNeulandCosmicTracker.h>
 #include <R3BNeulandHitCalibrationEngine.h>
 #include <R3BShared.h>
+#include <vector>
 
 namespace R3B::Neuland::Calibration
 {
