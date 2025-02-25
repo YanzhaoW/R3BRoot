@@ -11,6 +11,9 @@
 #include <range/v3/algorithm/find_if.hpp>
 #include <vector>
 
+// NOLINTNEXTLINE
+#include <fmt/ranges.h>
+
 namespace R3B::Neuland::Calibration
 {
     MilleDataProcessor::MilleDataProcessor(int num_of_modules)
