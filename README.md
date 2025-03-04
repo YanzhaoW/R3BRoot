@@ -1,6 +1,4 @@
-\mainpage
-
-# R3BRoot Software 
+# R3BRoot Software
 
 ![license](https://alfa-ci.gsi.de/shields/badge/license-GPL--3.0-orange.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5549469.svg)](https://doi.org/10.5281/zenodo.5549469) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9851/badge)](https://www.bestpractices.dev/projects/9851) [![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu)
@@ -21,7 +19,7 @@ Please visit the [Doxygen documentation](https://yanzhaow.github.io/R3BRoot/) fo
 
 Detector specifics:
 
-- [NeuLAND detector](neuland/readme.md)
+- [NeuLAND detector](neuland/README.md)
 
 ## License
 
