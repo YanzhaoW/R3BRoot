@@ -35,4 +35,6 @@
 #pragma link C++ class pair<R3B::ValueError<double>, R3B::ValueError<double>>+;
 #pragma link C++ class R3B::LRPair<R3B::ValueError<double>>+;
 #pragma link C++ class R3B::LRPair<int>+;
+#pragma link C++ class R3B::LRPair<double>+;
+#pragma link C++ class R3B::LRPair<float>+;
 #endif

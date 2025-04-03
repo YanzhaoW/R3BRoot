@@ -18,13 +18,10 @@
 
 #pragma once
 
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
-
 #include <FairLogger.h>
+#include <Rtypes.h>
+#include <cstdlib>
+#include <fairlogger/Logger.h>
 
 // NOLINTBEGIN
 class R3BLogger;
