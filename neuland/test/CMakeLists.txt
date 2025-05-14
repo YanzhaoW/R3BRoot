@@ -33,8 +33,10 @@ set(simuPars
     test_exe.para.root
     --event-num
     100
+    -s
+    error
     -v
-    error)
+    user1)
 add_test(NeulandSimulation ${R3BROOT_BINARY_DIR}/bin/neuland sim ${simuPars})
 set_tests_properties(NeulandSimulation PROPERTIES TIMEOUT "2000")
 set_tests_properties(NeulandSimulation PROPERTIES PASS_REGULAR_EXPRESSION
@@ -51,8 +53,10 @@ set(digiPars
     tamex
     -o
     test.neul.root
+    -s
+    info
     -v
-    info)
+    user1)
 add_test(NeulandDigitizer ${R3BROOT_BINARY_DIR}/bin/neuland ana ${digiPars})
 set_tests_properties(NeulandDigitizer PROPERTIES DEPENDS NeulandSimulation)
 set_tests_properties(NeulandDigitizer PROPERTIES TIMEOUT "1000")
