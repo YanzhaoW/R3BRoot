@@ -12,14 +12,14 @@
  * granted to it by virtue of its status as an Intergovernmental Organization *
  * or submit itself to any jurisdiction.                                      *
  ******************************************************************************/
-#include <boost/asio.hpp>
-#include <boost/asio/io_service.hpp>
+
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/readable_pipe.hpp>
 #include <boost/process/v2/process.hpp>
-#include <cstddef>
 #include <ext_data_clnt.hh>
 #include <memory>
 #include <string>
+#include <vector>
 
 constexpr auto UCESB_NULL_STR_MSG = "Can't retrieve error message as last_error returns nullptr!";
 
@@ -52,7 +52,7 @@ namespace R3B
         std::unique_ptr<bpv2::process> ucesb_server_;
         ResolveResult launch_strings_{};
         std::vector<std::string> launch_args;
-        boost::asio::io_service ios_;
+        boost::asio::io_context ios_;
         boost::asio::readable_pipe server_pipe_{ ios_ };
     };
 

@@ -24,7 +24,6 @@
 #include <boost/process/v2/process.hpp>
 #include <boost/process/v2/stdio.hpp>
 #include <chrono>
-#include <cstddef>
 #include <fairlogger/Logger.h>
 #include <filesystem>
 #include <fmt/core.h>
@@ -43,7 +42,6 @@
 constexpr auto CHILD_CLOSE_WAITING_TIME = std::chrono::seconds(5);
 
 namespace fs = std::filesystem;
-namespace bp = boost::process;
 namespace
 {
     bool Check_exist(std::string_view exe)
@@ -155,12 +153,11 @@ namespace R3B
 
     void UcesbServerLauncher::Launch()
     {
-        server_pipe_ = boost::process::async_pipe{ ios_ };
         ucesb_server_ =
             std::make_unique<bpv2::process>(ios_,
-                                            launch_strings.executable,
+                                            launch_strings_.executable,
                                             launch_args,
-                                            bpv2::process_stdio{ .in = nullptr, .out = server_pipe_, .err = stdout });
+                                            bpv2::process_stdio{ .in = nullptr, .out = server_pipe_, .err = stderr });
         R3BLOG(info, fmt::format("Launching an ucesb server with pid: {}", ucesb_server_->id()));
         if (auto is_status_ok = client_->connect(server_pipe_.native_handle()); not is_status_ok)
         {

@@ -12,10 +12,16 @@
  ******************************************************************************/
 
 #include "R3BUcesbStructInfo.h"
+#include "R3BReader.h"
 #include "R3BUcesbDecl.h"
+#include "R3BUcesbMappingFlag.h"
 #include <R3BException.h>
 #include <R3BLogger.h>
 #include <R3BUcesbSource2.h>
+#include <ext_data_client.h>
+#include <fairlogger/Logger.h>
+#include <fmt/core.h>
+#include <string_view>
 
 namespace R3B
 {
