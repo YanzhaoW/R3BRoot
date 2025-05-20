@@ -21,9 +21,11 @@
 #include <TClonesArray.h>
 #include <TCollection.h>
 #include <TObject.h>
-#include <fmt/format.h>
+#include <cstddef>
+#include <fmt/core.h>
 #include <map>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>

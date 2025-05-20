@@ -15,13 +15,14 @@
 
 #include "R3BReader.h"
 #include <FairSource.h>
-#include <R3BUcesbLauncher.h>
 #include <R3BUcesbMappingFlag.h>
 #include <R3BUcesbStructInfo.h>
 #include <Rtypes.h>
+#include <chrono>
 #include <cstddef>
 #include <ext_data_clnt.hh>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -31,15 +32,17 @@ using EventStructType = EXT_STR_h101_t;
 
 namespace R3B
 {
+    class UcesbServerLauncher;
     class UcesbSource : public FairSource
     {
       public:
-        UcesbSource() = default;
+        UcesbSource();
         UcesbSource(std::string_view lmdfile_name,
                     std::string_view ntuple_options,
                     std::string_view ucesb_path,
                     EventStructType* event_struct,
                     size_t event_struct_size);
+
         // rule of five:
         ~UcesbSource() override;
         UcesbSource(const UcesbSource&) = delete;
@@ -97,7 +100,7 @@ namespace R3B
 
         ext_data_clnt ucesb_client_;
         UcesbStructInfo ucesb_client_struct_info_;
-        UcesbServerLauncher ucesb_server_launcher_ = UcesbServerLauncher{ &ucesb_client_ };
+        std::unique_ptr<UcesbServerLauncher> ucesb_server_launcher_; //!
 
         // private non-virtual methods:
 
