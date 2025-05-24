@@ -17,6 +17,7 @@
 #include <iostream>
 #include <memory>
 
+static R3BFieldContFact gR3BFieldContFact;
 void testR3BPhaseSpaceGeneratorIntegration()
 {
     // Timer

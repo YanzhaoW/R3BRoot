@@ -187,6 +187,7 @@ namespace R3B
         [[nodiscard]] auto size() const -> std::size_t { return data_ == nullptr ? 0 : data_->GetEntriesFast(); }
 
         [[nodiscard]] auto get() const -> const std::vector<RawDataType>& { return output_data_; }
+        [[nodiscard]] auto get_name() const -> const std::string& { return branch_name_; }
 
       private:
         std::string branch_name_;
@@ -245,6 +246,7 @@ namespace R3B
 
         [[nodiscard]] auto get() -> RawDataType& { return data_; }
         [[nodiscard]] auto get_constref() const -> const RawDataType& { return data_; }
+        [[nodiscard]] auto get_name() const -> const std::string& { return branch_name_; }
 
         void clear() { data_.clear(); }
 

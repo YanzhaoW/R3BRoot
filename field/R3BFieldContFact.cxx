@@ -28,7 +28,7 @@
 using std::cout;
 using std::endl;
 
-static R3BFieldContFact gR3BFieldContFact;
+// static R3BFieldContFact gR3BFieldContFact;
 
 // -----   Constructor   ---------------------------------------------------
 R3BFieldContFact::R3BFieldContFact()
