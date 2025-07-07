@@ -18,6 +18,7 @@ set(SRCS
     R3BCoarseTimeStitch.cxx
     R3BDataPropagator.cxx
     R3BDetector.cxx
+    R3BDetParRootFileIo.cxx
     R3BEventHeader.cxx
     R3BEventHeaderPropagator.cxx
     R3BException.cxx
@@ -25,6 +26,7 @@ set(SRCS
     R3BFileSource2.cxx
     R3BLogger.cxx
     R3BModule.cxx
+    R3BParRootFileIo.cxx
     R3BPDGConverter.cxx
     R3BTcutPar.cxx
     R3BTsplinePar.cxx
@@ -37,6 +39,7 @@ set(HEADERS
     R3BCoarseTimeStitch.h
     R3BDataPropagator.h
     R3BDetector.h
+    R3BDetParRootFileIo.h
     R3BEventHeader.h
     R3BEventHeaderPropagator.h
     R3BException.h
@@ -45,6 +48,7 @@ set(HEADERS
     R3BIOConnector.h
     R3BLogger.h
     R3BModule.h
+    R3BParRootFileIo.h
     R3BPDGConverter.h
     R3BShared.h
     R3BTcutPar.h
