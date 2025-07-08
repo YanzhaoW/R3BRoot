@@ -53,12 +53,6 @@ class R3BLosMapped2CalPar : public FairTask
     R3BLosMapped2CalPar(const char* name, Int_t iVerbose = 1);
 
     /**
-     * Destructor.
-     * Frees the memory used by the object.
-     */
-    virtual ~R3BLosMapped2CalPar();
-
-    /**
      * Method for task initialization.
      * This function is called by the framework before
      * the event loop.

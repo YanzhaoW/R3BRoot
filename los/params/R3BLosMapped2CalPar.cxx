@@ -75,19 +75,6 @@ R3BLosMapped2CalPar::R3BLosMapped2CalPar(const char* name, Int_t iVerbose)
 {
 }
 
-R3BLosMapped2CalPar::~R3BLosMapped2CalPar()
-{
-    R3BLOG(debug1, "Destructor");
-    if (fCal_Par)
-    {
-        delete fCal_Par;
-    }
-    if (fEngine)
-    {
-        delete fEngine;
-    }
-}
-
 InitStatus R3BLosMapped2CalPar::Init()
 {
     R3BLOG(info, "");
@@ -211,14 +198,14 @@ void R3BLosMapped2CalPar::FinishTask()
     fCal_Par->printParams();
     fCal_Par->setChanged();
 
-    R3BLOG(info, "Calibration of LOS detector");
+    R3BLOG(debug, "Calibration of LOS detector");
     for (Int_t i = 0; i < 16; i++)
     {
         for (Int_t k = 0; k < 3; k++)
         {
             if (Icount[i][k] > fMinStats)
             {
-                R3BLOG(info, "Channel: " << i + 1 << ", Type: " << k << ", Count: " << Icount[i][k]);
+                R3BLOG(debug, "Channel: " << i + 1 << ", Type: " << k << ", Count: " << Icount[i][k]);
             }
         }
     }
@@ -230,7 +217,7 @@ void R3BLosMapped2CalPar::FinishTask()
         {
             if (Icounttrig[i][k] > fMinStats)
             {
-                R3BLOG(info, "Channel: " << i + 1 << ", Type: " << k << ", Count: " << Icounttrig[i][k]);
+                R3BLOG(debug, "Channel: " << i + 1 << ", Type: " << k << ", Count: " << Icounttrig[i][k]);
             }
         }
     }
