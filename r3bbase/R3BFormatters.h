@@ -15,11 +15,14 @@
 
 #include "R3BShared.h"
 #include "R3BValueError.h"
-#include <Math/Vector3D.h>
 #include <Math/Vector3Dfwd.h>
 #include <TVector3.h>
+#include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
+
+// NOLINTNEXTLINE(misc-include-cleaner)
+#include <Math/Vector3D.h>
 
 template <>
 class fmt::formatter<TVector3>
