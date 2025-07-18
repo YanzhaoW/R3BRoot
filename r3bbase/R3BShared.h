@@ -177,6 +177,7 @@ namespace R3B
         return exp;
     }
 
+#ifndef __CLING__
     // -------------------------------------------------------------------------
     // File handling
     namespace fs = std::filesystem;
@@ -224,4 +225,6 @@ namespace R3B
         std::sort(filelist.begin(), filelist.end());
         return filelist;
     }
+#endif
+
 } // namespace R3B
