@@ -15,9 +15,14 @@
 
 #include "R3BShared.h"
 #include "R3BValueError.h"
+#include <Math/Vector3Dfwd.h>
 #include <TVector3.h>
+#include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
+
+// NOLINTNEXTLINE(misc-include-cleaner)
+#include <Math/Vector3D.h>
 
 template <>
 class fmt::formatter<TVector3>
@@ -27,7 +32,7 @@ class fmt::formatter<TVector3>
     template <typename FmtContent>
     constexpr auto format(const TVector3& vec, FmtContent& ctn) const
     {
-        return format_to(ctn.out(), "[x: {}, y: {}, z: {}]", vec.X(), vec.Y(), vec.Z());
+        return fmt::format_to(ctn.out(), "[x: {}, y: {}, z: {}]", vec.X(), vec.Y(), vec.Z());
     }
 };
 
@@ -40,7 +45,19 @@ class fmt::formatter<R3B::ValueError<DataType>>
     template <typename FmtContent>
     constexpr auto format(const R3B::ValueError<DataType>& value_error, FmtContent& ctn) const
     {
-        return format_to(ctn.out(), "{}+/-{}", value_error.value, value_error.error);
+        return fmt::format_to(ctn.out(), "{}+/-{}", value_error.value, value_error.error);
+    }
+};
+
+template <>
+class fmt::formatter<ROOT::Math::XYZVector>
+{
+  public:
+    static constexpr auto parse(format_parse_context& ctx) { return ctx.end(); }
+    template <typename FmtContent>
+    constexpr auto format(const ROOT::Math::XYZVector& vec, FmtContent& ctn) const
+    {
+        return fmt::format_to(ctn.out(), "[x: {}, y: {}, z: {}]", vec.X(), vec.Y(), vec.Z());
     }
 };
 
@@ -52,7 +69,7 @@ class fmt::formatter<R3B::LRPair<DataType>>
     template <typename FmtContent>
     constexpr auto format(const R3B::LRPair<DataType>& data_pair, FmtContent& ctn) const
     {
-        return format_to(ctn.out(), "[left: {}, right: {}]", data_pair.left(), data_pair.right());
+        return fmt::format_to(ctn.out(), "[left: {}, right: {}]", data_pair.left(), data_pair.right());
     }
 };
 
@@ -66,8 +83,8 @@ class fmt::formatter<R3B::Side>
     {
         if (side == R3B::Side::left)
         {
-            return format_to(ctn.out(), "{}", "left");
+            return fmt::format_to(ctn.out(), "{}", "left");
         }
-        return format_to(ctn.out(), "{}", "right");
+        return fmt::format_to(ctn.out(), "{}", "right");
     }
 };

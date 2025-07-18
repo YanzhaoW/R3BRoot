@@ -29,6 +29,7 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/os.h>
+#include <fmt/ranges.h>
 #include <memory>
 #include <regex>
 

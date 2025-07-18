@@ -26,9 +26,11 @@
 #include <exception>
 #include <ext_data_client.h>
 #include <fairlogger/Logger.h>
+#include <fmt/base.h>
 #include <fmt/chrono.h> // NOLINT
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <memory>
 #include <mutex>
 #include <string_view>
@@ -50,7 +52,7 @@ namespace R3B
             auto index = uint32_t{};
             for (const auto& row_data : data_span)
             {
-                fmt::print("RAW{0:04x}: {1:08x}\n", index, fmt::join(row_data, " "));
+                fmt::println("RAW{0:04x}: {1:08x}", index, fmt::join(row_data, " "));
                 index += column_size;
             }
         }
@@ -280,9 +282,7 @@ namespace R3B
             LOGP(info, "The program has been running for {}", duration);
             waiting_time_ = std::chrono::minutes{ 0 };
         }
-        LOGP(info,
-             fmt::format(
-                 "Infinite run enabled! Relaunching ucesb server after {}. Time now: {}", waiting_time_, time_now));
+        // LOGP(info, "Infinite run enabled! Relaunching ucesb server after {}. Time now: {}", waiting_time_, time_now);
         std::this_thread::sleep_for(waiting_time_);
         restart_ucesb_server();
         last_start_time_ = std::chrono::system_clock::now();

@@ -29,8 +29,11 @@ cmake_policy(VERSION 3.15...3.31)
 # Set name of our project to "R3BROOT". Has to be done after check of cmake version
 project(R3BROOT LANGUAGES C CXX Fortran)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD
+    23
+    CACHE STRING "the C++ standard to use for this project")
 set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 # use default gnu install convention:
 include(GNUInstallDirs)
