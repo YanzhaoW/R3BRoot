@@ -1,0 +1,6 @@
+{
+	"image": "docker.io/yanzhaowang/r3bdev:fedora-latest",
+	"remoteEnv": {
+		"PODMAN_USERNS": "keep-id"
+	}
+}
