@@ -29,9 +29,6 @@ cmake_policy(VERSION 3.15...3.31)
 # Set name of our project to "R3BROOT". Has to be done after check of cmake version
 project(R3BROOT LANGUAGES C CXX Fortran)
 
-set(CMAKE_CXX_STANDARD
-    23
-    CACHE STRING "the C++ standard to use for this project")
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
@@ -640,7 +637,9 @@ if(NOT MODULE)
     endif(WITH_ASYEOS)
     if(WITH_MILLEPEDE)
         if(EXISTS "${CMAKE_SOURCE_DIR}/util/millepede2/CMakeLists.txt")
-            add_subdirectory(util/millepede2)
+            if(CMAKE_CXX_STANDARD GREATER_EQUAL 23)
+                add_subdirectory(util/millepede2)
+            endif()
         else()
             message(
                 FATAL_ERROR
