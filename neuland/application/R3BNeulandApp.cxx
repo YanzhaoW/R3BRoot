@@ -1,6 +1,5 @@
 #include "R3BNeulandApp.h"
 #include "R3BDetParRootFileIo.h"
-#include "R3BException.h"
 #include "R3BFileSource2.h"
 #include "R3BParRootFileIo.h"
 #include "R3BShared.h"
@@ -9,22 +8,23 @@
 #include <FairRootFileSink.h>
 #include <FairRun.h>
 #include <FairRuntimeDb.h>
+#include <algorithm>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 #include <cmath>
-#include <cstdint>
 #include <fairlogger/Logger.h>
 #include <filesystem>
+#include <fmt/base.h>
 #include <fmt/color.h>
 #include <fmt/core.h>
-#include <fstream>
+#include <fmt/format.h>
 #include <functional>
 #include <gsl/span>
+#include <magic_enum/magic_enum.hpp>
 #include <memory>
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -50,53 +50,26 @@ namespace
         return span<const T>{ &(elements.at(step * partition_num)), span_size };
     }
 
-    enum class JSONConfigInputType : uint8_t
+    constexpr auto trim_space(std::string_view str) -> std::string_view
     {
-        file,
-        string,
-        invalid
-    };
-
-    auto check_json_input_type(std::string_view input) -> JSONConfigInputType
-    {
-        auto is_json_string = [](std::string_view string) -> bool { return string.find('=') != std::string::npos; };
-        auto is_a_file = [](std::string_view string) -> bool { return std::filesystem::exists(string); };
-
-        if (is_json_string(input))
+        if (str.empty())
         {
-            return JSONConfigInputType::string;
+            return std::string_view{};
         }
-        if (is_a_file(input))
+        const auto* start_pos = std::ranges::find_if(str, [](auto cha) -> bool { return cha != ' ' and cha != '\n'; });
+        auto end_pos = std::ranges::find_if(str | std::views::reverse,
+                                            [](auto cha) -> bool { return cha != ' ' and cha != '\n'; });
+        if (start_pos > end_pos.base())
         {
-            return JSONConfigInputType::file;
+            return std::string_view{};
         }
-        return JSONConfigInputType::invalid;
+        return std::string_view{ start_pos, end_pos.base() };
     }
 
-    auto transform_to_json_string(std::string_view input) -> std::string
-    {
-        auto raw_string = std::string{ input };
-        auto equal_pos = raw_string.find('=');
-        auto keys_string = raw_string.substr(0, equal_pos);
-        auto value_string = raw_string.substr(equal_pos + 1);
-
-        boost::algorithm::trim(keys_string);
-        boost::algorithm::trim(value_string);
-
-        auto keys = std::vector<std::string>{};
-        boost::split(keys, keys_string, boost::is_any_of("."));
-
-        for (const auto& key : boost::adaptors::reverse(keys))
-        {
-            value_string = fmt::format("{{ {:?} : {}}}", key, value_string);
-        }
-        return value_string;
-    }
 } // namespace
 
 namespace R3B::Neuland
 {
-    using json = nlohmann::ordered_json;
     CLIApplication::CLIApplication(std::string_view name,
                                    std::unique_ptr<FairRun> run,
                                    std::reference_wrapper<Options> option)
@@ -115,7 +88,7 @@ namespace R3B::Neuland
 
         if (has_inited())
         {
-            LOGP(info, "Writting all parameters to files");
+            LOGP(info, "Writing all parameters to files");
             run_->GetRuntimeDb()->writeContainers();
             if (auto* runtime_db = run_->GetRuntimeDb(); runtime_db != nullptr)
             {
@@ -162,7 +135,7 @@ namespace R3B::Neuland
 
     void CLIApplication::init()
     {
-        LOGP(info, "Initializaing application ...");
+        LOGP(info, "Initializing application ...");
         set_inited(true);
         add_inout_files();
         add_inout_pars();
@@ -180,13 +153,13 @@ namespace R3B::Neuland
 
     void CLIApplication::setup_common_options(CLI::App& program_options)
     {
-        auto dump_config_callback = [this](const std::string& filename)
+        auto dump_config_callback = [this](const std::string& filename) -> void
         {
             is_dump_ = true;
             dump_json_filename_ = filename;
         };
 
-        auto use_config_callback = [this](const std::vector<std::string>& filename_or_option)
+        auto use_config_callback = [this](const std::vector<std::string>& filename_or_option) -> void
         {
             if (not is_already_parsed_)
             {
@@ -211,7 +184,8 @@ namespace R3B::Neuland
             ->expected(0, 1);
         program_options.add_option("-s, --severity", options.log_level, "Set the severity level");
         program_options.add_option("-v, --verbose", options.verbose_level, "Set the verbose level");
-        program_options.add_option("-n, --event-num", options.event_num, "Set the event number")->capture_default_str();
+        program_options.add_option("-n, --event-num", options.number_of_events, "Set the event number")
+            ->capture_default_str();
         program_options.add_option("--run-id", options.run_id, "Set the run id")->capture_default_str();
 
         program_options.add_option("-i, --input-file", options.input.data, "Set the input filenames (regex)")
@@ -248,7 +222,9 @@ namespace R3B::Neuland
             auto file_path = option.output.working_dir.empty()
                                  ? fs::path{ output_name }
                                  : fs::path{ option.output.working_dir } / fs::path{ output_name };
-            auto file_sink = std::make_unique<FairRootFileSink>(file_path.c_str());
+            auto root_file =
+                std::make_unique<TFile>(file_path.c_str(), magic_enum::enum_name(option.output.mode).data());
+            auto file_sink = std::make_unique<FairRootFileSink>(root_file.release());
             run_->SetSink(file_sink.release());
         }
 
@@ -281,7 +257,7 @@ namespace R3B::Neuland
             {
                 if (not par_filename.empty())
                 {
-                    auto file_path = [&]()
+                    auto file_path = [&]() -> fs::path
                     {
                         auto par_file = fs::path{ par_filename };
 
@@ -305,9 +281,9 @@ namespace R3B::Neuland
                 option.enable_mpi ? fmt::format("{}.{}", output_option.par, rank_num_) : output_option.par;
             auto file_path =
                 output_wd.empty() ? fs::path{ output_name } : fs::path{ output_wd } / fs::path{ output_name };
-            LOGP(info, "Ouptut parameter file is {:?}", file_path.string());
+            LOGP(info, "Output parameter file is {:?}", file_path.string());
             auto output_par_fileio = ParRootFileIo::Output();
-            output_par_fileio->open(file_path.c_str(), option.output.mode);
+            output_par_fileio->open(file_path.c_str(), magic_enum::enum_name(option.output.mode));
             // auto fileio = std::make_unique<FairParRootFileIo>(true);
             // fileio->open(file_path.c_str(), option.output.mode.c_str());
             auto* rtdb = run_->GetRuntimeDb();
@@ -317,7 +293,7 @@ namespace R3B::Neuland
 
     void CLIApplication::run()
     {
-        auto max_event = option_.get().event_num;
+        auto max_event = option_.get().number_of_events;
         max_event = max_event > 0 ? max_event : 0;
         if (max_event > 0)
         {
@@ -363,33 +339,50 @@ namespace R3B::Neuland
         }
     }
 
-    void CLIApplication::patch_files_or_strings(nlohmann::ordered_json& json_obj,
-                                                const std::vector<std::string>& filenames_or_options)
+    auto CLIApplication::check_json_input_type(std::string_view input) -> JSONConfigInputType
     {
-        for (const auto& filename_or_option : filenames_or_options)
+        auto is_json_native_string = [](std::string_view string) -> bool
         {
-            auto json_file_obj = [&filename_or_option]()
-            {
-                switch (check_json_input_type(filename_or_option))
-                {
-                    case JSONConfigInputType::string:
-                    {
-                        auto json_string = transform_to_json_string(filename_or_option);
-                        LOGP(info, "Reading the configuration from the string {:?}.", json_string);
-                        return nlohmann::ordered_json::parse(std::move(json_string), nullptr, true, true);
-                    }
-                    case JSONConfigInputType::file:
-                    {
-                        auto file = std::ifstream{ filename_or_option };
-                        LOGP(info, "Reading the configuration from the json file {:?}.", filename_or_option);
-                        return nlohmann::ordered_json::parse(file, nullptr, true, true);
-                    }
-                    case JSONConfigInputType::invalid:
-                        break;
-                }
-                throw R3B::logic_error(fmt::format("Cannot parse the string {:?}", filename_or_option));
-            }();
-            json_obj.merge_patch(json_file_obj);
+            const auto trim_string = trim_space(string);
+            return trim_string.starts_with('{') and trim_string.ends_with('}');
+        };
+
+        auto is_json_string = [](std::string_view string) -> bool { return string.contains('='); };
+        auto is_a_file = [](std::string_view string) -> bool { return std::filesystem::exists(string); };
+
+        if (is_json_native_string(input))
+        {
+            return JSONConfigInputType::native;
+        }
+        if (is_json_string(input))
+        {
+            return JSONConfigInputType::string;
+        }
+        if (is_a_file(input))
+        {
+            return JSONConfigInputType::file;
+        }
+        return JSONConfigInputType::invalid;
+    }
+
+    void CLIApplication::transform_to_json_string(std::string_view input, std::string& buffer)
+    {
+        auto raw_string = std::string{ input };
+        auto equal_pos = raw_string.find('=');
+        auto keys_string = raw_string.substr(0, equal_pos);
+        buffer = raw_string.substr(equal_pos + 1);
+
+        boost::algorithm::trim(keys_string);
+        boost::algorithm::trim(buffer);
+
+        auto keys = std::vector<std::string>{};
+
+        // NOLINTNEXTLINE (clang-analyzer-cplusplus.NewDeleteLeaks)
+        boost::split(keys, keys_string, boost::is_any_of("."));
+
+        for (const auto& key : boost::adaptors::reverse(keys))
+        {
+            buffer = fmt::format("{{ {:?} : {}}}", key, buffer);
         }
     }
 } // namespace R3B::Neuland

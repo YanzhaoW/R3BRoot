@@ -22,11 +22,14 @@
 #include <R3BIOConnector.h>
 #include <R3BNeulandCalData2.h>
 #include <R3BNeulandCalibrationTask.h>
-#include <R3BNeulandHit.h>
+#include <R3BNeulandHit2.h>
 #include <R3BShared.h>
+#include <fmt/base.h>
 #include <fmt/core.h>
 #include <string_view>
 #include <vector>
+
+class TH1L;
 
 namespace R3B::Neuland
 {
@@ -59,7 +62,7 @@ namespace R3B::Neuland
         double global_time_offset_ = 0.;
         double distance_to_target_ = 0.;
         InputVectorConnector<BarCalData> cal_data_;
-        OutputVectorConnector<R3BNeulandHit> hit_data_;
+        OutputVectorConnector<Hit> hit_data_;
         InputParView<Cal2HitPar> cal_to_hit_par_;
 
         // temporary variables to reduce dynamic allocations
@@ -73,7 +76,7 @@ namespace R3B::Neuland
         void BeginOfEvent() override { hit_data_.clear(); };
         void TriggeredExec() override;
         void EndOfTask() override;
-        [[nodiscard]] auto CheckConditions() const -> bool override;
+        [[nodiscard]] auto CheckConditions([[maybe_unused]] TH1L* hist_condition) const -> bool override;
 
         // non-virtual private functions:
         void calibrate();
@@ -83,22 +86,19 @@ namespace R3B::Neuland
         void construct_hits(const std::vector<CalibratedSignal>& left_signals,
                             const std::vector<CalibratedSignal>& right_signals,
                             const HitModulePar& par,
-                            /* inout */ std::vector<R3BNeulandHit>& hits);
-        [[nodiscard]] auto construct_hit(const LRPair<CalibratedSignal>& signalPair,
-                                         const HitModulePar& par) const -> R3BNeulandHit;
-        static auto get_calibrated_energy(const CalDataSignal& calSignal,
-                                          const HitModulePar& par,
-                                          R3B::Side side) -> ValueErrorD;
-        static auto get_calibrated_time(const CalDataSignal& calSignal,
-                                        const HitModulePar& par,
-                                        R3B::Side side) -> ValueErrorD;
-        static auto to_calibrated_signal(const CalDataSignal& calSignal,
-                                         const HitModulePar& par,
-                                         R3B::Side side) -> CalibratedSignal;
+                            /* inout */ std::vector<Hit>& hits);
+        [[nodiscard]] auto construct_hit(const LRPair<CalibratedSignal>& signalPair, const HitModulePar& par) const
+            -> Hit;
+        static auto get_calibrated_energy(const CalDataSignal& calSignal, const HitModulePar& par, R3B::Side side)
+            -> ValueErrorD;
+        static auto get_calibrated_time(const CalDataSignal& calSignal, const HitModulePar& par, R3B::Side side)
+            -> ValueErrorD;
+        static auto to_calibrated_signal(const CalDataSignal& calSignal, const HitModulePar& par, R3B::Side side)
+            -> CalibratedSignal;
         [[nodiscard]] auto signal_match_checking(const CalibratedSignal& first_signal,
                                                  const CalibratedSignal& second_signal,
                                                  const HitModulePar& par) -> bool;
-        [[nodiscard]] inline auto get_hit_time(double first_t, double second_t) const -> double;
+        [[nodiscard]] inline auto get_hit_time(ValueErrorD first_t, ValueErrorD second_t) const -> ValueErrorD;
     };
 
 } // namespace R3B::Neuland

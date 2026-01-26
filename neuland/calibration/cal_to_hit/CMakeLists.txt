@@ -17,38 +17,50 @@ set(LIBRARY_NAME R3BNeulandCalToHit)
 set(LINKDEF NeulandCalToHitLinkDef.h)
 
 set(SRCS
-    # cmake-format: sortable
+    R3BNeulandCalMonitorTask.cxx
+    R3BNeulandCalToHitPar.cxx
+    R3BNeulandCalToHitParTask.cxx
+    R3BNeulandCalToHitTask.cxx
+    R3BNeulandHitCosmicMonitorTask.cxx
+    R3BNeulandHitOnlineMonitorTask.cxx
     engine/R3BNeulandCal2HitHistAnalysis.cxx
     engine/R3BNeulandMilleCalDataProcessor.cxx
     engine/R3BNeulandMillepede.cxx
     engine/R3BNeulandMuonRecons.cxx
     engine/R3BNeulandTSyncAnalysis.cxx
-    R3BNeulandCalToHitPar.cxx
-    R3BNeulandCalToHitParTask.cxx
-    R3BNeulandCalToHitTask.cxx)
+)
 
 set(HEADERS
-    # cmake-format: sortable
-    engine/R3BNeulandCal2HitHistAnalysis.h
-    engine/R3BNeulandCosmicEngine.h
-    engine/R3BNeulandMilleCalDataProcessor.h
-    engine/R3BNeulandMuonRecons.h
-    engine/R3BNeulandTSyncAnalysis.h
     R3BNeulandCalToHitPar.h
     R3BNeulandCalToHitParTask.h
-    R3BNeulandCalToHitTask.h)
+    R3BNeulandCalToHitTask.h
+    engine/R3BNeulandCal2HitHistAnalysis.h
+    engine/R3BNeulandCosmicEngine.h
+    engine/R3BNeulandMuonRecons.h
+    engine/R3BNeulandTSyncAnalysis.h
+)
+
+set(ROOT_HEADERS # cmake-format: sortable
+    engine/R3BNeulandMilleCalDataProcessor.h
+    R3BNeulandCalToHitPar.h
+)
 
 add_library(R3BNeulandCalToHit SHARED ${SRCS})
-target_include_directories(R3BNeulandCalToHit PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} engine)
+target_include_directories(
+    R3BNeulandCalToHit
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} engine
+)
 target_link_libraries(
     R3BNeulandCalToHit
-    PUBLIC R3BNeulandMapToCal R3BNeulandCalibrationLegacy
-    PRIVATE R3BMille magic_enum::magic_enum)
+    PUBLIC R3BNeulandMapToCal R3BNeulandCalibrationLegacy R3BMille
+    PRIVATE magic_enum::magic_enum
+)
 
 root_generate_dictionary(
     R3BNeulandCalToHit_dict
-    ${HEADERS}
+    ${ROOT_HEADERS}
     MODULE
     R3BNeulandCalToHit
     LINKDEF
-    NeulandCalToHitLinkDef.h)
+    NeulandCalToHitLinkDef.h
+)

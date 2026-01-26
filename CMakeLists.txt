@@ -29,9 +29,6 @@ cmake_policy(VERSION 3.15...3.31)
 # Set name of our project to "R3BROOT". Has to be done after check of cmake version
 project(R3BROOT LANGUAGES C CXX Fortran)
 
-set(CMAKE_CXX_STANDARD
-    23
-    CACHE STRING "the C++ standard to use for this project")
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
@@ -302,11 +299,11 @@ else()
 endif()
 
 if(CONAN_ENABLED)
-    find_package(range-v3 REQUIRED)
-    find_package(Microsoft.GSL REQUIRED)
-    find_package(nlohmann_json REQUIRED)
-    find_package(CLI11 REQUIRED)
-    find_package(re2 REQUIRED)
+    find_package2(PUBLIC CLI11)
+    find_package2(PUBLIC Microsoft.GSL)
+    find_package2(PUBLIC nlohmann_json)
+    find_package2(PUBLIC range-v3)
+    find_package2(PUBLIC re2)
     set(JSON_ImplicitConversions
         OFF
         CACHE BOOL "disable implicit conversion of JSON" FORCE)
@@ -549,7 +546,7 @@ endif(EXISTS "${R3BROOT_SOURCE_DIR}/asyeos/")
 configure_file(${CMAKE_SOURCE_DIR}/cmake/scripts/R3BRootConfigVersion.cmake.in
                "${CMAKE_BINARY_DIR}/R3BRootConfigVersion.cmake" @ONLY)
 
-r3b_generate_version_info()
+# r3b_generate_version_info()
 
 # Recurse into the given subdirectories.  This does not actually cause another cmake executable to
 # run.  The same process will walk through the project's entire directory structure.
@@ -576,6 +573,7 @@ if(NOT MODULE)
             "${BRed} NO${CR}        (enable with ${BMagenta}-DBUILD_GEOMETRY=ON${CR})")
     endif()
     message(STATUS "  ${BWhite}ROOT geometries${CR}          ${unitgeo_summary}")
+    add_subdirectory(python)
     add_subdirectory(r3bbase)
     add_subdirectory(r3bdata)
     add_subdirectory(field)
@@ -639,7 +637,9 @@ if(NOT MODULE)
     endif(WITH_ASYEOS)
     if(WITH_MILLEPEDE)
         if(EXISTS "${CMAKE_SOURCE_DIR}/util/millepede2/CMakeLists.txt")
-            add_subdirectory(util/millepede2)
+            if(CMAKE_CXX_STANDARD GREATER_EQUAL 23)
+                add_subdirectory(util/millepede2)
+            endif()
         else()
             message(
                 FATAL_ERROR

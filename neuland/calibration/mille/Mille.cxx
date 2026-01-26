@@ -1,19 +1,25 @@
 #include "Mille.h"
 #include "MilleEntry.h"
 #include <cstddef>
+#include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <fstream>
 #include <iostream>
-#include <range/v3/view/enumerate.hpp>
-#include <range/v3/view/filter.hpp>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-namespace rng = ranges;
+#ifdef HAS_CPP_STANDARD_17
+#include <range/v3/view/enumerate.hpp>
+#include <range/v3/view/filter.hpp>
+namespace stdrng = ranges;
+#else
+#include <ranges>
+namespace stdrng = std::ranges;
+#endif
 
 namespace
 {
@@ -63,9 +69,9 @@ namespace R3B
         buffer_.add_entry(0, data_point.measurement);
 
         for (const auto [index, value] :
-             rng::views::enumerate(data_point.locals) |
-                 rng::views::filter([this](const auto& index_deriv)
-                                    { return index_deriv.second != 0 or is_zero_written_; }))
+             stdrng::views::enumerate(data_point.locals) |
+                 stdrng::views::filter([this](const auto& index_deriv) -> bool
+                                       { return std::get<1>(index_deriv) != 0 or is_zero_written_; }))
         {
             buffer_.add_entry(static_cast<int>(index + 1), value);
         }
@@ -82,7 +88,7 @@ namespace R3B
                 }
                 else
                 {
-                    fmt::print(stderr, "Mille::mille: Invalid label {} <= 0 or > ", label);
+                    fmt::println(stderr, "Mille::mille: Invalid label {} <= 0 or > ", label);
                 }
             }
         }
@@ -114,14 +120,15 @@ namespace R3B
 
     void Mille::end()
     {
-
         if (buffer_.is_empty())
         {
             return;
         }
         is_binary_ ? write_to_binary() : write_to_non_binary();
-        kill();
+        ++num_of_entries_;
+        reset();
     }
+
     void Mille::write_to_binary()
     {
         const auto data_size = static_cast<int>(buffer_.get_current_size());
@@ -137,6 +144,12 @@ namespace R3B
         output_file_ << buffer_.get_current_size() << "\n";
         output_file_ << fmt::format("{}\n", fmt::join(buffer_.get_indices(), " "));
         output_file_ << fmt::format("{}\n", fmt::join(buffer_.get_values(), " "));
+    }
+
+    void Mille::reset()
+    {
+        buffer_.clear();
+        has_special_done_ = false;
     }
 
     void Mille::close() { output_file_.close(); }

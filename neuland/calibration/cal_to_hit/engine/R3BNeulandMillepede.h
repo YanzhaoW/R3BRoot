@@ -14,6 +14,7 @@
 
 #include "MilleEntry.h"
 #include "R3BDataMonitor.h"
+#include "R3BIOConnector.h"
 #include "R3BLogger.h"
 #include "R3BNeulandCalData2.h"
 #include "R3BNeulandCalToHitPar.h"
@@ -26,15 +27,19 @@
 #include <TH1.h>
 #include <cstdint>
 #include <fmt/core.h>
+#include <fmt/format.h>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 // #include <RankChecker.h>
 
 class TGraphErrors;
+
+class TH2D;
 
 namespace R3B::Neuland::Calibration
 {
@@ -45,31 +50,57 @@ namespace R3B::Neuland::Calibration
         effective_c         // effective speed of light
     };
 
+    enum class MillepedeCalibrationMode : int8_t
+    {
+        offset_effective_c,
+        tsync,
+    };
+
+    struct MillepedeOptions
+    {
+        bool outdir_has_timestamp = true;
+        bool enable_data_write = false;
+        int min_plane_num = DEFAULT_MINIMUM_PLANE_NUM;
+        MillepedeCalibrationMode cal_mode = MillepedeCalibrationMode::offset_effective_c;
+        int num_of_threads = 0;
+        float scale_factor = 1000.F;
+        float max_abs_a_xz = DEFAULT_MAX_SLOPE_VALUE;
+        float max_abs_a_yz = DEFAULT_MAX_SLOPE_VALUE;
+        double t_diff_residual_cut = DEFAULT_T_DIFF_RESIDUAL_CUT;
+        double p_value_cut = DEFAULT_CALIBRATION_P_VALUE_CUT;
+        std::string mille_data_filename = "neuland_cosmic_mille.bin";
+        std::string pede_par_filename = "neuland_pars.txt";
+    };
+
     class MillepedeEngine : public CosmicEngineInterface
     {
       public:
         MillepedeEngine() = default;
         void enable_rank_check(bool rank_check = true) { has_rank_check_ = rank_check; }
-        void set_t_diff_residual_cut(double val) { t_diff_residual_cut_ = val; }
-        void set_p_value_cut(double val) { p_value_cut_ = val; }
+        void set_t_diff_residual_cut(double val) { config_.t_diff_residual_cut = val; }
+        void set_p_value_cut(double val) { config_.p_value_cut = val; }
+        void set_options(const MillepedeOptions& options);
 
       private:
         bool has_rank_check_ = false;
         int minimum_hit_ = 1;
-        float error_scale_factor_ = 1000.F;
+
+        MillepedeOptions config_;
         // float minimum_pos_z_ = 0;
         // float smallest_time_sum_ = 0.;
         std::optional<float> average_t_sum_;
-        double t_diff_residual_cut_ = DEFAULT_T_DIFF_RESIDUAL_CUT;
-        double p_value_cut_ = DEFAULT_CALIBRATION_P_VALUE_CUT;
         constexpr static std::string_view DEFAULT_SUB_DIR = "millepede";
 
         MilleDataPoint input_data_buffer_;
-        std::string input_data_filename_ = "neuland_cosmic_mille.bin";
+        R3B::OutputVectorConnector<MilleCalData> output_mille_data_{ "MilleData" };
+        R3B::OutputVectorConnector<MilleCalData> output_tsync_mille_data_{ "TSyncMilleData" };
+        R3B::OutputConnector<NeulandTrackInfo> output_mille_track_info_{ "MilleTrackInfo" };
+        // R3B::OutputVectorConnector<MilleDataPoint> output_mille_data_point_{ "MilleDataPoint" };
         std::string pede_steer_filename_ = "neuland_steer.txt";
-        std::string parameter_filename_ = "neuland_pars.txt";
+        std::string input_parameter_filename_ = "neuland_pars.txt";
         std::string working_dir_;
 
+        std::vector<int> plane_counter_;
         std::unique_ptr<Mille> binary_data_writer_;
         Millepede::ResultReader par_result_;
         Millepede::Launcher pede_launcher_;
@@ -79,6 +110,14 @@ namespace R3B::Neuland::Calibration
         TGraphErrors* graph_time_sync_ = nullptr;
         TGraphErrors* graph_effective_c_ = nullptr;
         TH1D* hist_t_offset_residual_ = nullptr;
+        TH1D* hist_p_value_xz_ = nullptr;
+        TH1D* hist_p_value_yz_ = nullptr;
+        TH1D* hist_a_xz_ = nullptr;
+        TH1D* hist_b_xz_ = nullptr;
+        TH1D* hist_a_yz_ = nullptr;
+        TH1D* hist_b_yz_ = nullptr;
+        TH1D* hist_plane_hit_num_ = nullptr;
+        TH1L* barplot_filter_counts_ = nullptr;
 
         // parameter:
         Cal2HitPar* cal_to_hit_par_ = nullptr;
@@ -91,6 +130,16 @@ namespace R3B::Neuland::Calibration
         void EndOfEvent(unsigned int event_num = 0) override;
         void EventReset() override;
         auto SignalFilter(const std::vector<BarCalData>& signals) -> bool override;
+        void BeginOfEvent() override
+        {
+            if (config_.enable_data_write)
+            {
+                output_mille_data_.clear();
+                output_tsync_mille_data_.clear();
+                output_mille_track_info_.clear();
+            }
+            // output_mille_data_point_.clear();
+        };
         void EndOfTask() override;
         void HistInit(DataMonitor& histograms) override;
         void SetMinStat(int min) override
@@ -98,11 +147,11 @@ namespace R3B::Neuland::Calibration
             minimum_hit_ = min;
             R3BLOG(info, fmt::format("Minimum number of hits is set to {}", minimum_hit_));
         }
-        void SetErrorScale(float scale) override { error_scale_factor_ = scale; }
+        void SetErrorScale(float scale) override { config_.scale_factor = scale; }
 
         void buffer_clear();
         void write_to_buffer();
-        void add_signal_t_sum(const MilleCalData& signal);
+        auto add_signal_t_sum(const MilleCalData& signal, const TrackFitResult& fit_coeff) -> float;
         void add_signal_t_diff(const MilleCalData& signal);
         void add_spacial_local_constraint(int plane_id, const std::vector<MilleCalData>& plane_signals);
         auto set_minimum_values(const std::vector<R3B::Neuland::BarCalData>& signals) -> bool;
@@ -114,8 +163,22 @@ namespace R3B::Neuland::Calibration
         void init_parameter();
         void init_steer_writer();
         void set_working_dir();
+        void add_fit_result_hist(const MilleDataProcessor::FitResult& fit_result);
 
-        auto select_t_diff_signal(const std::vector<MilleCalData>& plane_data);
+        using DataBufferType = std::unordered_map<int, std::vector<MilleCalData>>;
+        template <MillepedeCalibrationMode mode>
+        void add_signals(const DataBufferType& processed_data, const TrackFitResult& fit_coeff)
+        {
+        }
+
+        template <>
+        void add_signals<MillepedeCalibrationMode::offset_effective_c>(const DataBufferType& processed_data,
+                                                                       const TrackFitResult& fit_coeff);
+        template <>
+        void add_signals<MillepedeCalibrationMode::tsync>(const DataBufferType& processed_data,
+                                                          const TrackFitResult& fit_coeff);
+
+        auto select_t_sync_signal(const std::vector<MilleCalData>& plane_data);
     };
 
 } // namespace R3B::Neuland::Calibration

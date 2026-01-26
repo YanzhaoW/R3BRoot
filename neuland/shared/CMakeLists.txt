@@ -16,30 +16,43 @@
 set(SRCS
     ElasticScattering.cxx
     IsElastic.cxx
-    R3BNeulandGeoPar.cxx
     R3BNeulandContFact.cxx
-    R3BProgramOptions.cxx
+    R3BNeulandGeoPar.cxx
     R3BNeulandSignalMatcher.cxx
-    R3BNeulandVisualizer.cxx)
+    R3BNeulandVisualizer.cxx
+    R3BProgramOptions.cxx
+)
+
+if(CMAKE_CXX_STANDARD GREATER_EQUAL 23)
+    list(APPEND SRCS R3BHuberRegression.cxx)
+endif()
 
 set(HEADERS
-    # cmake-format: sortable
     ClusteringEngine.h
     ElasticScattering.h
     Filterable.h
     IsElastic.h
     R3BNeulandCommon.h
+    R3BNeulandCommonFunc.h
     R3BNeulandContFact.h
     R3BNeulandGeoPar.h
     R3BNeulandSignalMatcher.h
     R3BNeulandVisualizer.h
     R3BProgramOptions.h
-    Validated.h)
+    Validated.h
+)
 
 add_library(R3BNeulandShared SHARED ${SRCS})
 target_include_directories(R3BNeulandShared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(R3BNeulandShared PUBLIC R3BData Boost::program_options Microsoft.GSL::GSL
-                                              range-v3::range-v3 nlohmann_json::nlohmann_json)
+target_link_libraries(
+    R3BNeulandShared
+    PUBLIC
+        R3BData
+        Boost::program_options
+        Microsoft.GSL::GSL
+        range-v3::range-v3
+        nlohmann_json::nlohmann_json
+)
 
 root_generate_dictionary(
     R3BNeulandShared_dict
@@ -47,4 +60,5 @@ root_generate_dictionary(
     MODULE
     R3BNeulandShared
     LINKDEF
-    NeulandSharedLinkDef.h)
+    NeulandSharedLinkDef.h
+)

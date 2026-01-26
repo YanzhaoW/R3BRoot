@@ -50,6 +50,8 @@ namespace R3B::Neuland
             is_write_hist_disabled_ = is_write_hist_disabled;
         }
 
+        static void ConditionFillToHist(TH1L* hist_condition, std::string_view condition);
+        void ConditionFillToHist(std::string_view condition);
         [[nodiscard]] auto GetBasePar() const -> auto* { return base_par_; }
         // void SetOnline()
 
@@ -78,7 +80,7 @@ namespace R3B::Neuland
 
         CalibrationBasePar* base_par_ = AddInputPar<CalibrationBasePar>("NeulandCalibrationBasePar");
         TH1I* hist_trig_check_ = nullptr;
-        TH1I* hist_condition_check_ = nullptr;
+        TH1L* hist_condition_check_ = nullptr;
 
         // helpers:
         DataMonitor histograms_;
@@ -90,7 +92,7 @@ namespace R3B::Neuland
         virtual void BeginOfEvent() {};
         virtual void TriggeredExec() = 0;
         virtual void EndOfTask() {};
-        [[nodiscard]] virtual auto CheckConditions() const -> bool { return true; }
+        [[nodiscard]] virtual auto CheckConditions([[maybe_unused]] TH1L* hist_condition) const -> bool { return true; }
 
         // overriden functions:
         auto Init() -> InitStatus override;
@@ -105,17 +107,15 @@ namespace R3B::Neuland
         void execute_with_hist();
         void reset();
 
-        [[nodiscard]] auto check_trigger() const -> bool;
+        [[nodiscard]] auto check_offspill_trigger() const -> bool;
         template <typename ParType>
-        [[nodiscard]] auto add_par(std::string_view par_name,
-                                   std::vector<FairParSet*>& pars,
-                                   FairRuntimeDb* rtdb) -> ParType*;
+        [[nodiscard]] auto add_par(std::string_view par_name, std::vector<FairParSet*>& pars, FairRuntimeDb* rtdb)
+            -> ParType*;
     };
 
     template <typename ParType>
-    auto CalibrationTask::add_par(std::string_view par_name,
-                                  std::vector<FairParSet*>& pars,
-                                  FairRuntimeDb* rtdb) -> ParType*
+    auto CalibrationTask::add_par(std::string_view par_name, std::vector<FairParSet*>& pars, FairRuntimeDb* rtdb)
+        -> ParType*
     {
         auto* par = dynamic_cast<ParType*>(rtdb->findContainer(par_name.data()));
         if (par == nullptr)

@@ -11,6 +11,7 @@
 #include <TH1.h>
 #include <fairlogger/Logger.h>
 #include <fmt/core.h>
+#include <fmt/format.h>
 #include <range/v3/algorithm/find_if.hpp>
 #include <range/v3/algorithm/for_each.hpp>
 #include <string_view>
@@ -21,6 +22,7 @@ namespace R3B::Neuland
     CalibrationTask::CalibrationTask(std::string_view name, int iVerbose)
         : FairTask(name.data(), iVerbose)
     {
+        LOGP(info, "Calibration task {:?} is enable!", name);
     }
 
     CalibrationTask::CalibrationTask()
@@ -78,13 +80,15 @@ namespace R3B::Neuland
 
     void CalibrationTask::execute_with_hist()
     {
-        if (!check_trigger())
+        hist_condition_check_->Fill("total", 1);
+        if (!check_offspill_trigger())
         {
             hist_trig_check_->Fill(fmt::format("{:016b}", eventHeader_->GetTpat()).c_str(), 1);
             return;
         }
-        hist_trig_check_->Fill("triggered", 1);
-        if (!CheckConditions())
+        hist_condition_check_->Fill("triggered", 1);
+        hist_trig_check_->Fill(fmt::format("*{:016b}", eventHeader_->GetTpat()).c_str(), 1);
+        if (!CheckConditions(hist_condition_check_))
         {
             hist_condition_check_->Fill("failure", 1);
             return;
@@ -94,9 +98,24 @@ namespace R3B::Neuland
         TriggeredExec();
     }
 
+    void CalibrationTask::ConditionFillToHist(TH1L* hist_condition, std::string_view condition)
+    {
+        if (condition == "failure" or condition == "success" or condition == "triggered" or condition == "total")
+        {
+            LOGP(warn, R"("failure", "success", "triggered" and "total" are reserved conditions!)");
+        }
+        hist_condition->Fill(condition.data(), 1);
+    }
+
+    void CalibrationTask::ConditionFillToHist(std::string_view condition)
+    {
+
+        ConditionFillToHist(hist_condition_check_, condition);
+    }
+
     void CalibrationTask::execute_no_hist()
     {
-        if (check_trigger() and CheckConditions())
+        if (check_offspill_trigger() and CheckConditions(hist_condition_check_))
         {
             passed_num_of_events++;
             TriggeredExec();
@@ -123,11 +142,11 @@ namespace R3B::Neuland
                  is_hist_disabled_,
                  is_write_hist_disabled_);
         }
-        ranges::for_each(output_pars_, [](FairParSet* par) { par->setChanged(); });
+        ranges::for_each(output_pars_, [](FairParSet* par) -> void { par->setChanged(); });
         reset();
     }
 
-    auto CalibrationTask::check_trigger() const -> bool
+    auto CalibrationTask::check_offspill_trigger() const -> bool
     {
         LOGP(debug2,
              R"(From task "{}": tpat {}. Trig type {})",
@@ -140,13 +159,17 @@ namespace R3B::Neuland
     void CalibrationTask::init_histogram()
     {
         hist_trig_check_ = histograms_.add_hist<TH1I>("trig_check", "check the triggered or passed events", 1, 0., 0.);
-        hist_condition_check_ = histograms_.add_hist<TH1I>("condition_check", "check the condition", 1, 0., 0.);
+        hist_trig_check_->GetYaxis()->SetTitle("Entries");
+        hist_trig_check_->GetXaxis()->SetTitle("TPAT");
+        hist_condition_check_ = histograms_.add_hist<TH1L>("condition_check", "check the condition", 1, 0., 0.);
+        hist_condition_check_->GetYaxis()->SetTitle("Entries");
+        hist_condition_check_->GetXaxis()->SetTitle("Condition");
         HistogramInit(histograms_);
     }
 
     void CalibrationTask::check_input_par()
     {
-        auto par_not_changed = ranges::find_if(input_pars_, [](auto* par) { return !par->hasChanged(); });
+        auto par_not_changed = ranges::find_if(input_pars_, [](auto* par) -> bool { return !par->hasChanged(); });
         if (par_not_changed != input_pars_.end())
         {
             auto par_name = std::string_view{ (*par_not_changed)->GetName() };

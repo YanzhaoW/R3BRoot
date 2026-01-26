@@ -24,4 +24,9 @@
 #pragma link C++ class R3B::Neuland::HitModulePar+;
 #pragma link C++ class unordered_map<unsigned int, R3B::Neuland::HitModulePar>+;
 #pragma link C++ class R3B::Neuland::Cal2HitPar+;
+#pragma link C++ class R3B::Neuland::Calibration::MilleCalData+;
+#pragma link C++ class R3B::Neuland::Calibration::TrackFitPar+;
+#pragma link C++ class R3B::Neuland::Calibration::TrackFitResult+;
+#pragma link C++ class R3B::Neuland::Calibration::NeulandTrackInfo+;
+#pragma link C++ class vector<R3B::Neuland::Calibration::MilleCalData>+;
 #endif

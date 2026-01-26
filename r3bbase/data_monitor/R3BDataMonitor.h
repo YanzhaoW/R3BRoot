@@ -40,9 +40,8 @@ namespace R3B
         DataMonitor() = default;
 
         template <typename... Args>
-        auto create_canvas(std::string_view canvas_name,
-                           std::string_view canvas_title,
-                           Args&&... args) -> DataMonitorCanvas&;
+        auto create_canvas(std::string_view canvas_name, std::string_view canvas_title, Args&&... args)
+            -> DataMonitorCanvas&;
 
         // Use R3B::make_hist to create unique_ptr<TH1>
         auto add_hist(std::unique_ptr<TH1> hist) -> TH1* { return add_to_map(std::move(hist), histograms_); }
@@ -105,7 +104,7 @@ namespace R3B
         if (not is_success)
         {
             throw R3B::logic_error(fmt::format(
-                "Element with the name {} has been already added. Please use different name!", element_name));
+                "Element with the name {} has been already added. Please use a different name!", element_name));
         }
         return element_ptr;
     }
@@ -118,9 +117,8 @@ namespace R3B
     }
 
     template <typename... Args>
-    auto DataMonitor::create_canvas(std::string_view canvas_name,
-                                    std::string_view canvas_title,
-                                    Args&&... args) -> DataMonitorCanvas&
+    auto DataMonitor::create_canvas(std::string_view canvas_name, std::string_view canvas_title, Args&&... args)
+        -> DataMonitorCanvas&
     {
         if (canvases_.find(std::string{ canvas_name }) != canvases_.end())
         {

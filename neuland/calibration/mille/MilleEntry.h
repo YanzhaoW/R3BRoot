@@ -13,10 +13,12 @@
 
 #pragma once
 
+#include <Rtypes.h>
+#include <fmt/base.h>
 #include <fmt/core.h>
-#include <fmt/format.h>
 #include <utility>
 #include <vector>
+
 namespace R3B
 {
     struct MilleDataPoint
@@ -25,9 +27,18 @@ namespace R3B
         std::vector<std::pair<int, float>> globals; // global label and derivatives pair
         float measurement = 0.;                     // measurement corresponding to the error value
         float sigma = 1.;                           // error value
+        void clear()
+        {
+            locals.clear();
+            globals.clear();
+            measurement = 0.;
+            sigma = 1.;
+        }
+        ClassDefNV(MilleDataPoint, 1);
     };
 } // namespace R3B
 
+#ifndef __CLING__
 template <>
 class fmt::formatter<R3B::MilleDataPoint>
 {
@@ -37,10 +48,11 @@ class fmt::formatter<R3B::MilleDataPoint>
     constexpr auto format(const R3B::MilleDataPoint& point, FmtContent& ctn) const
     {
         return fmt::format_to(ctn.out(),
-                              "measurement: {}, sigma: {}, locals: {}, globals: {}",
+                              "measurement: {}, sigma: {}\nlocals: {}\nglobals: {}",
                               point.measurement,
                               point.sigma,
                               point.locals,
                               point.globals);
     }
 };
+#endif

@@ -171,7 +171,7 @@ namespace
                                          }
                                      });
 
-        // TODO: what if it's branch with signle literal value?
+        // TODO: what if it's branch with single literal value?
     }
 
     auto HasBranchList(TFile* rootFile, const std::vector<std::string>& branchList) -> bool
@@ -180,7 +180,7 @@ namespace
         auto view1 = std::vector<std::string_view>(branchList.begin(), branchList.end());
         auto view2 = std::vector<std::string_view>(newBranchList.begin(), newBranchList.end());
 
-#ifdef HAS_CXX_17
+#ifdef HAS_CPP_STANDARD_17
         std::sort(view1.begin(), view1.end());
         std::sort(view2.begin(), view2.end());
 #else
@@ -268,7 +268,7 @@ void R3BEventProgressPrinter::Print(uint64_t event_num, double speed_per_ms)
     }
     const auto event_num_str =
         fmt::format(fg(fmt::terminal_color::bright_green) | fmt::emphasis::bold, "{:^5d}k", event_num / 1000);
-    const auto speed_str = fmt::format(fg(fmt::color::white), "{:^6.1F}k/s", speed_per_ms);
+    const auto speed_str = fmt::format("{:^6.1F}k/s", speed_per_ms);
     const auto progress_str = fmt::format(fg(fmt::terminal_color::bright_yellow) | fmt::emphasis::bold,
                                           "{:^6.2F}",
                                           100. * static_cast<double>(event_num) / static_cast<double>(max_event_num_));
@@ -288,7 +288,7 @@ auto R3BInputRootFiles::AddFileName(std::string fileName, bool is_tree_file) -> 
     LOGP(info, "Adding {} to file source\n", fileName);
     if (fileNames_.empty())
     {
-        Intitialize(fileName, is_tree_file);
+        Initialize(fileName, is_tree_file);
         register_branch_name();
     }
     if (!ValidateFile(fileName, is_tree_file))
@@ -407,7 +407,7 @@ auto R3BInputRootFiles::ExtractRunId(TFile* rootFile) -> std::optional<int>
     return runID;
 }
 
-void R3BInputRootFiles::Intitialize(std::string_view filename, bool is_tree_file)
+void R3BInputRootFiles::Initialize(std::string_view filename, bool is_tree_file)
 {
     auto file = R3B::make_rootfile(filename.data());
 
@@ -535,7 +535,7 @@ void R3BFileSource2::AddFriend(std::string file_name, bool is_tree_file)
 {
     //
     auto rootfile = R3B::make_rootfile(file_name.c_str());
-#ifdef HAS_CXX_17
+#ifdef HAS_CPP_STANDARD_17
     auto friendGroup = std::find_if(inputFriendFiles_.begin(),
                                     inputFriendFiles_.end(),
                                     [&rootfile](const auto& friends)
