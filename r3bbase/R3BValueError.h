@@ -50,8 +50,14 @@ namespace R3B
         {
         }
 
-        constexpr explicit ValueError(DataType val)
+        constexpr ValueError(DataType val)
             : ValueError{ val, DataType{} }
+        {
+        }
+
+        template <typename InputDataType>
+        constexpr explicit ValueError(InputDataType val)
+            : ValueError{ static_cast<DataType>(val), DataType{} }
         {
         }
         // ValueError(const DataType& val, const DataType& err)

@@ -44,6 +44,7 @@ namespace R3B::Neuland::Calibration
         explicit CosmicMonitorTask(const Config& config);
 
       private:
+        static constexpr int TIME_REFERENCE_MODULE_NUM = 675;
         Config config_;
         InputVectorConnector<Hit> hit_data_;
         TrackFitResult track_info_;
@@ -62,6 +63,7 @@ namespace R3B::Neuland::Calibration
         TH1D* hist_t_diff_module_counts_ = nullptr;
         TH2D* hist_fit_diff_time_ = nullptr;
         TH2D* hist_fit_diff_bar_pos_ = nullptr;
+        TH2D* hist_cosmic_time_to_reference_ = nullptr;
 
         // overriden functions:
         void HistogramInit(DataMonitor& histograms) override;

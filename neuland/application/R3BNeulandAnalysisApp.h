@@ -3,6 +3,7 @@
 #include "R3BDigitizingTamex.h"
 #include "R3BFTCalEngine.h"
 #include "R3BNeulandApp.h"
+#include "R3BNeulandCalToHitTask.h"
 #include "R3BNeulandDigitizer.h"
 #include "R3BNeulandHitCosmicMonitorTask.h"
 #include "R3BNeulandHitOnlineMonitorTask.h"
@@ -129,17 +130,9 @@ namespace R3B::Neuland
                     std::string read = "NeulandMapData;NeulandTrigMapData";
                     std::string write = "LandTCalPar;LandTrigTCalPar";
                 } neuland_map_to_cal_par_task;
-                struct Map2CalTaskConfig neuland_map_to_cal_task;
-                struct Cal2HitParTaskConfig neuland_cal_to_hit_par_task;
-                struct Cal2HitTask
-                {
-                    bool enable = false;
-                    CalTrigger mode = CalTrigger::offspill;
-                    double global_time_offset = 0.;
-                    std::string name = "NeulandCal2HitTask";
-                    std::string read = "NeulandCalData;NeulandHitPar";
-                    std::string write = "NeulandHits";
-                } neuland_cal_to_hit_task;
+                Map2CalTaskConfig neuland_map_to_cal_task;
+                Cal2HitParTaskConfig neuland_cal_to_hit_par_task;
+                Cal2HitTaskConfig neuland_cal_to_hit_task;
                 struct CalMonitorTask
                 {
                     bool enable = false;

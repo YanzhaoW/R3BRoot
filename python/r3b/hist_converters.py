@@ -156,7 +156,7 @@ class PlotHist:
         # axis.set(title=hist_obj.GetTitle())
 
     @staticmethod
-    def plot_th2(hist_obj, axis):
+    def plot_th2(hist_obj, axis, **kwargs):
         x_data, y_data, z_data = th2d_to_arrays(hist_obj)
         x_bin_width = hist_obj.GetXaxis().GetBinWidth(0)
         y_bin_width = hist_obj.GetYaxis().GetBinWidth(0)
@@ -173,6 +173,7 @@ class PlotHist:
             ],
             origin="lower",
             aspect="auto",
+            **kwargs
         )
         plot.set(cmap="gnuplot2_r")
         return plot

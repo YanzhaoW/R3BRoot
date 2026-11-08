@@ -3,6 +3,7 @@
 #include "R3BNeulandCommon.h"
 #include "R3BNeulandCommonFunc.h"
 #include "R3BNeulandTriggerTypes.h"
+#include <cmath>
 #include <string_view>
 
 namespace R3B::Neuland::Calibration
@@ -34,11 +35,11 @@ namespace R3B::Neuland::Calibration
         set_x_title(hist_positions_along_bar_, "module number");
         set_y_title(hist_positions_along_bar_, "position (cm)");
 
-        static constexpr auto TIME_MIN_NS = 120;
+        static constexpr auto TIME_MIN_NS = 0;
         static constexpr auto TIME_MAX_NS = 220;
         static constexpr auto TIME_VALUE_BINS = 1000;
         hist_times_ = histograms.add_hist<TH2D>("time_val",
-                                                "Positions along the bar directions",
+                                                "Time values of hit data",
                                                 module_size,
                                                 0.5,
                                                 0.5 + module_size,
@@ -47,6 +48,17 @@ namespace R3B::Neuland::Calibration
                                                 TIME_MAX_NS);
         set_x_title(hist_times_, "module number");
         set_y_title(hist_times_, "time (ns)");
+
+        hist_times_position_offset_ = histograms.add_hist<TH2D>("time_pos_offset",
+                                                                "position-offsetted time values",
+                                                                module_size,
+                                                                0.5,
+                                                                0.5 + module_size,
+                                                                TIME_VALUE_BINS,
+                                                                TIME_MIN_NS,
+                                                                TIME_MAX_NS);
+        set_x_title(hist_times_position_offset_, "module number");
+        set_y_title(hist_times_position_offset_, "time (ns)");
     }
 
     void HitOnlineMonitorTask::TriggeredExec()
@@ -60,6 +72,8 @@ namespace R3B::Neuland::Calibration
             const auto pos_along_bar = is_horizontal ? position.X() : position.Y();
             hist_positions_along_bar_->Fill(module_num, pos_along_bar.value);
             hist_times_->Fill(module_num, hit.time.value);
+            const auto position_offset_time = hit.time.value - (std::sqrt(hit.position.Mag2().value) / CLight);
+            hist_times_position_offset_->Fill(module_num, position_offset_time);
         }
     }
 

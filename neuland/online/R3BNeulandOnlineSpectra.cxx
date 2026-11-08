@@ -26,6 +26,7 @@
 #include <iostream>
 #include <limits>
 
+// NOLINTBEGIN
 R3BNeulandOnlineSpectra::R3BNeulandOnlineSpectra()
     : FairTask("R3BNeulandOnlineSpectra", 0)
     , fNeulandMappedData("NeulandMappedData")
@@ -549,4 +550,4 @@ void R3BNeulandOnlineSpectra::ResetHistosMapped()
 
 bool R3BNeulandOnlineSpectra::IsBeam() const { return !std::isnan(fEventHeader->GetTStart()); }
 
-ClassImp(R3BNeulandOnlineSpectra)
+// NOLINTEND

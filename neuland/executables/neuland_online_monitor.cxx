@@ -202,9 +202,9 @@ auto main(int argc, char** argv) -> int
     if (not is_hit_disabled.value())
     {
         run.AddTask(std::make_unique<R3BLosProvideTStart>().release());
-        auto cal2hit = std::make_unique<R3B::Neuland::Cal2HitTask>();
+        auto cal2hit = std::make_unique<R3B::Neuland::Cal2HitTask>(
+            R3B::Neuland::Cal2HitTask::Config{ .global_time_offset_ns = NEULAND_GLOBAL_TIME_OFFSET_NS });
         cal2hit->SetTrigger(R3B::Neuland::CalTrigger::allspill);
-        cal2hit->SetGlobalTimeOffset(NEULAND_GLOBAL_TIME_OFFSET_NS);
         cal2hit->SetDisableHist();
         run.AddTask(cal2hit.release());
     }
