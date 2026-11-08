@@ -102,7 +102,7 @@ void R3BGladFieldMap::SetFieldfromCurrent(double current)
     R3BLOG_IF(fatal, TMath::Abs(current) > 3583.81, "GLAD current cannot be larger than 3583.81 A.");
     if (fYAngle < 0)
     {
-        fScale = -1. * abs(current) / 3583.81;
+        fScale = -1. * std::abs(current) / 3583.81;
     }
     else
     {

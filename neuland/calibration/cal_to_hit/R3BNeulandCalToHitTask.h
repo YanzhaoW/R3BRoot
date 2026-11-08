@@ -15,6 +15,7 @@
 
 #include "R3BDataMonitor.h"
 #include "R3BNeulandCalToHitPar.h"
+#include "R3BNeulandTriggerTypes.h"
 #include "R3BParView.h"
 #include "R3BValueError.h"
 #include <FairRootManager.h>
@@ -26,7 +27,7 @@
 #include <R3BShared.h>
 #include <fmt/base.h>
 #include <fmt/core.h>
-#include <string_view>
+#include <string>
 #include <vector>
 
 class TH1L;
@@ -42,11 +43,19 @@ namespace R3B::Neuland
     class Cal2HitTask : public CalibrationTask
     {
       public:
-        explicit Cal2HitTask(std::string_view input_cal_data_name = "NeulandCalData",
-                             std::string_view input_cal_2_hit_par_name = "NeulandHitPar",
-                             std::string_view output_hit_data_name = "NeulandHits"
+        struct Config
+        {
+            using Task = Cal2HitTask;
+            bool enable = false;
+            CalTrigger mode = CalTrigger::offspill;
+            double global_time_offset_ns = 0.;
+            double distance_to_target_cm = 0.;
+            std::string name = "NeulandCal2HitTask";
+            std::string read = "NeulandCalData;NeulandHitPar";
+            std::string write = "NeulandHits";
+        };
 
-        );
+        explicit Cal2HitTask(const Config& config);
 
         /**
          * @brief Set the global time offset relating to the reference bar
@@ -100,6 +109,8 @@ namespace R3B::Neuland
                                                  const HitModulePar& par) -> bool;
         [[nodiscard]] inline auto get_hit_time(ValueErrorD first_t, ValueErrorD second_t) const -> ValueErrorD;
     };
+
+    using Cal2HitTaskConfig = Cal2HitTask::Config;
 
 } // namespace R3B::Neuland
 template <>

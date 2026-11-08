@@ -57,16 +57,6 @@ namespace R3B::Neuland::Calibration
             return { hist_y_proj->GetMean(), hist_y_proj->GetStdDev() };
         }
 
-        void offset_to_tsync_ref_bar(Cal2HitPar& hit_par)
-        {
-            const auto ref_t_sync = hit_par.GetModuleParAt(DEFAULT_TSYNC_REFERENCE_BAR_NUM).t_sync;
-
-            for (auto& [module_number, module_par] : hit_par.GetListOfModuleParRef())
-            {
-                module_par.t_sync -= ref_t_sync;
-            }
-        }
-
         template <typename ViewType>
         auto check_all_same_view(ViewType view) -> bool
         {
@@ -162,8 +152,9 @@ namespace R3B::Neuland::Calibration
         LOGP(debug,
              "Filling data of record type {:?} with time values: [{}]",
              magic_enum::enum_name(record_type_),
-             fmt::join(buffer_points_ | ranges::views::transform([](const Point& point) { return point.t_mean; }),
-                       ", "));
+             fmt::join(
+                 buffer_points_ | ranges::views::transform([](const Point& point) -> double { return point.t_mean; }),
+                 ", "));
 
         for (const auto& point : buffer_points_)
         {
@@ -249,8 +240,9 @@ namespace R3B::Neuland::Calibration
         {
             LOGP(error,
                  "module numbers [{}] doesn't contain any reference numbers: [{}]",
-                 fmt::join(collection | ranges::views::transform([](const Point& point) { return point.module_num; }),
-                           ", "),
+                 fmt::join(
+                     collection | ranges::views::transform([](const Point& point) -> int { return point.module_num; }),
+                     ", "),
                  fmt::join(ref_bars_in_planes_ | ranges::views::values, ", "));
         }
     }
@@ -338,7 +330,7 @@ namespace R3B::Neuland::Calibration
 
     auto TSyncEngine::calculate_best_vertical_bar_num() const -> int
     {
-        auto vertical_entry = [this](int vertical_number)
+        auto vertical_entry = [this](int vertical_number) -> double
         {
             auto sum = 0.;
             for (int dp_id{}; dp_id < num_of_dp_; ++dp_id)
@@ -353,7 +345,7 @@ namespace R3B::Neuland::Calibration
         auto vertical_bar_num_entries_view =
             ranges::views::iota(1, BarsPerPlane + 1) |
             ranges::views::transform(
-                [vertical_entry](auto vertical_offset_number)
+                [vertical_entry](auto vertical_offset_number) -> auto
                 { return std::make_pair(vertical_offset_number, vertical_entry(vertical_offset_number)); });
         auto element = ranges::max_element(vertical_bar_num_entries_view, std::less{}, &std::pair<int, double>::second);
         return (*element).first;
@@ -377,7 +369,7 @@ namespace R3B::Neuland::Calibration
         auto ref_plane_consecutive_t_diff =
             ref_bars_in_planes_ | ranges::views::keys |
             ranges::views::transform(
-                [best_vert_bar_num, this](auto plane_id)
+                [best_vert_bar_num, this](auto plane_id) -> auto
                 {
                     return (plane_id == 0)
                                ? std::make_pair(plane_id, ValueErrorD{})
@@ -388,7 +380,7 @@ namespace R3B::Neuland::Calibration
         auto time_diff = ValueErrorD{};
         return ref_plane_consecutive_t_diff |
                ranges::views::transform(
-                   [&time_diff](const auto& entry_pair)
+                   [&time_diff](const auto& entry_pair) -> auto
                    {
                        time_diff += entry_pair.second;
                        return std::make_pair(entry_pair.first, time_diff);
@@ -409,7 +401,7 @@ namespace R3B::Neuland::Calibration
             const auto dp_id = ModuleID2PlaneID(module_num - 1) / 2;
             const auto t_sync_corr = ref_time_diff_to_first.at(dp_id * 2);
 
-            const auto t_sync_val = [this](int p_module_num)
+            const auto t_sync_val = [this](int p_module_num) -> ValueError<double>
             {
                 if (IsModuleNumHorizontal(p_module_num))
                 {
@@ -423,7 +415,6 @@ namespace R3B::Neuland::Calibration
 
             module_par.t_sync = t_sync_val + t_sync_corr;
         }
-        offset_to_tsync_ref_bar(hit_par);
 
         // // TEST: try to set error to zero
         // for (auto& [module_num, module_par] : hit_par.GetListOfModuleParRef())

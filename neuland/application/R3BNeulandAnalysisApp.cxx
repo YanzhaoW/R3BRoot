@@ -237,11 +237,7 @@ namespace R3B::Neuland
 
         if (const auto& option = task_option.neuland_cal_to_hit_task; option.enable)
         {
-            parse_io_branch_names(option, read_branch_names, 2, write_branch_names, 1);
-            auto task = std::make_unique<R3B::Neuland::Cal2HitTask>(
-                read_branch_names.at(0), read_branch_names.at(1), write_branch_names.at(0));
-            task->SetTrigger(option.mode);
-            task->SetGlobalTimeOffset(option.global_time_offset);
+            auto task = std::make_unique<std::remove_cvref_t<decltype(option)>::Task>(option);
             run->AddTask(task.release());
         }
 

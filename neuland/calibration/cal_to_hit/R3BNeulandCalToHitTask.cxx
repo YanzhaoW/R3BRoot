@@ -18,6 +18,7 @@
 #include "R3BNeulandCalToHitPar.h"
 #include "R3BNeulandCalibrationTask.h"
 #include "R3BNeulandCommon.h"
+#include "R3BNeulandCommonFunc.h"
 #include "R3BNeulandHit2.h"
 #include "R3BNeulandTriggerTypes.h"
 #include "R3BValueError.h"
@@ -91,14 +92,15 @@ namespace R3B::Neuland
         }
     } // namespace
 
-    Cal2HitTask::Cal2HitTask(std::string_view input_cal_data_name,
-                             std::string_view input_cal_2_hit_par_name,
-                             std::string_view output_hit_data_name)
+    Cal2HitTask::Cal2HitTask(const Config& config)
         : CalibrationTask("R3BNeulandCal2Hit", 1)
-        , cal_data_{ input_cal_data_name }
-        , hit_data_{ output_hit_data_name }
-        , cal_to_hit_par_{ input_cal_2_hit_par_name }
+        , cal_data_{ get_from_sep_string(0, config.read) }
+        , hit_data_{ get_from_sep_string(1, config.write) }
+        , cal_to_hit_par_{ get_from_sep_string(1, config.read) }
+        , global_time_offset_{ config.global_time_offset_ns }
+        , distance_to_target_{ config.distance_to_target_cm }
     {
+        SetTrigger(config.mode);
     }
 
     void Cal2HitTask::HistogramInit(DataMonitor& histograms) {}
@@ -164,12 +166,18 @@ namespace R3B::Neuland
         hit.module_id = static_cast<int>(par.module_num - 1);
         hit.tdc_left = signalPair.left().time;
         hit.tdc_right = signalPair.right().time;
-        hit.time = get_hit_time(hit.tdc_left, hit.tdc_right);
+        hit.time = get_hit_time(hit.tdc_left, hit.tdc_right) + global_time_offset_;
         hit.qdc_left = signalPair.left().energy;
         hit.qdc_right = signalPair.right().energy;
         hit.energy = get_hit_energy(hit.qdc_left, hit.qdc_right, par);
-        hit.position = get_hit_position(hit.tdc_left, hit.tdc_right, par);
+
+        const auto position_offset = XYZVectorValueErrorD{ ValueErrorD{ 0., 0. },
+                                                           ValueErrorD{ 0., 0. },
+                                                           ValueErrorD{ distance_to_target_, 0. } };
+
+        hit.position = get_hit_position(hit.tdc_left, hit.tdc_right, par) + position_offset;
         hit.pixel = get_hit_pixel(hit.position);
+        // fmt::println("tme: {}", hit.time);
         LOGP(debug, "Adding a new NeulandHit: {}\n", hit);
         return hit;
     }
@@ -244,7 +252,7 @@ namespace R3B::Neuland
             }
             return los_time;
         }();
-        auto time_val = ((larger_t + smaller_t) / 2.) - global_time_offset_ - t_start;
+        auto time_val = ((larger_t + smaller_t) / 2.) - t_start;
         time_val.value = std::remainder(time_val.value, R3B::Neuland::MaxCalTime);
         return time_val;
     }

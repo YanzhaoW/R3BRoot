@@ -42,6 +42,7 @@ namespace R3B::Neuland::Calibration
         // histograms:
         TH2D* hist_positions_along_bar_ = nullptr;
         TH2D* hist_times_ = nullptr;
+        TH2D* hist_times_position_offset_ = nullptr;
 
         // overriden functions:
         void HistogramInit(DataMonitor& histograms) override;

@@ -3,6 +3,7 @@
 #include "R3BNeulandCalibrationTask.h"
 #include "R3BNeulandCommon.h"
 #include "R3BNeulandCommonFunc.h"
+#include "R3BNeulandHit2.h"
 #include "R3BNeulandMilleCalDataProcessor.h"
 #include "R3BNeulandTriggerTypes.h"
 #include <FairRootManager.h>
@@ -10,6 +11,7 @@
 #include <TH2.h>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <fmt/format.h>
 #include <limits>
 #include <string_view>
@@ -31,7 +33,6 @@ namespace R3B::Neuland::Calibration
         static constexpr auto RESIDUAL_BIN_NUM = 500;
         static constexpr auto PAR_BIN_NUM = 400;
 
-        static constexpr auto MAX_TIME_SEC = 800;
         static constexpr auto TIME_BIN_NUM = 800;
         static constexpr auto TIME_US_MAX = 100.;
         static constexpr auto ITER_BIN_NUM = 200;
@@ -101,6 +102,19 @@ namespace R3B::Neuland::Calibration
                                                            max_diff);
         set_x_title(hist_fit_diff_bar_pos_, "Module number");
         set_y_title(hist_fit_diff_bar_pos_, "diff value (cm)");
+
+        static constexpr auto TIME_DIFF_BIN_NUM = 500;
+        static constexpr auto TIME_MAX_NS = 20;
+
+        hist_cosmic_time_to_reference_ = histograms.add_hist<TH2D>(
+            "time_to_reference",
+            fmt::format("position offsetted time diff to reference module number {}", TIME_REFERENCE_MODULE_NUM),
+            module_size,
+            0.5,
+            0.5 + module_size,
+            TIME_DIFF_BIN_NUM,
+            -TIME_MAX_NS,
+            TIME_MAX_NS);
     }
 
     void CosmicMonitorTask::ExtraInit([[maybe_unused]] FairRootManager* rootMan)
@@ -182,6 +196,8 @@ namespace R3B::Neuland::Calibration
 
         auto predict = [](const TrackFitPar& par, double val) -> double { return (par.slope * val) + par.offset; };
 
+        auto ref_hit = std::ranges::find(hit_data_.get(), TIME_REFERENCE_MODULE_NUM, &R3B::Neuland::Hit::module_id);
+
         for (const auto& hit : hit_data_)
         {
             const auto z_pos = hit.position.Z().value;
@@ -198,6 +214,18 @@ namespace R3B::Neuland::Calibration
             const auto bar_diff_val = predict(bar_diff_par, z_pos) - bar_diff_pos;
             hist_fit_diff_time_->Fill(module_num, time_diff_val);
             hist_fit_diff_bar_pos_->Fill(module_num, bar_diff_val);
+
+            if (ref_hit != hit_data_.end())
+            {
+                const auto pos_diff = hit.position - ref_hit->position;
+                const auto time_diff = hit.time - ref_hit->time;
+                const auto time_offset = std::sqrt(pos_diff.Mag2().value) / CLight;
+                const auto offsetted_time = time_diff.value + (std::copysign(1., pos_diff.Y().value) * time_offset);
+                if (offsetted_time != 0)
+                {
+                    hist_cosmic_time_to_reference_->Fill(module_num, offsetted_time);
+                }
+            }
         }
     }
 

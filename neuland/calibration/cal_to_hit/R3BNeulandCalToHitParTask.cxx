@@ -32,6 +32,20 @@
 
 namespace R3B::Neuland
 {
+
+    namespace
+    {
+        void offset_to_tsync_ref_bar(Cal2HitPar& hit_par)
+        {
+            const auto ref_t_sync = hit_par.GetModuleParAt(Calibration::DEFAULT_TSYNC_REFERENCE_BAR_NUM).t_sync;
+
+            for (auto& [module_number, module_par] : hit_par.GetListOfModuleParRef())
+            {
+                module_par.t_sync -= ref_t_sync;
+            }
+        }
+    } // namespace
+
     Cal2HitParTask::Cal2HitParTask(const Config& config)
 
         : CalibrationTask(config.name, 1)
@@ -142,6 +156,7 @@ namespace R3B::Neuland
         R3BLOG(info, "Starting to do cosmic calibration calibration!");
         engine_->Calibrate(*hit_par_);
         engine_->EndOfTask();
+        offset_to_tsync_ref_bar(*hit_par_);
     }
     void Cal2HitParTask::BeginOfEvent() { engine_->BeginOfEvent(); }
 
