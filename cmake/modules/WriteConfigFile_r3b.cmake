@@ -205,6 +205,7 @@ macro(WRITE_CONFIG_FILE filename)
 
     convert_list_to_string($ENV{NEW_CLASSPATH})
     set(MY_CLASSPATH ${output})
+    set(ROOT_INCLUDE_PATH)
 
     list(APPEND ROOT_INCLUDE_PATH ${FAIRROOTPATH}/include)
     if(ucesb_FOUND)
